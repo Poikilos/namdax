@@ -30,39 +30,39 @@
 
 //Important Windows stuff:
 #include <windows.h>
-#include <windowsx.h>
-#include <mmsystem.h>
+//#include <windowsx.h> 
+//#include <mmsystem.h>
 //Important C/C++ stuff
-#include <iostream.h>
-#include <conio.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <string.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <math.h>
-#include <io.h>
-#include <fcntl.h>
+#include <iostream>
+//#include <conio.h>
+#include <cstdlib>
+//#include <malloc.h>
+#include <memory>
+#include <cstring>
+//#include <stdarg.h>
+#include <cstdio>
+#include <cmath>
+#include <ios>
+//#include <io.h>
+//#include <fcntl.h>
 //More includes:
-#include <fstream.h>
+#include <fstream>
 #include "resource.h"
-#include "ddraw.h" // include directdraw
-#pragma comment(lib, "ddraw.lib")
-#pragma comment(lib, "winmm.lib")
-
-#include "_ENGINE.H"
-#include "ERRLOG.CPP"
-#include "BASEFUNC.CPP"
-#include "TGA.CPP"
-
-// DEFINES ////////////////////////////////////////////////
+#include <SDL/SDL.h>
+using namespace std;
+#include "basefunc.cpp"
+#include "errlog.cpp"
+#include "tga.cpp"
+//namespace dxmanse {
 
 //Defines for windows
 #define WINDOW_CLASS_NAME "WINCLASS1"
+// DEFINES ////////////////////////////////////////////////
 //Default screen size
 #define SCREEN_WIDTH			640
 #define SCREEN_HEIGHT			480
+#define SCREEN_OFFSET_X           320//screen (a targa buffer) is offset to avoid clipping
+#define SCREEN_OFFSET_Y           240
 #define SCREEN_BPP				32	 //bits per pixel, GameInit tries 32 or 24 if one is not available
 //#define MAX_COLORS_PALETTE		256
 //States for game loop
@@ -99,7 +99,7 @@
 #define KEYDOWN(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1 : 0)
 #define KEYUP(vk_code)	 ((GetAsyncKeyState(vk_code) & 0x8000) ? 0 : 1)
 //Initialize a direct draw struct:
-#define DDRAW_INIT_STRUCT(ddstruct) { memset(&ddstruct,0,sizeof(ddstruct)); ddstruct.dwSize=sizeof(ddstruct);}
+//#define DDRAW_INIT_STRUCT(ddstruct) { memset(&ddstruct,0,sizeof(ddstruct)); ddstruct.dwSize=sizeof(ddstruct);}
 //Build a 32 bit color value in A.8.8.8 format (8-bit alpha mode):
 #define _RGB32BIT(a,r,g,b) ((b) + ((g) << 8) + ((r) << 16) + ((a) << 24))
 //24-bit specific, needed because of some video cards:
@@ -112,12 +112,12 @@
 // basic unsigned types
 typedef unsigned short USHORT;
 typedef unsigned short WORD;
-typedef unsigned char	UCHAR;
+typedef unsigned char	BYTE;
 typedef unsigned char	BYTE;
 
 
 // GLOBALS ////////////////////////////////////////////////
-UCHAR alphaLook[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/256+Dest)
+BYTE alphaLook[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/256+Dest)
 
 int ix;//temp var for error#'s
 int iErrorsSaved=0;
@@ -126,40 +126,23 @@ int REAL_BPP=32;
 int REAL_BYTEDEPTH=4;
 int keyDelay=0;
 int doublecode=0; //player cheat code
-int precisecode=0; //player cheat code
+int precisecode=0; //player cheat code 
 int bombed=0;
 //WinAPI globals:
 HWND			hwndMain = NULL; // globally track main window
 int			 window_closed			= 0;		// tracks if window is closed
 HINSTANCE hinstance_app			= NULL; // globally track hinstance
-//DirectDraw globals:
-//LPDIRECTDRAWPALETTE	 lpddpal			= NULL;	 // a pointer to the created dd palette
-LPDIRECTDRAW					lpdd				 = NULL;	 // dd object
-LPDIRECTDRAW4				 lpdd4				= NULL;	 // dd4 object
-LPDIRECTDRAWSURFACE4	lpddsPrimary = NULL;	 // dd primary surface
-LPDIRECTDRAWSURFACE4	lpddsBack		= NULL;	 // dd back surface
-LPDIRECTDRAWSURFACE4	lpddsBackdrop= NULL;	 // dd backdrop image surface
-//LPDIRECTDRAWSURFACE4	lpddsExplosion= NULL;	// dd working surface where explosion outputs
-LPDIRECTDRAWCLIPPER	 lpddClipper	= NULL;	 // dd clipper
-DDSURFACEDESC2				ddsd;									// a direct draw surface description struct
-DDBLTFX							 ddbltfx;							 // used to fill
-DDSCAPS2							ddscaps;							 // a direct draw surface capabilities struct
-HRESULT							 ddrval;								// result back from dd calls
-DDPIXELFORMAT			ddpixel;				 // used to get real bit depth and all that
+SDL_Surface *screen = NULL;
 //Other globals:
 DWORD								 start_clock_count = 0; // used for timing
-LPTARGA				lptargaBack=NULL;
+LPTARGA				lptargaBackdrop=NULL;
 LPTARGA				lptargaIntro=NULL;
 LPTARGA				*lptargaAlien;
 LPTARGA				*lptargaAlienBoss;
 LPTARGA				*lptargaHero;
 LPTARGA				*lptargaShot;
 LPTARGA				*lptargaGameScreen;
-//LPTARGA				lptargaAlien[2]={NULL,NULL};
-//LPTARGA				lptargaAlienBoss[3]={NULL,NULL,NULL};
-//LPTARGA				lptargaHero[21]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
-//LPTARGA				lptargaShot[2]={NULL,NULL};
-//LPTARGA				lptargaGameScreen[9]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};
+LPTARGA             lptargaScreen;
 
 char buffer[80];														 // general printing buffer
 int explosionResult = 0;
@@ -172,30 +155,15 @@ int numOfAliens = 0;
 
 // PROTOTYPES	//////////////////////////////////////////////
 
-//int Flip_Bitmap(UCHAR *image, int bytes_per_line, int height);
-LPDIRECTDRAWSURFACE4 DDrawCreateSurface(int width, int height, int memflags);
-LPDIRECTDRAWCLIPPER DDrawAttachClipper(LPDIRECTDRAWSURFACE4 lpdds,
-											int numRects, LPRECT clipList);
-int DDrawFillSurface(LPDIRECTDRAWSURFACE4 lpdds,int color);
-int DDrawDrawSurface(LPDIRECTDRAWSURFACE4 source, int x, int y,
-											int width, int height, LPDIRECTDRAWSURFACE4 dest);
-int DDrawDrawSurfaceScaled(LPDIRECTDRAWSURFACE4 source, int x, int y,
-											int width_src, int height_src, int width_dest, int height_dest,
-											LPDIRECTDRAWSURFACE4 dest);
-int _Targa2Surface32_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY);//, int opacityCap);
-int _Targa2Surface32_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
-int _Targa2Surface32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale);
-int Targa2Surface32(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY);
-int _Targa2Surface24_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY);//, int opacityCap);
-
-//universal (24- or 32-bit mode) Targa renderer
-int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
-
-int _Targa2Surface24_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
-int _Targa2Surface24_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale);
-int Targa2Surface24(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY);
-//UNUSED FUNCTION:
-int _Targa2Surface32_AlphaQuickEdge(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY);
+int TargaStride(LPTARGA image);
+void TargaToScreen_AutoCrop(LPTARGA image);
+void TargaToScreen(LPTARGA image);
+int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY);//, int opacityCap);
+int TargaToTarga32_AlphaQuickEdge_FX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
+int TargaToTarga32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale);
+int TargaToTarga32(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY);
+//universal (24- or 32-bit mode) Targa renderer:
+int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
 
 // CLASSES ////////////////////////////////////////////////
 class Shot
@@ -288,28 +256,14 @@ void Shot::refresh()
 		dead = 1;
 }
 void Shot::redraw(register RECT &rectRendered, register float &scale)
-{
-	//USES ALPHALOOK//_Targa2SurfaceAlphaFX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
-
-	//_Targa2Surface24_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
-
-	if (REAL_BPP==24)
-	{
-		if (z==4)
-			_Targa2Surface24_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
-		else
-			_Targa2Surface24_AlphaQuickEdge_FX_Scaled(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0, scale);
-	}
+{	
+	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
+	
+	
+	if (z==4)
+		TargaToTarga32_AlphaQuickEdge_FX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
 	else
-	{
-		if (z==4)
-			_Targa2Surface32_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
-		else
-			_Targa2Surface32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0, scale);
-	}
-
-
-
+	    TargaToTarga32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0, scale);
 }
 void Shot::setVars(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2)
 {
@@ -345,7 +299,7 @@ public:
 	int explodedBy;					//Size of explosion, incremented when dead
 	int exploding; //used as boolean
 	int shootDelay;
-
+	
 	Alien();
 	Alien(int x2, int y2, int z2);
 	~Alien();
@@ -527,7 +481,7 @@ void Alien::refresh()
 	{
 		if (!explodedBy)
 		{
-			//PlaySound((const char*)SOUND_ID_EXPLOSION, hinstance_app, SND_RESOURCE | SND_ASYNC);
+			////PlaySound((const char*)SOUND_ID_EXPLOSION/*"explosion.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 			exploding=1;
 		}
 		explodedBy++;
@@ -535,22 +489,12 @@ void Alien::refresh()
 }
 void Alien::redraw(register RECT &rectRendered, register float &scale)
 {
-	//USES ALPHALOOK//_Targa2SurfaceAlphaFX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
-	//_Targa2Surface24_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
-
+	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
+	
 	//static int animation_seq[4] = {0,1,0,2};
-	if (REAL_BPP==24)
-	{
-		if (z==4)
-			 _Targa2Surface24_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
-		else _Targa2Surface24_AlphaQuickEdge_FX_Scaled(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus, z/4.00);
-	}
-	else
-	{
-		if (z==4) _Targa2Surface32_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
-		else			_Targa2Surface32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lpddsBack, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus, z/4.00);
-	}
-
+	if (z==4) TargaToTarga32_AlphaQuickEdge_FX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
+	else			TargaToTarga32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus, z/4.00);
+	
 }
 void Alien::hitDetect(float &scaler)
 {
@@ -570,7 +514,7 @@ void Alien::hitDetect(float &scaler)
 							iHP+=8;
 							delete shots[index];
 							shots[index]=NULL;
-							PlaySound((const char*)SOUND_ID_SHIELDZAP, hinstance_app, SND_RESOURCE | SND_ASYNC);
+							//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*//*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 						}
 						else
 						{
@@ -578,7 +522,7 @@ void Alien::hitDetect(float &scaler)
 							iHP-=16;
 							delete shots[index];
 							shots[index]=NULL;
-							PlaySound((const char*)SOUND_ID_OUCHALIEN, hinstance_app, SND_RESOURCE | SND_ASYNC);
+							//PlaySound((const char*)SOUND_ID_OUCHALIEN/*"ouchalien.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 						}
 					}
 		}
@@ -789,7 +733,7 @@ void Hero::refresh()
 		explodedBy++;
 		if (!exploding)
 		{
-			PlaySound((const char*)SOUND_ID_EXPLOSION, hinstance_app, SND_RESOURCE | SND_ASYNC);
+			//PlaySound((const char*)SOUND_ID_EXPLOSION/*"explosion.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 			exploding=1;
 		}
 	}
@@ -845,7 +789,7 @@ void Hero::move(int dir)
 			}
 		}
 		else
-		{
+		{	
 			if (z<4)
 			{	z++;
 				y+=z*10;
@@ -884,114 +828,93 @@ void Hero::shoot()
 				else //shoot downward
 					shots[index] = new Shot(eyePosX-20*scaler+scaler*frameNow, eyePosY, z, (frameNow-10)*6, 20, shotSpeed, 0, 0);
 				break;
-				//PlaySound((const char*)SOUND_ID_LASER, hinstance_app, SND_RESOURCE | SND_ASYNC);
+				//PlaySound((const char*)SOUND_ID_LASER/*"laser.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+				////PlaySound((const char*)SOUND_ID_LASER, hinstance_app, SND_RESOURCE | SND_ASYNC);
 			}
 		}
 	}
 }
 void Hero::redraw()
 {
-	//USES ALPHALOOK//_Targa2SurfaceAlphaFX(frames[frameNow], lpddsBack, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
-	//_Targa2Surface24_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
-
-	if (REAL_BPP==24)
-	{
-		if (z==4)
-			 _Targa2Surface24_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
-		else _Targa2Surface24_AlphaQuickEdge_FX_Scaled(frames[frameNow], lpddsBack, x, y-verticle, 255-stunnedness, explodedBy, dwStatus, z/4.00);
-	}
-	else
-	{
-		if (z==4) _Targa2Surface32_AlphaQuickEdge_FX(frames[frameNow], lpddsBack, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
-		else		_Targa2Surface32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lpddsBack, x, y-verticle, 255-stunnedness, explodedBy, dwStatus, z/4.00);
-	}
-
+	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[frameNow], lptargaScreen, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
+	if (z==4) TargaToTarga32_AlphaQuickEdge_FX(frames[frameNow], lptargaScreen, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
+	else		TargaToTarga32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lptargaScreen, x, y-verticle, 255-stunnedness, explodedBy, dwStatus, z/4.00);
 }
 void Hero::drawMeters()
 {
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsBack->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
 
-	//register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-	register UCHAR *byteBuffer = (UCHAR *)ddsd.lpSurface;
+	//register DWORD *this_buffer = 
+	register BYTE *byteBuffer = lptargaScreen->buffer;
+	static int iStride=TargaStride(lptargaScreen);
 	//register DWORD pixel;// = _RGB32BIT(255,255,255,255); //remember this MACRO is ARGB unlike actual screen
 	register int toX=2, toY=SCREEN_HEIGHT-3;
 	for (int index=0; index<=gunPower*100; index++)
 	{
-		//pixel=_RGB32BIT(255,55+index*2,55+index*2,155+index);
+		//pixel=_RGB32BIT(255,55+index*2,55+index*2,155+index); 
 		for (register int offset=0; offset<=13; offset++)
 		{
-			//this_buffer[toX + ((toY)*ddsd.lPitch >> 2)] = pixel;
+			//this_buffer[toX + ((toY)*iStride >> 2)] = pixel;
 			//this_buffer[int(index*100)] = pixel;
 			for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-				byteBuffer[(toX + offset)*REAL_BYTEDEPTH + (toY-index)*ddsd.lPitch + byteNow] = 255-130+offset*10-index;
-
+				byteBuffer[(toX + offset)*REAL_BYTEDEPTH + (toY-index)*iStride + byteNow] = 255-130+offset*10-index;
+			
 		}
 	}
 
 	toX=18;
 	toY=SCREEN_HEIGHT-2;
 /*
-	pixel=_RGB32BIT(255,255,UCHAR(iHP*.85),0);
+	pixel=_RGB32BIT(255,255,BYTE(iHP*.85),0);
 	for (index=0; index<iHP; index++)
 	{
-		this_buffer[toX + index + ((toY)*ddsd.lPitch >> 2)] = pixel;
+		this_buffer[toX + index + ((toY)*iStride >> 2)] = pixel;
 		//for (byteNow
 	}
 */
+    
 	for (index=0; index<iHP; index++)
 	{
 
 		for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-			byteBuffer[(toX+index)*REAL_BYTEDEPTH + toY*ddsd.lPitch + byteNow] = (byteNow==3) ? 255 : (byteNow==2) ? 255 : iHP;
+			byteBuffer[(toX+index)*REAL_BYTEDEPTH + toY*iStride + byteNow] = (byteNow==3) ? 255 : (byteNow==2) ? 255 : iHP;
 	}
-
-	lpddsBack->Unlock(NULL);
 }
 void Hero::drawTarget(int alienNum)
 {
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsBack->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
 
 	//for (int alienNow = 0; alienNow < MAXALIENS; alienNow++)
 	//{
 		//if (aliens[alienNum] != NULL)
-
+	    
 		if (aliens[index]->z==z) if (aliens[index]->x>5) if (aliens[index]->x<SCREEN_WIDTH-6)
 		{
-
-			//register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-			register UCHAR *byteBuffer = (UCHAR *)ddsd.lpSurface;
+			//register DWORD *this_buffer = 
+			register BYTE *byteBuffer = lptargaScreen->buffer;
+			static int iStride=TargaStride(lptargaScreen);
 			//register DWORD pixel;// = _RGB32BIT(255,255,255,255); //remember this MACRO is ARGB unlike actual screen
 			register int toX=aliens[index]->x-3, toY=aliens[index]->y-3;
 
 			for (int index=0; index<7; index++)
 			{
-
 				for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
 				{//draw a crosshairs
-					byteBuffer[(toX+index)*REAL_BYTEDEPTH + (toY+3)*ddsd.lPitch + byteNow] = (byteNow==1)? 255 : 0; //across
-					byteBuffer[(toX+3)*REAL_BYTEDEPTH + (toY+index)*ddsd.lPitch + byteNow] = (byteNow==1)? 255 : 0; //down
+					byteBuffer[(toX+index)*REAL_BYTEDEPTH + (toY+3)*iStride + byteNow] = (byteNow==1)? 255 : 0; //across
+					byteBuffer[(toX+3)*REAL_BYTEDEPTH + (toY+index)*iStride + byteNow] = (byteNow==1)? 255 : 0; //down
 				}
 			}
-
+			
 /*			toX=aliens[index]->x;
 			toY=aliens[index]->y-2;
 			for (index=0; index<5; index++)
 			{
-
+	
 				for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-					byteBuffer[(toX)*REAL_BYTEDEPTH + (toY+index)*ddsd.lPitch + byteNow] = (byteNow==1)? 255 : 0;
+					byteBuffer[(toX)*REAL_BYTEDEPTH + (toY+index)*iStride + byteNow] = (byteNow==1)? 255 : 0;
 			}
-*/
+*/			
 
 		}
 	//}
-
-
-	lpddsBack->Unlock(NULL);
 }
 void Hero::hitDetect()
 {
@@ -1002,19 +925,19 @@ void Hero::hitDetect()
 	//HIT ALIEN:
 	for (int index=0; index<MAXALIENS; index++)
 	{
-
-		if (aliens[index] != NULL)
-		{//CENTERPOINT DISTANCE-BASED
-		/*
-			if ( abs(aliens[index]->x-50-xCenter) < 100) //100 IS SLOPPY BUT USSIVL DIST -50 SO HIT IS NEAR FRONT
-				if ( abs(aliens[index]->y-yCenter) < 80) //80 IS SLOPPY BUT USSIVL DIST
-					if (aliens[index]->z==z)
-					{
-						PlaySound((const char*)SOUND_ID_OUCHZAP, hinstance_app, SND_RESOURCE | SND_ASYNC);
-						stunnedness=10;
-						iHP-=50;
-					}
-		*/
+		
+		if (aliens[index] != NULL) {
+                          
+        //CENTERPOINT DISTANCE-BASED
+		//	if ( abs(aliens[index]->x-50-xCenter) < 100) //100 IS SLOPPY BUT USSIVL DIST -50 SO HIT IS NEAR FRONT
+		//		if ( abs(aliens[index]->y-yCenter) < 80) //80 IS SLOPPY BUT USSIVL DIST
+		//			if (aliens[index]->z==z)
+		//   		{
+		//				PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+		//       		stunnedness=10;
+		//				iHP-=50;
+		//			}
+		
 		//RECT-BASED
 			int widthMod = 80*scaler;
 			if (aliens[index]->rightEdge()>x+widthMod+widthMod)
@@ -1026,13 +949,13 @@ void Hero::hitDetect()
 								if (dwStatus & STATUS_SHIELD)
 								{
 									dwStatus ^= STATUS_SHIELD;
-									PlaySound((const char*)SOUND_ID_OUCHZAP, hinstance_app, SND_RESOURCE | SND_ASYNC);
+									//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 									stunnedness=10;
 									iHP+=50;
 								}
 								else
 								{
-									PlaySound((const char*)SOUND_ID_OUCHZAP, hinstance_app, SND_RESOURCE | SND_ASYNC);
+									//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 									stunnedness=10;
 									iHP-=50;
 								}
@@ -1055,7 +978,7 @@ void Hero::hitDetect()
 							iHP+=15;
 							delete shots[index];
 							shots[index]=NULL;
-							PlaySound((const char*)SOUND_ID_OUCHZAP, hinstance_app, SND_RESOURCE | SND_ASYNC);
+							//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 						}
 						else
 						{
@@ -1063,7 +986,7 @@ void Hero::hitDetect()
 							iHP-=15;
 							delete shots[index];
 							shots[index]=NULL;
-							PlaySound((const char*)SOUND_ID_OUCHZAP, hinstance_app, SND_RESOURCE | SND_ASYNC);
+							//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 						}
 					}
 		}
@@ -1074,7 +997,7 @@ void Hero::doublespeed()
 	if (!(dwStatus & STATUS_DOUBLESPEED))
 	{
 	dwStatus |= STATUS_DOUBLESPEED;
-	PlaySound((const char*)SOUND_ID_TRUMPET, hinstance_app, SND_RESOURCE | SND_ASYNC);
+	//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 	}
 }
 void Hero::precisionaim()
@@ -1082,7 +1005,7 @@ void Hero::precisionaim()
 	if (!(dwStatus & STATUS_PRECISIONAIM))
 	{
 	dwStatus |= STATUS_PRECISIONAIM;
-	PlaySound((const char*)SOUND_ID_TRUMPET, hinstance_app, SND_RESOURCE | SND_ASYNC);
+	//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 	}
 }
 
@@ -1090,268 +1013,89 @@ void Hero::precisionaim()
 Hero				*hero = NULL;
 
 // FUNCTIONS ////////////////////////////////////////////////
-LPDIRECTDRAWSURFACE4 DDrawCreateSurface(int width, int height, int memflags)
-{
-	DDSURFACEDESC2 ddsd;				 // working description
-	LPDIRECTDRAWSURFACE4 lpdds;	// temporary surface
-
-		// set to access caps, width, and height
-	memset(&ddsd,0,sizeof(ddsd));
-	ddsd.dwSize	= sizeof(ddsd);
-	ddsd.dwFlags = DDSD_CAPS | DDSD_WIDTH | DDSD_HEIGHT;// | DDSD_ALPHABITDEPTH;
-	//ddsd.dwAlphaBitDepth = 8;
-	ddsd.dwWidth = width;
-	ddsd.dwHeight = height;
-	// set surface to offscreen plain
-	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | memflags;
-
-
-	if (FAILED(lpdd4->CreateSurface(&ddsd, &lpdds, NULL)))
-		return(0);
-
-	return(lpdds);
+int TargaStride(LPTARGA image) {
+    if (image==NULL) return 0;
+    return image->width*(image->byBitDepth/8);
 }
 
-//////////////////////////////////////////////////////////////////////
-
-LPDIRECTDRAWCLIPPER DDrawAttachClipper(LPDIRECTDRAWSURFACE4 lpdds,
-																				 int numRects,
-																				 LPRECT clipList)
-{
-	// this function creates a clipper from the sent clip list and attaches
-	// it to the sent surface
-
-	//int index;												 // looping var
-	LPDIRECTDRAWCLIPPER lpddClipper;	 // pointer to the newly created dd clipper
-	LPRGNDATA regionData;						 // pointer to the region data that contains
-																		 // the header and clip list
-
-	// first create the direct draw clipper
-	if (FAILED(lpdd4->CreateClipper(0,&lpddClipper,NULL)))
-		 return(NULL);
-
-	// now create the clip list from the sent data
-
-	// first allocate memory for region data
-	regionData = (LPRGNDATA)malloc(sizeof(RGNDATAHEADER)+numRects*sizeof(RECT));
-
-	// now copy the rects into region data
-	memcpy(regionData->Buffer, clipList, sizeof(RECT)*numRects);
-
-	// set up fields of header
-	regionData->rdh.dwSize					= sizeof(RGNDATAHEADER);
-	regionData->rdh.iType					 = RDH_RECTANGLES;
-	regionData->rdh.nCount					= numRects;
-	regionData->rdh.nRgnSize				= numRects*sizeof(RECT);
-
-	regionData->rdh.rcBound.left		=	64000;
-	regionData->rdh.rcBound.top		 =	64000;
-	regionData->rdh.rcBound.right	 = -64000;
-	regionData->rdh.rcBound.bottom	= -64000;
-
-	// find bounds of all clipping regions
-	for (index=0; index<numRects; index++)
-			{
-			// test if the next rectangle unioned with the current bound is larger
-			if (clipList[index].left < regionData->rdh.rcBound.left)
-				 regionData->rdh.rcBound.left = clipList[index].left;
-
-			if (clipList[index].right > regionData->rdh.rcBound.right)
-				 regionData->rdh.rcBound.right = clipList[index].right;
-
-			if (clipList[index].top < regionData->rdh.rcBound.top)
-				 regionData->rdh.rcBound.top = clipList[index].top;
-
-			if (clipList[index].bottom > regionData->rdh.rcBound.bottom)
-				 regionData->rdh.rcBound.bottom = clipList[index].bottom;
-
-			} // end for index
-
-	// now we have computed the bounding rectangle region and set up the data
-	// now let's set the clipping list
-
-	if (FAILED(lpddClipper->SetClipList(regionData, 0)))
-		 {
-		 // release memory and return error
-		 free(regionData);
-		 return(NULL);
-		 } // end if
-
-	// now attach the clipper to the surface
-	if (FAILED(lpdds->SetClipper(lpddClipper)))
-		 {
-		 // release memory and return error
-		 free(regionData);
-		 return(NULL);
-		 } // end if
-
-	// all is well, so release memory and send back the pointer to the new clipper
-	free(regionData);
-
-	return(lpddClipper);
+void TargaToScreen_AutoCrop(LPTARGA image) {
+		//assumes 32-bit screen?
+		//for (int iLine=0; iLine<SCREEN_WIDTH; iLine++) {
+        //}
+        //debug SLOW
+        SDL_Rect rect;
+        Uint32 color;
+    
+        
+        //color = SDL_MapRGB (screen->format, 0, 0, 0);
+        //SDL_FillRect (screen, NULL, color);// Create a black background 
+        rect.w=1;
+        rect.h=1;
+        rect.x=0;
+        rect.y=0;
+        BYTE *lpbyNow=image->buffer;
+        lpbyNow+=SCREEN_OFFSET_Y*lptargaScreen->width+SCREEN_OFFSET_X;
+        int iMarginsOffset=SCREEN_WIDTH*4;
+        for (int yPix=0; yPix<SCREEN_HEIGHT; yPix++, rect.y++, rect.x=0) {
+            for (int xPix=0; xPix<SCREEN_WIDTH; xPix++, rect.x++) {
+                //color=(Uint32)*lpbyNow;
+                color=SDL_MapRGB(screen->format,lpbyNow[2],lpbyNow[1],*lpbyNow);
+                SDL_FillRect (screen, &rect, color);
+                lpbyNow+=4;
+                //lptargaNew->buffer = (BYTE *)malloc(lptarga1->width * lptarga1->height * iByteDepth);
+            }
+            lpbyNow+=iMarginsOffset;
+        }
+        SDL_Flip (screen);
 }
 
-///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////	 
 
-int DDrawFillSurface(LPDIRECTDRAWSURFACE4 lpdds,int color)
-{
-	DDBLTFX ddbltfx; // this contains the DDBLTFX structure
+void TargaToScreen(LPTARGA image) {
+		//assumes 32-bit screen?
+		//for (int iLine=0; iLine<SCREEN_WIDTH; iLine++) {
+        //}
+        //debug SLOW
+        SDL_Rect rect;
+        Uint32 color;
+    
+        //color = SDL_MapRGB (screen->format, 0, 0, 0);
+        //SDL_FillRect (screen, NULL, color);// Create a black background 
+        rect.w=1;
+        rect.h=1;
+        rect.x=0;
+        rect.y=0;
+        BYTE *lpbyNow=image->buffer;
+        lpbyNow+=SCREEN_OFFSET_Y*lptargaScreen->width+SCREEN_OFFSET_X;
+        for (int yPix=0; yPix<SCREEN_HEIGHT; yPix++, rect.y++, rect.x=0) {
+            for (int xPix=0; xPix<SCREEN_WIDTH; xPix++, rect.x++, lpbyNow+=4) {
+                //color=(Uint32)*lpbyNow;
+                color=SDL_MapRGB(screen->format,lpbyNow[2],lpbyNow[1],*lpbyNow);
+                SDL_FillRect (screen, &rect, color);
+                //lptargaNew->buffer = (BYTE *)malloc(lptarga1->width * lptarga1->height * iByteDepth);
+            }
+        }
+        SDL_Flip (screen);
+}
 
-	// clear out the structure and set the size field
-	DDRAW_INIT_STRUCT(ddbltfx);
+///////////////////////////////////////////////////////////	 
 
-
-
-
-	// ready to blt to surface
-	lpdds->Blt(NULL,			 // ptr to dest rectangle
-					 NULL,			 // ptr to source surface, NA
-					 NULL,			 // ptr to source rectangle, NA
-					 DDBLT_COLORFILL | DDBLT_WAIT,	 // fill and wait
-					 &ddbltfx);	// ptr to DDBLTFX structure
-
-	// return success
-	return(1);
-} // end DDrawFillSurface
-
-//////////////////////////////////////////////////////////////
-
-int DDrawDrawSurface(LPDIRECTDRAWSURFACE4 source, // source surface to draw
-											int x, int y,								 // position to draw at
-											int width, int height,				// size of source surface
-											LPDIRECTDRAWSURFACE4 dest)		// surface to draw the surface on
-{
-	// draw the surface at the x,y defined by dest, note that we are sending
-	// the size of the surface, we could query for it, but that takes time
-	// basically, we are really lacking datastructure as this point, since
-	// you would create a datastructure that keep important info about the
-	// surface, so you did't have to query it from directdraw
-	//DDBLTFX	ddbltfx; // this contains the DDBLTFX structure
-
-	// clear out the structure and set the size field
-	//DDRAW_INIT_STRUCT(ddbltfx);
-	//ddbltfx.dwDDFX = DDBLT_ALPHADEST | DDBLT_ALPHASRC;
-
-	RECT dest_rect,	 // the destination rectangle
-		source_rect; // the source rectangle
-
-	// fill in the destination rect
-	dest_rect.left	 = x;
-	dest_rect.top		= y;
-	dest_rect.right	= x+width-1;
-	dest_rect.bottom = y+height-1;
-
-	// fill in the source rect
-	source_rect.left		= 0;
-	source_rect.top		 = 0;
-	source_rect.right	 = width-1;
-	source_rect.bottom	= height-1;
-
-	//This is a plain Blt without FX
-	if (FAILED(dest->Blt(&dest_rect, source,
-						&source_rect,(DDBLT_WAIT),
-						NULL)))
-		return(0);
-
-
-
-
-
-/*	//Code for key color:
-	// test transparency flag
-	if (transparent)
-	{
-		// enable color key blit
-		// blt to destination surface
-		if (FAILED(dest->Blt(&dest_rect, source,
-							&source_rect,(DDBLT_WAIT | DDBLT_KEYSRC),
-																	NULL)))
-			return(0);
-
-	} // end if
-	else
-	{
-		// perform blit without color key
-		// blt to destination surface
-		if (FAILED(dest->Blt(&dest_rect, source,
-							&source_rect,(DDBLT_WAIT),
-														NULL)))
-			return(0);
-
-	} // end if
-*/
-	// return success
-	return(1);
-
-} // end DDrawDrawSurface
-
-//////////////////////////////////////////////////////////////
-
-int DDrawDrawSurfaceScaled(LPDIRECTDRAWSURFACE4 source, // source surface to draw
-											int x, int y,								 // position to draw at
-											int width_src, int height_src,// size of source surface
-											int width_dest, int height_dest,// size of dest surface
-											LPDIRECTDRAWSURFACE4 dest)		// surface to draw the surface on
-{
-// draw the surface at the x,y defined by dest, send both the original
-// source size of surface, along with the desired size, if they are
-// different then directdraw will scale the bitmap for you
-// note that we are sending
-// the size of the surface, we could query for it, but that takes time
-// basically, we are really lacking datastructure as this point, since
-// you would create a datastructure that keep important info about the
-// surface, so you did't have to query it from directdraw
-
-
-	RECT dest_rect,	 // the destination rectangle
-		source_rect; // the source rectangle
-
-	// fill in the destination rect
-	dest_rect.left	 = x;
-	dest_rect.top		= y;
-	dest_rect.right	= x+width_dest-1;
-	dest_rect.bottom = y+height_dest-1;
-
-	// fill in the source rect
-	source_rect.left		= 0;
-	source_rect.top		 = 0;
-	source_rect.right	 = width_src-1;
-	source_rect.bottom	= height_src-1;
-
-	// perform blit without color key
-	// blt to destination surface
-	if (FAILED(dest->Blt(&dest_rect, source,
-										 &source_rect,(DDBLT_WAIT),
-										 NULL)))
-		return(0);
-
-	// return success
-	return(1);
-
-} // end DDrawDrawSurfaceScaled
-
-//////////////////////////////////////////////////////////////
-
-int _Targa2Surface32_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY)//, int opacityCap)
+int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)//, int opacityCap)
 {
 	// copy the Targa image to the primary buffer line by line
-	DDSURFACEDESC2 ddsd;	//	direct draw surface description
+	//	direct draw surface description 
 	// set size of the structure
-	ddsd.dwSize = sizeof(ddsd);
 
-	// lock the primary surface
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
+	register DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
+    int iStride=TargaStride(lptargaThis1);
 
-	// get video pointer to primary surfce
-	register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-
-	register UCHAR *dPtr = (UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)]; //dest pointer
-	register UCHAR *sPtr = image->buffer;														 //source pointer
-
-	register UCHAR alpha,blue,green,red;
+	register BYTE *dPtr = (BYTE*)&this_buffer[toX + (toY*iStride >> 2)]; //dest pointer
+	register BYTE *sPtr = image->buffer;														 //source pointer
+	
+	register BYTE alpha,blue,green,red;
 	register DWORD pixel;
-	//int adddPos=ddsd.lPitch-nWidth*4;
-	//register int adddPos=ddsd.lPitch >> 2;//-image->width*4; //in case not linear
+	//int adddPos=iStride-nWidth*4;
+	//register int adddPos=iStride >> 2;//-image->width*4; //in case not linear
 	//int addsPos=lPitch-nWidth*4;
 	//register int addsPos=1 ;//assume linear
 
@@ -1362,18 +1106,18 @@ int _Targa2Surface32_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int t
 		{
 			/*
 			//Get BGR values and alpha
-			UCHAR blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
+			BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
 				green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
 				red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
 				alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
 			*/
-
-
+			
+			
 			blue=*sPtr++;
 			green=*sPtr++;
 			red=*sPtr++;
 			alpha=*sPtr++;
-
+			
 			//if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
 
 			if (alpha==0)
@@ -1395,7 +1139,7 @@ int _Targa2Surface32_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int t
 					if (index_x+toX>=0)
 						if (index_y+toY>=0)
 							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 
 			}
 			else if (alpha==255)
@@ -1407,7 +1151,7 @@ int _Targa2Surface32_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int t
 					if (index_x+toX>=0)
 						if (index_y+toY>=0)
 							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 			}
 			else
 			{
@@ -1426,30 +1170,25 @@ int _Targa2Surface32_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int t
 					if (index_x+toX>=0)
 						if (index_y+toY>=0)
 							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 			}
 
 		} // end for index_x
-		dPtr+=ddsd.lPitch-image->width*4;
+		dPtr+=iStride-image->width*4;
 	} // end for index_y
 
-	// now unlock the surface
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
 	return(1);
-} // end _Targa2Surface32_Alpha
+} // end TargaToTarga32_Alpha
 
 ///////////////////////////////////////////////////////////////
 
-int _Targa2Surface32_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
+int TargaToTarga32_AlphaQuickEdge_FX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
 {
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-	register UCHAR *dPtr = (UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)];
-	register UCHAR *sPtr = image->buffer;
-	register UCHAR blue,green,red,alpha;
+	register DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
+	int iStride=TargaStride(lptargaThis1);
+	register BYTE *dPtr = (BYTE*)&this_buffer[toX + (toY*iStride >> 2)];
+	register BYTE *sPtr = image->buffer;
+	register BYTE blue,green,red,alpha;
 	register DWORD pixel;
 	register int tox1 = toX; //save original
 	register int explod1 = explodedness; //save original
@@ -1487,14 +1226,14 @@ int _Targa2Surface32_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpdds
 			}
 
 			if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-
+			
 			if (alpha<85)
 			{
 				dPtr+=4;
 			}
 			else if (alpha>171)
 			{	dPtr+=4;
-
+				
 				//register int scaledX = (scale==1) ? index_x : index_x*scale,
 				//			 scaledY = (scale==1) ? index_y : index_y*scale;
 				//Manual clip	and set pixel:
@@ -1504,7 +1243,7 @@ int _Targa2Surface32_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpdds
 							if (index_y + toY<SCREEN_HEIGHT)
 							{
 								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[index_x + toX + ((index_y + toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[index_x + toX + ((index_y + toY)*iStride >> 2)] = pixel;
 							}
 			}
 			else
@@ -1533,28 +1272,24 @@ int _Targa2Surface32_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpdds
 							if (index_y + toY<SCREEN_HEIGHT)
 							{
 								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[index_x + toX + ((index_y + toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[index_x + toX + ((index_y + toY)*iStride >> 2)] = pixel;
 							}
 			}
 		}
-		dPtr+=ddsd.lPitch-image->width*4;
+		dPtr+=iStride-image->width*4;
 	}
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
 	return(1);
-} // end _Targa2Surface32_AlphaQuickEdge_FX
+} // end TargaToTarga32_AlphaQuickEdge_FX
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int _Targa2Surface32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale)
+int TargaToTarga32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale)
 {
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-	register UCHAR *dPtr = (UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)];
-	register UCHAR *sPtr = image->buffer;
-	register UCHAR blue,green,red,alpha;
+	register DWORD *this_buffer = (DWORD *)lptargaThis1;
+	int iStride=TargaStride(lptargaThis1);
+	register BYTE *dPtr = (BYTE*)&this_buffer[toX + (toY*iStride >> 2)];
+	register BYTE *sPtr = image->buffer;
+	register BYTE blue,green,red,alpha;
 	register DWORD pixel;
 	register int tox1 = toX; //save original
 	register int explod1 = explodedness; //save original
@@ -1583,7 +1318,7 @@ int _Targa2Surface32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE
 			}
 
 			if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-
+			
 			if (alpha<85)
 			{//transparent
 				dPtr+=4;
@@ -1591,7 +1326,7 @@ int _Targa2Surface32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE
 			else if (alpha>171)
 			{//opaque
 				dPtr+=4;
-
+				
 				register int scaledX = (scale==1) ? index_x : index_x*scale,
 							 scaledY = (scale==1) ? index_y : index_y*scale;
 				//Manual clip	and set pixel:
@@ -1601,7 +1336,7 @@ int _Targa2Surface32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE
 							if (scaledY+toY<SCREEN_HEIGHT)
 							{
 								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[toX + scaledX + ((scaledY+toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[toX + scaledX + ((scaledY+toY)*iStride >> 2)] = pixel;
 							}
 			}
 			else
@@ -1630,39 +1365,28 @@ int _Targa2Surface32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE
 							if (scaledY+toY<SCREEN_HEIGHT)
 							{
 								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[toX + scaledX + ((scaledY+toY)*ddsd.lPitch >> 2)] = pixel;
+								this_buffer[toX + scaledX + ((scaledY+toY)*iStride >> 2)] = pixel;
 							}
 			}
 		}
-		dPtr+=ddsd.lPitch-image->width*4;
+		dPtr+=iStride-image->width*4;
 	}
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
 	return(1);
-} // end _Targa2Surface32_AlphaQuickEdge_FX_Scaled
+} // end TargaToTarga32_AlphaQuickEdge_FX_Scaled
 
 ///////////////////////////////////////////////////////////////////////////////
 
-int Targa2Surface32(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY)
+int TargaToTarga32(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)
 {
-	// copy the Targa image to the primary buffer line by line
-	DDSURFACEDESC2 ddsd;	//	direct draw surface description
-	// set size of the structure
-	ddsd.dwSize = sizeof(ddsd);
-
-	// lock the primary surface
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-
-	// get video pointer to primary surfce
-	DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-
+	DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
+    int iStride=TargaStride(lptargaThis1);
 	// process each line and copy it into the primary buffer
 	for (int index_y = 0; index_y < image->height; index_y++)
 	{
 		for (int index_x = 0; index_x < image->width; index_x++)
 		{
 			// get BGR values
-			UCHAR blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
+			BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
 				green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
 				red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
 				alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
@@ -1671,198 +1395,45 @@ int Targa2Surface32(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int
 			DWORD pixel = _RGB32BIT(alpha,red,green,blue);
 
 			// write the pixel
-			this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
+			this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 
 		} // end for index_x
 
 	} // end for index_y
 
-	// now unlock the surface
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
 	return(1);
-} //end Targa2Surface32
+} //end TargaToTarga32
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int _Targa2Surface24_Alpha(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY)//, int opacityCap)
-{
-	DDSURFACEDESC2 ddsd;	//	direct draw surface description
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	// get video pointer to primary surfce
-	//register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-
-	register UCHAR *dPtr = (UCHAR *)ddsd.lpSurface;//(UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)]; //dest pointer
-	register UCHAR *sPtr = (UCHAR *)image->buffer;														 //source pointer
-	register UCHAR *sPtrAlpha = (UCHAR *)image->buffer;
-	sPtrAlpha+=3; //move pointer to position of alpha byte
-	register int draw=0;
-	register float cookedAlpha=1;
-
-
-
-	//register UCHAR alpha,blue,green,red;
-	//register DWORD pixel;
-
-	//int adddPos=ddsd.lPitch-nWidth*4;
-	//register int adddPos=ddsd.lPitch >> 2;//-image->width*4; //in case not linear
-	//int addsPos=lPitch-nWidth*4;
-	//register int addsPos=1 ;//assume linear
-
-	//Move the dest pointer to the starting pixel
-	dPtr+=toX*3;
-	dPtr+=toY*ddsd.lPitch;
-
-	for (register int index_y = 0; index_y < image->height; index_y++)
-	{
-		for (register int index_x = 0; index_x < image->width; index_x++)
-		{
-			draw=0;
-			/*
-			//Get BGR values and alpha
-			UCHAR blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
-				green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
-				red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
-				alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
-			*/
-
-			//if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-
-			if (*sPtrAlpha==0)
-			{//skip
-				dPtr+=3;
-				sPtr+=4;
-				sPtrAlpha+=4;
-			}
-			else if (*sPtrAlpha==127)
-			{//half-transparent
-				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								draw=1;
-				if (draw)
-				{
-					//Do quick average
-					*dPtr = (*dPtr + *sPtr)/2;
-					dPtr++;
-					sPtr++;
-					*dPtr = (*dPtr + *sPtr)/2;
-					dPtr++;
-					sPtr++;
-					*dPtr = (*dPtr + *sPtr)/2;
-					dPtr++;
-					sPtr+=2; //increment past alpha
-
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-
-				sPtrAlpha+=4;
-			}
-			else if (*sPtrAlpha==255)
-			{//Solid
-				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								draw=1;
-				if (draw)
-				{
-					*dPtr = *sPtr;
-					dPtr++;
-					sPtr++;
-					*dPtr = *sPtr;
-					dPtr++;
-					sPtr++;
-					*dPtr = *sPtr;
-					dPtr++;
-					sPtr++;
-					sPtr++; //skip alpha
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-
-				sPtrAlpha+=4;
-			}
-			else
-			{//Do Alpha Formula
-				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								draw=1;
-				if (draw)
-				{
-					cookedAlpha = *sPtrAlpha/255.00;
-					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
-					dPtr++;	sPtr++;
-					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
-					dPtr++; sPtr++;
-					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
-					dPtr++;
-					sPtr+=2;
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-
-				sPtrAlpha+=4;
-			}
-		} // end for index_x
-		dPtr+=ddsd.lPitch - image->width*3;// - toX*3;
-	} // end for index_y
-
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
-	return(1);
-} // end _Targa2Surface24_Alpha
-////////////////////////////////////////////////////////////////////////////////
-
-int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
+int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
 {//uses alpha lookup
-	DDSURFACEDESC2 ddsd;	//	direct draw surface description
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	// get video pointer to primary surfce
-	//register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-
-	register UCHAR *dPtr = (UCHAR *)ddsd.lpSurface;//(UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)]; //dest pointer
-	register UCHAR *sPtr = (UCHAR *)image->buffer;														 //source pointer
-	register UCHAR *sPtrAlpha = (UCHAR *)image->buffer;
+	//register DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
+    int iStride=TargaStride(lptargaThis1);
+	register BYTE *dPtr = lptargaThis1->buffer;//(BYTE*)&this_buffer[toX + (toY*iStride >> 2)]; //dest pointer
+	register BYTE *sPtr = (BYTE *)image->buffer;														 //source pointer
+	register BYTE *sPtrAlpha = (BYTE *)image->buffer;
 	sPtrAlpha+=3; //move pointer to position of alpha byte
 	register int draw=0;
 	register float cookedAlpha=1;
-
-
-
-	//register UCHAR alpha,blue,green,red;
+	
+	
+	
+	//register BYTE alpha,blue,green,red;
 	//register DWORD pixel;
 
-	//int adddPos=ddsd.lPitch-nWidth*4;
-	//register int adddPos=ddsd.lPitch >> 2;//-image->width*4; //in case not linear
+	//int adddPos=iStride-nWidth*4;
+	//register int adddPos=iStride >> 2;//-image->width*4; //in case not linear
 	//int addsPos=lPitch-nWidth*4;
 	//register int addsPos=1 ;//assume linear
 
 	//Move the dest pointer to the starting pixel
 	dPtr+=toX*REAL_BYTEDEPTH;
-	dPtr+=toY*ddsd.lPitch;
-	int offset = ddsd.lPitch - image->width*REAL_BYTEDEPTH;
+	dPtr+=toY*iStride;
+	int offset = iStride - image->width*REAL_BYTEDEPTH;
 
 	//int scalerAdder=5-scale*4 //ADD THIS TO indexES INSTEAD OF ++, AND MULTIPLY USES OF width BY scale
-
+	
 	for (register int index_y = 0; index_y < image->height; index_y++)
 	{
 		for (register int index_x = 0; index_x < image->width; index_x++)
@@ -1870,7 +1441,7 @@ int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int to
 			draw=0;	//for clipping
 			/*
 			//Get BGR values and alpha
-			UCHAR blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
+			BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
 				green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
 				red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
 				alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
@@ -1906,7 +1477,7 @@ int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int to
 
 					sPtr++; //skip alpha
 					if (REAL_BYTEDEPTH==4) dPtr++; //if exist, skip alpha
-
+					
 				}
 				else
 				{
@@ -1936,7 +1507,7 @@ int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int to
 					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
 					dPtr++;	if (REAL_BYTEDEPTH==4) dPtr++; sPtr+=2;
 				*/
-
+				
 					//Lookup value by alpha
 					*dPtr = alphaLook[int(*sPtr)][int(*dPtr)][int(*sPtrAlpha)];
 					dPtr++;	sPtr++;
@@ -1944,7 +1515,7 @@ int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int to
 					dPtr++;	sPtr++;
 					*dPtr = alphaLook[int(*sPtr)][int(*dPtr)][int(*sPtrAlpha)];
 					dPtr++;	if (REAL_BYTEDEPTH==4) dPtr++; sPtr+=2;
-
+					
 				}
 				else
 				{
@@ -1957,428 +1528,14 @@ int _Targa2SurfaceAlphaFX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int to
 		} // end for index_x
 		dPtr+=offset;
 	} // end for index_y
-
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
 	return(1);
-} // end _Targa2Surface_Alpha
+} // end TargaToTarga_Alpha
 
 ///////////////////////////////////////////////////////////////
 
-int _Targa2Surface24_AlphaQuickEdge_FX(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
-{
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	//register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-	register UCHAR *dPtr = (UCHAR *)ddsd.lpSurface;//(UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)];
-	register UCHAR *sPtr = image->buffer;
-	register UCHAR *sPtrAlpha = image->buffer;
-	sPtrAlpha+=3;
-	//register UCHAR blue,green,red,alpha;
-	//register DWORD pixel;
-	register int tox1 = toX; //save original
-	register int toy1 = toY;
-	register int explod1 = explodedness; //save original
-	register int draw=0;
-
-/*
-	if (explodedness)
-	{//this keeps the exploded object red but solid until after frame 3
-		if (explodedness<=3)
-			explodedness=0;
-		else
-			explodedness-=3;
-	}
-*/
-	if (explodedness) explodedness--; //start explosion just as a red dude, not blown up yet at 1
-
-	dPtr+=toX*3;
-	dPtr+=toY*ddsd.lPitch;
-	register UCHAR *dPtrLineStart=dPtr;
-
-	for (register int index_y = 0; index_y < image->height; index_y++)
-	{
-		dPtrLineStart=dPtr;
-		if (index_y%2) //splits object into squares
-			toY+=explodedness;
-		toX=tox1; //reset offset before exploding next line of image
-
-		for (register int index_x = 0; index_x < image->width; index_x++)
-		{
-			if (index_x%2) //splits object into squares
-				toX+=explodedness;
-			draw=0;
-			/*
-			blue=*sPtr++;
-			green=*sPtr++;
-			red=*sPtr++;
-			alpha=*sPtr++;
-			*/
-			/*
-			if (explod1 || 255-opacityCap) //this use of opacity cap is unique to DXMan, makes it red when transparent
-			{
-				green>>=1;
-				blue>>=2;
-			}//find some way to implement this
-			*/
-
-			if (*sPtrAlpha>opacityCap) *sPtrAlpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-
-			if (*sPtrAlpha<85)
-			{//skip
-				sPtr+=4;
-				sPtrAlpha+=4;
-				dPtr+=3;
-			}
-			else if (*sPtrAlpha>171)
-			{//Solid
-				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								draw=1;
-				if (draw)
-				{
-					//dPtr+=index_x*3 + toX*3;// + index_x*3;// + toX*3;
-					//dPtr=dPtrLineStart;
-					dPtr=(UCHAR*)ddsd.lpSurface;
-					dPtr+=(index_y+toY)*ddsd.lPitch;
-					dPtr+=(index_x+toX)*3;//+(index_y+toY-toy1)*ddsd.lPitch;
-					//dPtr+=explOffset;//+ddsd.lPitch*int(explodedness/2);
-					*dPtr = (explod1 || 255-opacityCap) ? *sPtr>>2 : *sPtr; //b
-					dPtr++;
-					sPtr++;
-					*dPtr = (explod1 || 255-opacityCap) ? *sPtr>>1 : *sPtr; //g
-					dPtr++;
-					sPtr++;
-					*dPtr = (explod1)? *sPtr-explodedness*30 : *sPtr; //r
-					dPtr++;
-					sPtr+=2;
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-
-				sPtrAlpha+=4;
-			}
-			else
-			{//Half transparent
-				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								draw=1;
-
-				if (draw)
-				{
-					if (dwStat & STATUS_SHIELD)
-					{//blue outline
-							*dPtr = 192;
-							dPtr++;
-							sPtr++;
-							*dPtr = 64;
-							dPtr++;
-							sPtr++;
-							*dPtr = *sPtr;
-							dPtr++;
-							sPtr+=2;
-					}
-					else
-					{//actual blend
-						//dPtr=(UCHAR*)ddsd.lpSurface + toX*3 + toY*ddsd.lPitch;
-						*dPtr = (*dPtr + *sPtr)/2;
-						dPtr++;
-						sPtr++;
-						*dPtr = (*dPtr + *sPtr)/2;
-						dPtr++;
-						sPtr++;
-						*dPtr = (*dPtr + *sPtr)/2;
-						dPtr++;
-						sPtr+=2; //increment past alpha
-					}
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-
-
-				sPtrAlpha+=4;
-			}
-		}
-		dPtrLineStart+=ddsd.lPitch;
-		dPtr+=ddsd.lPitch - image->width*3;
-	}
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
-	return(1);
-} // end _Targa2Surface24_AlphaQuickEdge_FX
-
-////////////////////////////////////////////////////////////////////////////////
-
-int _Targa2Surface24_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale)
-{
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	//register DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-	register UCHAR *dPtr = (UCHAR *)ddsd.lpSurface;//(UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)];
-	register UCHAR *sPtr = image->buffer;
-	register UCHAR *sPtrAlpha = image->buffer;
-	sPtrAlpha+=3;
-	//register UCHAR blue,green,red,alpha;
-	//register DWORD pixel;
-	register int tox1 = toX; //save original
-	register int explod1 = explodedness; //save original
-	register int draw=0;
-
-	if (explodedness) explodedness--; //start explosion just as a red dude, not blown up yet at frame 1
-
-	dPtr+=toX*3;
-	dPtr+=toY*ddsd.lPitch;
-
-	register UCHAR *
-	dPtrLineStart=dPtr;
-
-	for (register int index_y = 0; index_y < image->height; index_y++)
-	{
-		dPtr=dPtrLineStart;
-		if (index_y%2) //splits object into squares
-			toY+=explodedness;
-		toX=tox1; //reset offset before exploding next line of image
-
-		for (register int index_x = 0; index_x < image->width; index_x++)
-		{
-			draw=0;
-			if (index_x%2) //splits object into squares
-				toX+=explodedness;
-
-			if (*sPtrAlpha>opacityCap) *sPtrAlpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-
-			if (*sPtrAlpha<85)
-			{//TRANSPARENT
-				dPtr+=3;
-				sPtr+=4;
-				sPtrAlpha+=4;
-			}
-			else if (*sPtrAlpha>171)
-			{//SOLID
-				register int scaledX = (scale==1) ? index_x : index_x*scale,
-							 scaledY = (scale==1) ? index_y : index_y*scale;
-				//Manual clip	and set pixel:
-				if (scaledX+toX<SCREEN_WIDTH)
-					if (scaledX+toX>=0)
-						if (scaledY+toY>=0)
-							if (scaledY+toY<SCREEN_HEIGHT)
-							{
-								draw=1;
-								//pixel = _RGB32BIT(256,red,green,blue);
-								//this_buffer[toX + scaledX + ((scaledY+toY)*ddsd.lPitch >> 2)] = pixel;
-							}
-				if (draw)
-				{
-					dPtr=(UCHAR*)ddsd.lpSurface+(toX+scaledX)*3+(toY+scaledY)*ddsd.lPitch;
-					*dPtr=(explod1 || 255-opacityCap) ? *sPtr>>2 : *sPtr; //b
-					dPtr++;
-					sPtr++;
-					*dPtr=(explod1 || 255-opacityCap) ? *sPtr>>1 : *sPtr; //g
-					dPtr++;
-					sPtr++;
-					*dPtr=(explod1)? *sPtr-explodedness*30 : *sPtr; //r;
-					dPtr++;
-					sPtr+=2; //skip alpha
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-				sPtrAlpha+=4;
-			}
-			else
-			{//AVERAGE (or "shield" effect)
-				register int scaledX = (scale==1) ? index_x : index_x*scale,
-							 scaledY = (scale==1) ? index_y : index_y*scale;
-				//Manual clip	and set pixel:
-				if (scaledX+toX<SCREEN_WIDTH)
-					if (scaledX+toX>=0)
-						if (scaledY+toY>=0)
-							if (scaledY+toY<SCREEN_HEIGHT)
-							{
-								draw=1;
-								//pixel = _RGB32BIT(256,red,green,blue);
-								//this_buffer[toX + scaledX + ((scaledY+toY)*ddsd.lPitch >> 2)] = pixel;
-							}
-				if (draw)
-				{
-					if (dwStat & STATUS_SHIELD)
-					{//do shield
-						dPtr=(UCHAR*)ddsd.lpSurface+(toX+scaledX)*3+(toY+scaledY)*ddsd.lPitch;
-						*dPtr=192;
-						dPtr++;
-						sPtr++;
-						*dPtr=64;
-						dPtr++;
-						sPtr++;
-						*dPtr=*sPtr;
-						dPtr++;
-						sPtr+=2;
-					}
-					else
-					{//do shield
-						dPtr=(UCHAR*)ddsd.lpSurface+(toX+scaledX)*3+(toY+scaledY)*ddsd.lPitch;
-						*dPtr=(*dPtr + *sPtr)/2;
-						dPtr++;
-						sPtr++;
-						*dPtr=(*dPtr + *sPtr)/2;
-						dPtr++;
-						sPtr++;
-						*dPtr=(*dPtr + *sPtr)/2;
-						dPtr++;
-						sPtr+=2;
-					}
-				}
-				else
-				{
-					dPtr+=3;
-					sPtr+=4;
-				}
-				sPtrAlpha+=4;
-			}
-		}
-		dPtr+=ddsd.lPitch - image->width*3;
-	}
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
-	return(1);
-} // end _Targa2Surface24_AlphaQuickEdge_FX_Scaled
-
-///////////////////////////////////////////////////////////////////////////////
-
-
-int Targa2Surface24(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY)
-{
-	// copy the Targa image to the primary buffer line by line
-	DDSURFACEDESC2 ddsd;	//	direct draw surface description
-	// set size of the structure
-	ddsd.dwSize = sizeof(ddsd);
-
-	// lock the primary surface
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-
-	// get video pointer to primary surfce
-	//DWORD *this_buffer = (DWORD *)ddsd.lpSurface;
-	UCHAR *dPtr = (UCHAR *)ddsd.lpSurface;
-	UCHAR *sPtr = (UCHAR *)image->buffer;
-
-	// process each line and copy it into the primary buffer
-	for (int index_y = 0; index_y < image->height; index_y++)
-	{
-		dPtr+=toX*3;
-		dPtr+=toY*ddsd.lPitch;
-		for (int index_x = 0; index_x < image->width; index_x++)
-		{
-			// get BGR values
-			//UCHAR blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
-				//green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
-				//red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
-				//alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
-			*dPtr = *sPtr;
-			dPtr++;
-			sPtr++;
-			*dPtr = *sPtr;
-			dPtr++;
-			sPtr++;
-			*dPtr = *sPtr;
-			dPtr++;
-			sPtr++;
-			sPtr++; //skip alpha
-
-			// this builds a 32 bit color value in A.8.8.8 format (8-bit alpha mode)
-			//DWORD pixel = _RGB32BIT(alpha,red,green,blue);
-
-			// write the pixel
-			//this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
-
-		} // end for index_x
-		dPtr+=ddsd.lPitch - image->width*3 - toX*3;// /REAL_BPP - SCREEN_WIDTH*REAL_BPP/8;// - SCREEN_WIDTH * REAL_BPP/8;
-	} // end for index_y
-
-	// now unlock the surface
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
-	return(1);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////////////////////////////
-//UNUSED FUNCTION:
-int _Targa2Surface32_AlphaQuickEdge(LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY)//, int opacityCap)
-{
-	DDSURFACEDESC2 ddsd;
-	ddsd.dwSize = sizeof(ddsd);
-	lpddsThis1->Lock(NULL,&ddsd, DDLOCK_SURFACEMEMORYPTR | DDLOCK_WAIT,NULL);
-	register DWORD *this_buffer = (DWORD *)ddsd.lpSurface; //dest pixel pointer
-	register UCHAR *dPtr = (UCHAR*)&this_buffer[toX + (toY*ddsd.lPitch >> 2)]; //dest byte pointer
-	register UCHAR *sPtr = image->buffer;														 //source byte pointer
-	register UCHAR alpha,blue,green,red;
-	register DWORD pixel;
-	for (register int index_y = 0; index_y < image->height; index_y++)
-	{
-		for (register int index_x = 0; index_x < image->width; index_x++)
-		{
-			blue=*sPtr++;
-			green=*sPtr++;
-			red=*sPtr++;
-			alpha=*sPtr++;
-			if (alpha<85) dPtr+=4;//transparent
-			else if (alpha>171)
-			{//solid
-				dPtr+=4;
-				pixel = _RGB32BIT(256,red,green,blue);
-				//Manual clip, and set pixel in this_buffer:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
-			}
-			else
-			{//half transparent, average
-				blue = (*dPtr + blue)/2;
-				dPtr++;
-				green = (*dPtr + green)/2;
-				dPtr++;
-				red = (*dPtr + red)/2;
-				dPtr+=2; //increment past alpha
-				pixel = _RGB32BIT(256,red,green,blue);
-				//Manual clip and set pixel:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*ddsd.lPitch >> 2)] = pixel;
-			}
-		}
-		dPtr+=ddsd.lPitch - image->width*4;
-	}
-	if (FAILED(lpddsThis1->Unlock(NULL)))
-		return(0);
-	return(1);
-} // end _Targa2Surface_AlphaQuickEdge
-
-///////////////////////////////////////////////////////////////
-
-LRESULT CALLBACK WindowProc(HWND hwnd,
-								UINT msg,
-														WPARAM wparam,
+LRESULT CALLBACK WindowProc(HWND hwnd, 
+								UINT msg, 
+														WPARAM wparam, 
 														LPARAM lparam)
 {
 	// this is the main message handler of the system
@@ -2386,21 +1543,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd,
 	HDC				hdc;	// handle to a device context
 	char buffer[80];				// used to print strings
 
-	// what is the message
+	// what is the message 
 	switch(msg)
-	{
-	case WM_CREATE:
+	{	
+	case WM_CREATE: 
 				{
 		// do initialization stuff here
 				// return success
 		return(0);
 		} break;
-
-	case WM_PAINT:
+	 
+	case WM_PAINT: 
 		{
-		// simply validate the window
-				 hdc = BeginPaint(hwnd,&ps);
-
+		// simply validate the window 
+				 hdc = BeginPaint(hwnd,&ps);	 
+				
 				// end painting
 				EndPaint(hwnd,&ps);
 
@@ -2408,10 +1565,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd,
 		return(0);
 			 } break;
 
-	case WM_DESTROY:
+	case WM_DESTROY: 
 		{
 
-		// kill the application, this sends a WM_QUIT message
+		// kill the application, this sends a WM_QUIT message 
 		PostQuitMessage(0);
 
 				// return success
@@ -2422,7 +1579,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd,
 
 		} // end switch
 
-	// process any messages that we didn't take care of
+	// process any messages that we didn't take care of 
 	return (DefWindowProc(hwnd, msg, wparam, lparam));
 
 } // end WinProc
@@ -2433,7 +1590,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 {
 	// this is the main loop of the game, do all your processing
 	// here
-
+	
 
 	// make sure this isn't executed again
 	if (window_closed)
@@ -2442,16 +1599,11 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	// for now test if user is hitting ESC
 	if (KEYDOWN(VK_ESCAPE))
 	{//int answer = 0;
-
-			if (REAL_BPP==24)
-				_Targa2Surface24_Alpha(lptargaGameScreen[2], lpddsPrimary,
-					SCREEN_WIDTH/2-lptargaGameScreen[2]->width/2,
-					SCREEN_HEIGHT/2-lptargaGameScreen[2]->height/2);
-			else
-				_Targa2Surface32_Alpha(lptargaGameScreen[2], lpddsPrimary,
-					SCREEN_WIDTH/2-lptargaGameScreen[2]->width/2,
-					SCREEN_HEIGHT/2-lptargaGameScreen[2]->height/2);
-
+			
+			TargaToTarga32_Alpha(lptargaGameScreen[2], lptargaScreen,
+				SCREEN_WIDTH/2-lptargaGameScreen[2]->width/2,
+				SCREEN_HEIGHT/2-lptargaGameScreen[2]->height/2);
+            TargaToScreen_AutoCrop(lptargaScreen);
 			DWORD startTime=GetTickCount();
 			while((GetTickCount() - startTime) < 300);
 
@@ -2468,18 +1620,16 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 				break;
 			}
 		}
-
+		
 		//gameState=GAME_STATE_YOU_LOSE;
 	}
 
 
 	if (gameState == GAME_STATE_INIT)
 	{
-		DDrawFillSurface(lpddsPrimary,0);
-		if (REAL_BPP == 24)
-			Targa2Surface24(lptargaIntro, lpddsPrimary, SCREEN_WIDTH/2-lptargaIntro->width/2,0);
-		else Targa2Surface32(lptargaIntro, lpddsPrimary, SCREEN_WIDTH/2-lptargaIntro->width/2,0);
-		PlaySound((const char*)SOUND_ID_INTRO, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
+		TargaToTarga32(lptargaIntro, lptargaScreen, SCREEN_WIDTH/2-lptargaIntro->width/2,0);
+		TargaToScreen_AutoCrop(lptargaScreen);
+		//PlaySound((const char*)SOUND_ID_INTRO/*"Orangejuice-DXMan-Intro.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
 		DWORD startTime=GetTickCount();
 			while((GetTickCount() - startTime) < 1000);
 		while (KEYUP(VK_RETURN))
@@ -2510,11 +1660,11 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 
 		if (gameLevel==1)
 		{
-			errlog.AddPrecedent("About to call TargaUnload(lptargaBack)", "START_LEVEL 1");
-			if (lptargaBack) TargaUnload(lptargaBack);
-			errlog.Add(iLastErr, "TargaUnload lptargaBack", "START_LEVEL");
-			errlog.AddPrecedent("About to call TargaLoad(\"level1Back.tga\")", "START_LEVEL 1");
-			lptargaBack=TargaLoad("level1Back.tga");
+			//errlog.AddPrecedent("About to call TargaUnload(lptargaBackdrop)", "START_LEVEL 1");
+			if (lptargaBackdrop) TargaUnload(lptargaBackdrop);
+			errlog.Add(iLastErr, "TargaUnload lptargaBackdrop", "START_LEVEL");
+			//errlog.AddPrecedent("About to call TargaLoad(\"level1Back.tga\")", "START_LEVEL 1");
+			lptargaBackdrop=TargaLoad("level1Back.tga");
 			errlog.Add(iLastErr, "TargaLoad level1Back.tga", "START_LEVEL");
 			if (iLastErr)
 			{
@@ -2522,82 +1672,64 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 				return (0);
 			}
 
-			if (REAL_BPP==24)
-			{
-				if (!Targa2Surface24(lptargaBack, lpddsBackdrop, 0, 0))
-				{
-					iErrorsSaved++;
-					//error_txt << "\nUnable to render Targa to 24-bit Backdrop in START_LEVEL";
-					return(0);
-				}
+			/*
+			//32-bit backdrop surface
+			if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
+			{	
+				iErrorsSaved++;
+				error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 1";
+				return(0);
 			}
-			else
-			{//32-bit backdrop surface
-				if (!Targa2Surface32(lptargaBack, lpddsBackdrop, 0, 0))
-				{
-					iErrorsSaved++;
-					error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 1";
-					return(0);
-				}
-			}
-
-			errlog.AddPrecedent("About to call TargaUnload(lptargaBack)","START_LEVEL 1");
-			TargaUnload(lptargaBack);
-			errlog.Add(iLastErr, "unload lptargaBack","START_LEVEL");
+			
+            */
+			//errlog.AddPrecedent("About to call TargaUnload(lptargaBackdrop)","START_LEVEL 1");
+			//TargaUnload(lptargaBackdrop);
+			//errlog.Add(iLastErr, "unload lptargaBackdrop","START_LEVEL");
 		}
 		else if (gameLevel==2)
 		{
-			errlog.AddPrecedent("Calling TargaUnload(lptargaBack)", "START_LEVEL 2);
-			if (lptargaBack) TargaUnload(lptargaBack);
-			errlog.Add(iLastErr, "unload lptargaBack","START_LEVEL 2");
-			errlog.AddPrecedent("TargaLoad(\"level2Back.tga\")", "START_LEVEL 2");
-			lptargaBack=TargaLoad("level2Back.tga");
+			//errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)", "START_LEVEL 2);
+			if (lptargaBackdrop) TargaUnload(lptargaBackdrop);
+			errlog.Add(iLastErr, "unload lptargaBackdrop","START_LEVEL 2");
+			//errlog.AddPrecedent("TargaLoad(\"level2Back.tga\")", "START_LEVEL 2");
+			lptargaBackdrop=TargaLoad("level2Back.tga");
 			errlog.Add(iLastErr, "level2Back.tga","START_LEVEL 2");
 			if (iLastErr)
 			{
 				iErrorsSaved++;
 				return (0);
 			}
-
-			if (REAL_BPP==24)
-			{
-				if (!Targa2Surface24(lptargaBack, lpddsBackdrop, 0, 0))
-				{
-					iErrorsSaved++;
-					error_txt << "\nUnable to render Targa to 24-bit Backdrop in START_LEVEL 2";
-					return(0);
-				}
+/*
+			//32-bit backdrop surface
+			if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
+			{	
+				error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 2";
+				iErrorsSaved++;
+				return(0);
 			}
-			else
-			{//32-bit backdrop surface
-				if (!Targa2Surface32(lptargaBack, lpddsBackdrop, 0, 0))
-				{
-					error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 2";
-					iErrorsSaved++;
-					return(0);
-				}
-			}
+			
 
-			errlog.AddPrecedent("Calling TargaUnload(lptargaBack)","START_LEVEL 2");
-			TargaUnload(lptargaBack);
-			errlog.Add(iLastErr, "unload lptargaBack", "START_LEVEL 2");
+			//errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)","START_LEVEL 2");
+			TargaUnload(lptargaBackdrop);
+			errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 2");
+			*/
 		}
 		else if (gameLevel==3)
 		{
-			errlog.AddPrecedent("Calling TargaUnload(lptargaBack)");
-			if (lptargaBack) TargaUnload(lptargaBack);
-			errlog.Add(iLastErr, "unload lptargaBack", "START_LEVEL 3");
-			lptargaBack=TargaLoad("level3Back.tga");
+			//errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)");
+			if (lptargaBackdrop) TargaUnload(lptargaBackdrop);
+			errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 3");
+			lptargaBackdrop=TargaLoad("level3Back.tga");
 			errlog.Add(iLastErr, "level3Back.tga", "START_LEVEL 3");
 			if (iLastErr)
 			{
 				iErrorsSaved++;
 				return (0);
 			}
-
+/*
 			if (REAL_BPP == 24)
 			{
-				if (!Targa2Surface32(lptargaBack, lpddsBackdrop, 0, 0))//ix)
+				if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))//ix)
 				{
 					error_txt << "\nUnable to render targaBack to 24-bit surface";
 					iErrorsSaved++;
@@ -2606,7 +1738,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 			}
 			else
 			{
-				if (!Targa2Surface32(lptargaBack, lpddsBackdrop, 0, 0))
+				if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
 				{
 					error_txt << "\nUnable to render targaBack to 32-bit surface";
 					iErrorsSaved++;
@@ -2614,9 +1746,10 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 				}
 			}
 
-			errlog.AddPrecedent("Calling TargaUnload(lptargaBack)", "START_LEVEL 3");
-			TargaUnload(lptargaBack);
-			errlog.Add(iLastErr, "unload lptargaBack", "START_LEVEL 3");
+			//errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)", "START_LEVEL 3");
+			TargaUnload(lptargaBackdrop);
+			errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 3");
+			*/
 		}
 
 
@@ -2628,7 +1761,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	else if (gameState == GAME_STATE_START_STAGE)
 	{//START STAGE
 		bombed=0;
-		PlaySound((const char*)SOUND_ID_INVASION, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
+		//PlaySound((const char*)SOUND_ID_INVASION/*"Orangejuice-DXMan-Invasion.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
 		for (index=0; index<MAXALIENS; index++)
 		{
 			aliens[index] = new Alien(SCREEN_WIDTH, index*(SCREEN_HEIGHT/8), index+1);
@@ -2689,16 +1822,17 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 			}
 		}
 		*/
-
+		
 
 		if (doublecode>=10 && hero->dwStatus ^ STATUS_DOUBLESPEED) hero->doublespeed();
 		if (precisecode>=20 && hero->dwStatus ^ STATUS_PRECISIONAIM) hero->precisionaim();
 
-		DDrawDrawSurface(lpddsBackdrop,	0,	 0,	 SCREEN_WIDTH+1, SCREEN_HEIGHT+1 ,lpddsBack);
+		TargaToTarga32(lptargaBackdrop, lptargaScreen, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
+        //DDrawDrawSurface(lptargaScreendrop, 0, 0, SCREEN_WIDTH+1, SCREEN_HEIGHT+1, lptargaScreen);
 
 		//Update all the existing aliens, delete the rest
 		for (index=0; index < MAXALIENS; index++)
-		{//Prototype is (LPTARGA image, LPDIRECTDRAWSURFACE4 lpddsThis1, int toX, int toY_)
+		{//Prototype is (LPTARGA image, LPTARGA lptargaThis1, int toX, int toY_)
 			if (hero!=NULL && (index == hero->z-1))//(calculate layer to put hero in)
 				hero->refresh();
 			if (aliens[index] != NULL)
@@ -2728,7 +1862,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 			hero=NULL;
 			gameState=GAME_STATE_YOU_LOSE;
 		}
-
+		
 
 		for (index=0; index<MAXSHOTS; index++)
 		{
@@ -2744,22 +1878,22 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 		}
 
 
-		//DDrawDrawSurface(lpddsExplosion, 100,100,300,300,lpddsBack);
-
+		//DDrawDrawSurface(lptargaExplosion, 100,100,300,300,lptargaScreen);
+		
 		/*
-		if(calculateExplosion(lpddsBack, 100, 100, 20, 0, EXPLOSION_CHECK_COUNT) == 0)
+		if(calculateExplosion(lptargaScreen, 100, 100, 20, 0, EXPLOSION_CHECK_COUNT) == 0)
 		{
-			//DDrawFillSurface(lpddsBack,0);
-			explosionResult = calculateExplosion(lpddsBack, 100, 100, 20, 30, EXPLOSION_START);
+			//DDrawFillSurface(lptargaScreen,0);
+			explosionResult = calculateExplosion(lptargaScreen, 100, 100, 20, 30, EXPLOSION_START);
 		}
 		else
-			explosionResult = calculateExplosion(lpddsBack, 100, 100, 20, 30, EXPLOSION_CONTINUE);
+			explosionResult = calculateExplosion(lptargaScreen, 100, 100, 20, 30, EXPLOSION_CONTINUE);
 		//error_txt << "\nResult of explosionCalculate = " << explosionResult;
 		*/
 
-		// flip pages
-		while (FAILED(lpddsPrimary->Flip(NULL, DDFLIP_WAIT)));
-
+		// flip pages:
+		TargaToScreen_AutoCrop(lptargaScreen);
+		
 		if (numOfAliens<=0) gameState = GAME_STATE_WIN_STAGE;
 	}
 	else if (gameState == GAME_STATE_SHUTDOWN)
@@ -2767,7 +1901,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	}
 	else if (gameState == GAME_STATE_WIN_STAGE)
 	{
-		PlaySound((const char*)SOUND_ID_TRUMPET, hinstance_app, SND_RESOURCE | SND_ASYNC);
+		//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 		for (index=0; index<MAXSHOTS; index++)
 		{
 			if (shots[index]!=NULL)
@@ -2782,7 +1916,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 		{
 			if (gameStage<3)
 			{//WIN STAGE
-
+				
 
 				gameStage++;
 				screenNow=gameStage+1;//DISPLAY: Stage gameStage..
@@ -2790,7 +1924,7 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 			}
 			else
 			{//WIN LEVEL
-
+				
 				gameLevel++;
 				screenNow=gameLevel+3;//DISPLAY: Level gameLevel.
 				gameStage=1;
@@ -2817,19 +1951,15 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 		}
 		else
 		{
-			if (REAL_BPP==24)
-			{
-				_Targa2Surface24_Alpha(lptargaGameScreen[screenNow], lpddsPrimary,
+			//
+			//	TargaToTarga32_Alpha(lptargaGameScreen[screenNow], lptargaScreen,
+			//		SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
+			//		SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
+			//
+			TargaToTarga32_Alpha(lptargaGameScreen[screenNow],lptargaScreen,
 					SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
 					SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
-			}
-			else
-			{
-				_Targa2Surface32_Alpha(lptargaGameScreen[screenNow], lpddsPrimary,
-					SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
-					SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
-			}
-
+			TargaToScreen_AutoCrop(lptargaScreen);
 			DWORD startTime=GetTickCount();
 			while((GetTickCount() - startTime) < 3000);
 		}
@@ -2843,20 +1973,14 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 			if (precisecode>=20) screenNow++;
 		}
 
-		if (REAL_BPP==24)
-		{
-			_Targa2Surface24_Alpha(lptargaGameScreen[screenNow], lpddsPrimary,
+		//	TargaToTarga32_Alpha(lptargaGameScreen[screenNow], lpddsPrimary,
+		//		SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
+		//		SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
+		TargaToTarga32_Alpha(lptargaGameScreen[screenNow], lptargaScreen,
 				SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
 				SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
-		}
-		else
-		{
-			_Targa2Surface32_Alpha(lptargaGameScreen[screenNow], lpddsPrimary,
-				SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
-				SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
-		}
 
-		PlaySound((const char*)SOUND_ID_ENDING, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
+		//PlaySound((const char*)SOUND_ID_ENDING/*"Orangejuice-DXMan-Ending.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
 		DWORD startTime=GetTickCount();
 		while((GetTickCount() - startTime) < 300);
 		while(KEYUP(VK_ESCAPE));
@@ -2864,19 +1988,11 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	}
 	else if (gameState == GAME_STATE_YOU_LOSE)
 	{
-		PlaySound((const char*)SOUND_ID_THRUST, hinstance_app, SND_RESOURCE | SND_ASYNC);
-		if (REAL_BPP==24)
-		{
-			_Targa2Surface24_Alpha(lptargaGameScreen[0], lpddsPrimary,
-				SCREEN_WIDTH/2-lptargaGameScreen[0]->width/2,
-				SCREEN_HEIGHT/2-lptargaGameScreen[0]->height/2);
-		}
-		else
-		{
-			_Targa2Surface32_Alpha(lptargaGameScreen[0], lpddsPrimary,
-				SCREEN_WIDTH/2-lptargaGameScreen[0]->width/2,
-				SCREEN_HEIGHT/2-lptargaGameScreen[0]->height/2);
-		}
+		//PlaySound((const char*)SOUND_ID_THRUST/*"thrust.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+		TargaToTarga32_Alpha(lptargaGameScreen[0], lptargaScreen,
+			SCREEN_WIDTH/2-lptargaGameScreen[0]->width/2,
+			SCREEN_HEIGHT/2-lptargaGameScreen[0]->height/2);
+		TargaToScreen_AutoCrop(lptargaScreen);
 		DWORD startTime=GetTickCount();
 		while((GetTickCount() - startTime) < 5000);
 		//PostMessage(hwndMain,WM_CLOSE,0,0);
@@ -2900,21 +2016,21 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 int GameInit(void *parms = NULL, int num_parms = 0)
 {
 	errlog.SetMessageDest(hwndMain);
-	errlog.AddTitle("Starting GameInit");
+	//errlog.AddTitle("Starting GameInit");
 
 	/*
 	*/
-
+	
 
 	//Load alpha lookup table from file
 	int file_handle;
 	OFSTRUCT file_data; //the file data information
-
+	
 	if ((file_handle = OpenFile("alphalook.raw",&file_data,OF_READ))==-1) //open the file if it exists
 	{//If can't open file:
 		error_txt << "\nERROR: Unable to open alpha lookup file!";
 		iErrorsSaved++;
-		return(0);
+		return(0);	
 	}
 	_lread(file_handle, alphaLook,256*256*256);
 	_lclose(file_handle);
@@ -2923,11 +2039,11 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	{
 		//Generate alpha lookup table if needed
 		error_txt << "\nNeed to generate alpha lookup table..";
-		for (UCHAR source=0; source<256; source++)
+		for (BYTE source=0; source<256; source++)
 		{
-		for (UCHAR dest; dest<256; dest++)
+		for (BYTE dest; dest<256; dest++)
 		{
-			for (UCHAR alpha; alpha<256; alpha++)
+			for (BYTE alpha; alpha<256; alpha++)
 			{
 						alphaLook[source][dest][alpha]=((source-dest)*alpha/255+dest);
 			}
@@ -2941,106 +2057,66 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	for (int aliensNow = 0; aliensNow<MAXALIENS; aliensNow++)
 		aliens[aliensNow]=NULL;
 
-
 	// this is called once after the initial window is created and
 	// before the main event loop is entered, do all your initialization
 	// here
+	lptargaScreen=TargaNew(SCREEN_WIDTH*2, SCREEN_HEIGHT*2,32,TGATYPE_UTC);
 
-	// first create base IDirectDraw interface
-	if (FAILED(DirectDrawCreate(NULL, &lpdd, NULL)))
-		return(0);
-
-	// now query for IDirectDraw4
-	if (FAILED(lpdd->QueryInterface(IID_IDirectDraw4,
-															 (LPVOID *)&lpdd4)))
-	return(0);
-
-	// set cooperation to full screen
-	if (FAILED(lpdd4->SetCooperativeLevel(hwndMain,
-										DDSCL_FULLSCREEN | DDSCL_ALLOWMODEX |
-										DDSCL_EXCLUSIVE | DDSCL_ALLOWREBOOT)))
-	return(0);
-
-	// set display mode
-	if (FAILED(lpdd4->SetDisplayMode(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP,0,0)))
-		if (FAILED(lpdd4->SetDisplayMode(SCREEN_WIDTH, SCREEN_HEIGHT, (SCREEN_BPP==32) ? 24 : 32,0,0)))
-		{
-			error_txt << "\nAborting: Unable to set ColorDepth to 24 or 32";
-			iErrorsSaved++;
-			return (0);
-		}
-
-
-	// clear ddsd and set size
-	DDRAW_INIT_STRUCT(ddsd);
-	// enable valid fields
-	ddsd.dwFlags = DDSD_CAPS | DDSD_BACKBUFFERCOUNT;
-	// set the backbuffer count field to 1, use 2 for triple buffering
-	ddsd.dwBackBufferCount = 1;
-	// request a complex, flippable
-	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_COMPLEX | DDSCAPS_FLIP;
-	// create the primary surface
-	if (FAILED(lpdd4->CreateSurface(&ddsd, &lpddsPrimary, NULL)))
-		return(0);
-	// this line is needed by the call
-	ddsd.ddsCaps.dwCaps = DDSCAPS_BACKBUFFER;
-	// set clipper up on back buffer since that's where well clip
-	// get the attached back buffer surface
-	if (FAILED(lpddsPrimary->GetAttachedSurface(&ddsd.ddsCaps, &lpddsBack)))
-		return(0);
 	//RECT explosionRect={0,0,200,200};
-	//lpddClipper = DDrawAttachClipper(lpddsExplosion,1,&explosionRect);
 	RECT screenRect= {0,0,SCREEN_WIDTH,SCREEN_HEIGHT};
-	lpddClipper = DDrawAttachClipper(lpddsBack,1,&screenRect);
-	// clean the surfaces
-	DDrawFillSurface(lpddsPrimary,0);
-	DDrawFillSurface(lpddsBack,0);
 
-	DDRAW_INIT_STRUCT(ddsd);
+	REAL_BPP=32;
+	REAL_BYTEDEPTH=4;
 
-	//Good time to get the pixel format:
-	memset(&ddpixel, 0, sizeof(ddpixel));
-	ddpixel.dwSize = sizeof(ddpixel);
-	lpddsPrimary->GetPixelFormat(&ddpixel);
-	REAL_BPP=ddpixel.dwRGBBitCount;
-	REAL_BYTEDEPTH=REAL_BPP/8;
+    char *msg;
+    int done;
 
+    /* Initialize SDL */
+    if (SDL_Init (SDL_INIT_VIDEO) < 0)
+    {
+        sprintf (msg, "Couldn't initialize SDL: %s\n", SDL_GetError ());
+        MessageBox (0, msg, "Error", MB_ICONHAND); 
+        free (msg);
+        exit (1);
+    }
+    atexit (SDL_Quit);
 
-	if (lptargaBack) TargaUnload(lptargaBack);
-	errlog.Add(iLastErr, "unload lptargaBack", "GameInit");
-	lptargaBack=TargaLoad("level1Back.tga");
+    /* Set 640x480 16-bits video mode */
+    screen = SDL_SetVideoMode (SCREEN_WIDTH, SCREEN_WIDTH, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF);
+    if (screen == NULL) {
+        sprintf (msg, "Couldn't set video mode: %s\n",
+          SDL_GetError ());
+        MessageBox (0, msg, "Error", MB_ICONHAND); 
+        free (msg);
+        exit (2);
+    }
+    SDL_WM_SetCaption ("DXMan", NULL);
+    
+   REAL_BPP=32;
+   REAL_BYTEDEPTH=4;
+
+	if (lptargaBackdrop) TargaUnload(lptargaBackdrop);
+	errlog.Add(iLastErr, "unload lptargaBackdrop", "GameInit");
+	lptargaBackdrop=TargaLoad("level1Back.tga");
 	errlog.Add(iLastErr, "level1Back.tga", "GameInit");
 	if (iLastErr)
 	{
 		iErrorsSaved++;
 		return (0);
 	}
-	lpddsBackdrop = DDrawCreateSurface(lptargaBack->width,lptargaBack->height,0);
-	if (REAL_BPP == 32)
-	{
-		if (!Targa2Surface32(lptargaBack, lpddsBackdrop, 0, 0))
-		{
-			error_txt <<"\nCould not load targaBack to 32-bit BackDrop in GameInit";
-			iErrorsSaved++;
-			return(0);
-		}
-	}
-	else
-	{
-		if (!Targa2Surface24(lptargaBack, lpddsBackdrop, 0,0))
-		{
-			error_txt <<"\nCould not load targaBack to 24-bit BackDrop in GameInit";
-			iErrorsSaved++;
-			return(0);
-		}
-
-	}
-	TargaUnload(lptargaBack); //Dump this targa--already stored as lpddsBackdrop
-	errlog.Add(iLastErr, "unload lptargaBack", "GameInit");
+	//lptargaScreendrop = DDrawCreateSurface(lptargaBackdrop->width,lptargaBackdrop->height,0);	
+	//	if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
+	//	{
+	//		error_txt <<"\nCould not load targaBack to 32-bit BackDrop in GameInit";
+	//		iErrorsSaved++;
+	//		return(0);
+	//	}
+	//TargaUnload(lptargaBackdrop);
+	errlog.Add(iLastErr, "unload lptargaBackdrop", "GameInit");
 
 
-	//lpddsExplosion = DDrawCreateSurface(300,300,0); //Not used yet
-	//DDrawFillSurface(lpddsExplosion,0);
+	//lptargaExplosion = DDrawCreateSurface(300,300,0); //Not used yet
+	//DDrawFillSurface(lptargaExplosion,0);
 	int iFramesHero=21,
 		iFramesAlien=2,
 		iFramesAlienBoss=3,
@@ -3049,7 +2125,7 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	int iFramesFound;
 
 	iFramesFound=iFramesHero;
-	errlog.AddPrecedent("Loading heroani","GameInit");
+	//errlog.AddPrecedent("Loading heroani","GameInit");
 	lptargaHero=TargaLoadSeq("heroani", &iFramesFound);
 	errlog.Add(iLastErr, "heroani*.tga", "GameInit");
 	if (iFramesFound!=iFramesHero) error_txt << "not all Hero frames loaded."<<endl;
@@ -3092,7 +2168,7 @@ int GameShutdown(void *parms = NULL, int num_parms = 0)
 
 		//Release palette if 8-bit was used
 	//if (lpddpal){lpddpal->Release(); lpddpal = NULL;} //
-
+	
 	//Unload Targas
 	TargaUnloadSeq(lptargaAlien, 2);
 	errlog.Add(iLastErr, "lptargaAlien", "GameShutDown");
@@ -3108,16 +2184,10 @@ int GameShutdown(void *parms = NULL, int num_parms = 0)
 	errlog.Add(iLastErr, "lptargaIntro", "GameShutDown");
 
 
-	//Release primary surface
-	if (lpddsPrimary)	{lpddsPrimary->Release();	lpddsPrimary = NULL;}
-
-	//Release other surfaces//
-	if (lpddsBackdrop)	{lpddsBackdrop->Release();	lpddsBackdrop = NULL;}
-	//if (lpddsExplosion)	{lpddsExplosion->Release();	lpddsExplosion = NULL;}
-
-	// now blow away the IDirectDraw4 interface
-	if (lpdd4){	lpdd4->Release(); lpdd4 = NULL;} // end if
-
+    TargaUnload(lptargaScreen);
+	errlog.Add(iLastErr, "lptargaScreen", "GameShutDown");
+    TargaUnload(lptargaBackdrop);
+	errlog.Add(iLastErr, "lptargaBackdrop", "GameShutDown");
 	// return success or failure or your own return code here
 	return(1);
 
@@ -3138,14 +2208,14 @@ int WINAPI WinMain(	HINSTANCE hinstance,
 
 	// first fill in the window class stucture
 	winclass.cbSize				 = sizeof(WNDCLASSEX);
-	winclass.style			= CS_DBLCLKS | CS_OWNDC |
+	winclass.style			= CS_DBLCLKS | CS_OWNDC | 
 													CS_HREDRAW | CS_VREDRAW;
 	winclass.lpfnWndProc	= WindowProc;
 	winclass.cbClsExtra		= 0;
 	winclass.cbWndExtra		= 0;
 	winclass.hInstance		= hinstance;
-	winclass.hIcon			= LoadIcon(hinstance, MAKEINTRESOURCE(IDI_ICON1));
-	winclass.hCursor		= LoadCursor(hinstance, MAKEINTRESOURCE(IDC_CURSOR1));
+	//winclass.hIcon			= LoadIcon(hinstance, MAKEINTRESOURCE(IDI_ICON1));
+	winclass.hCursor		= LoadCursor(hinstance, MAKEINTRESOURCE(IDC_CROSSHAIRS)); 
 	winclass.hbrBackground	= (HBRUSH)GetStockObject(BLACK_BRUSH);
 	winclass.lpszMenuName	= NULL;
 	winclass.lpszClassName	= WINDOW_CLASS_NAME;
@@ -3165,7 +2235,7 @@ int WINAPI WinMain(	HINSTANCE hinstance,
 								WS_POPUP | WS_VISIBLE,
 								 0,0,		// initial x,y
 								SCREEN_WIDTH,SCREEN_HEIGHT,	// initial width, height
-								NULL,		// handle to parent
+								NULL,		// handle to parent 
 								NULL,		// handle to menu
 								hinstance,// instance of this application
 								NULL)))	// extra creation parms
@@ -3178,18 +2248,18 @@ int WINAPI WinMain(	HINSTANCE hinstance,
 	// initialize game here
 	GameInit();
 
-
+	
 	while(TRUE)
 	{//Main event Loop
 		DWORD startTime=GetTickCount();
 
 		// test if there is a message in queue, if so get it
 		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
-		{
+		{ 
 			// test if this is a quit
 			if (msg.message == WM_QUIT)
 				break;
-
+	
 			// translate any accelerator keys
 			TranslateMessage(&msg);
 
@@ -3207,10 +2277,11 @@ int WINAPI WinMain(	HINSTANCE hinstance,
 	GameShutdown();
 
 	//error_txt << "\n(" << iFramesDropped << ") frames dropped";
-
+	
 	if (!iErrorsSaved) DeleteFile("!errors.txt");
 
 	// return to Windows like this
 	return(msg.wParam);
 
 } // end WinMain
+//}//end namespace
