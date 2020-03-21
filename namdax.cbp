@@ -3,67 +3,100 @@
 	<FileVersion major="1" minor="6" />
 	<Project>
 		<Option title="DXManSDL" />
+		<Option execution_dir="C:/Users/Owner/ownCloud/d.cpp/dxman/dxman-crossplatform/bin" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
-			<Target title="default">
-				<Option output="bin\DXMan" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\dxman-crossplatform\bin" />
-				<Option object_output="obj" />
+			<Target title="Debug">
+				<Option output="bin/Debug/DXMan" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin" />
+				<Option object_output="obj/Debug" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/DXMan" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin" />
+				<Option object_output="obj/Release" />
 				<Option type="0" />
 				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="WindowsRelease">
+				<Option platforms="Windows;" />
+				<Option output="bin/Release/DXMan" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="bin" />
+				<Option object_output="obj/WindowsRelease" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-g" />
-			<Add option="-Dmain=SDL_main" />
-			<Add directory="C:\Dev-Cpp\include\SDL" />
-			<Add directory="..\..\base" />
+			<Add option="`sdl2-config --cflags`" />
+			<Add directory="../../base" />
+			<Add directory="../base" />
+			<Add directory="C:/SDK/SDL2/include" />
 		</Compiler>
 		<Linker>
-			<Add library="mingw32" />
-			<Add library="SDLmain" />
-			<Add library="SDL" />
-			<Add library="SDL_Mixer" />
-			<Add library="SDL_ttf" />
+			<Add option="`sdl2-config --libs`" />
+			<Add option="`audiere-config --libs`" />
+			<Add directory="C:/SDK/SDL2/lib" />
 		</Linker>
-		<Unit filename="..\..\base\RAnim_bgra32.cpp" />
-		<Unit filename="..\..\base\RAnim_bgra32.h" />
-		<Unit filename="..\..\base\RFile.cpp" />
-		<Unit filename="..\..\base\RFile.h" />
-		<Unit filename="..\..\base\RFont_bgra32.cpp" />
-		<Unit filename="..\..\base\RFont_bgra32.h" />
-		<Unit filename="..\..\base\RGradient_bgra32.cpp" />
-		<Unit filename="..\..\base\RGradient_bgra32.h" />
-		<Unit filename="..\..\base\RImage_bgra32.cpp" />
-		<Unit filename="..\..\base\RImage_bgra32.h" />
-		<Unit filename="..\..\base\RMath.cpp" />
-		<Unit filename="..\..\base\RMath.h" />
-		<Unit filename="..\..\base\RSprite_bgra32.cpp" />
-		<Unit filename="..\..\base\RSprite_bgra32.h" />
-		<Unit filename="..\..\base\RTypes.cpp" />
-		<Unit filename="..\..\base\RTypes.h" />
-		<Unit filename="..\..\base\RWorld.cpp" />
-		<Unit filename="..\..\base\RWorld.h" />
-		<Unit filename="..\..\base\Targa.cpp" />
-		<Unit filename="..\..\base\Targa.h" />
-		<Unit filename="..\..\base\base.cpp" />
-		<Unit filename="..\..\base\base.h" />
-		<Unit filename="..\..\base\camera.cpp" />
-		<Unit filename="..\..\base\camera.h" />
-		<Unit filename="..\..\base\frameworkdummy.cpp" />
-		<Unit filename="..\..\base\frameworkdummy.h" />
-		<Unit filename="..\..\base\pixelinfo.cpp" />
-		<Unit filename="..\..\base\pixelinfo.h" />
-		<Unit filename="..\..\base\pmath.cpp" />
-		<Unit filename="..\..\base\pmath.h" />
-		<Unit filename="..\..\base\pmemory.cpp" />
-		<Unit filename="..\..\base\pmemory.h" />
-		<Unit filename="..\..\base\pointinfo.cpp" />
-		<Unit filename="..\..\base\pointinfo.h" />
-		<Unit filename="..\..\base\preporting.cpp" />
-		<Unit filename="..\..\base\preporting.h" />
+		<Unit filename="../../base/RAnim_bgra32.cpp" />
+		<Unit filename="../../base/RAnim_bgra32.h" />
+		<Unit filename="../../base/RFile.cpp" />
+		<Unit filename="../../base/RFile.h" />
+		<Unit filename="../../base/RFont_bgra32.cpp" />
+		<Unit filename="../../base/RFont_bgra32.h" />
+		<Unit filename="../../base/RGradient_bgra32.cpp" />
+		<Unit filename="../../base/RGradient_bgra32.h" />
+		<Unit filename="../../base/RImage_bgra32.cpp" />
+		<Unit filename="../../base/RImage_bgra32.h" />
+		<Unit filename="../../base/RMath.cpp" />
+		<Unit filename="../../base/RMath.h" />
+		<Unit filename="../../base/RSound_audiere.cpp" />
+		<Unit filename="../../base/RSound_audiere.h" />
+		<Unit filename="../../base/RSprite_bgra32.cpp" />
+		<Unit filename="../../base/RSprite_bgra32.h" />
+		<Unit filename="../../base/RTypes.cpp" />
+		<Unit filename="../../base/RTypes.h" />
+		<Unit filename="../../base/RWorld.cpp" />
+		<Unit filename="../../base/RWorld.h" />
+		<Unit filename="../../base/StringQ.cpp" />
+		<Unit filename="../../base/StringQ.h" />
+		<Unit filename="../../base/Targa.cpp" />
+		<Unit filename="../../base/Targa.h" />
+		<Unit filename="../../base/base.cpp" />
+		<Unit filename="../../base/base.h" />
+		<Unit filename="../../base/camera.cpp" />
+		<Unit filename="../../base/camera.h" />
+		<Unit filename="../../base/frameworkdummy.cpp" />
+		<Unit filename="../../base/frameworkdummy.h" />
+		<Unit filename="../../base/pixelinfo.cpp" />
+		<Unit filename="../../base/pixelinfo.h" />
+		<Unit filename="../../base/pmath.cpp" />
+		<Unit filename="../../base/pmath.h" />
+		<Unit filename="../../base/pmemory.cpp" />
+		<Unit filename="../../base/pmemory.h" />
+		<Unit filename="../../base/pointinfo.cpp" />
+		<Unit filename="../../base/pointinfo.h" />
+		<Unit filename="../../base/preporting.cpp" />
+		<Unit filename="../../base/preporting.h" />
 		<Unit filename="dxman.cpp" />
 		<Unit filename="dxman.h" />
 		<Unit filename="entity.cpp" />

@@ -7,9 +7,14 @@
 
 using namespace std;
 
+
 namespace ExpertMultimediaBase {
+
+	extern int unnamed_index;
+	extern double HITDETECTION2D_CONSTANT_Z_DBL;
 	class Entity {
 	public:
+		string NameUnique;
 		float fShield;
 		bool bHitSoundWasPlayed;
 		bool bRotationTakesPrecedence;
@@ -22,6 +27,7 @@ namespace ExpertMultimediaBase {
 		float fMetersPerSecond;//only used if bMoveByMetric
 		float fMetersPerSecondMax;
 		Mass3d m3dEnt;
+		Mass3d m3dWeapon;
 		Mass2d m2dEnt;
 		Mass2d m2dShadow;
 		float fPowerMax;
@@ -49,12 +55,14 @@ namespace ExpertMultimediaBase {
 		bool bGravity;
 		bool bMustMove;
 		int iIndex;//my index in entity array
+		Pixel shield_color;
+		Pixel variable_shield_color;
 
 		void InitNull();
-		Entity(int iTypeX);
-		Entity(int iTypeX, Mass3d m3dDirectionAndLocation, float fMetersPerSec, bool IsAlien, bool IsBomb);
-		Entity(int iTypeX, float x2, float y2, float z2, float xVel2, float yVel2, float zVel2, bool IsAlien, bool IsBomb);
-		Entity(int iTypeX, float x2, float y2, float z2);
+		Entity(int iTypeX, string set_UniqueName);
+		Entity(int iTypeX, string set_UniqueName, Mass3d m3dDirectionAndLocation, float fMetersPerSec, bool IsAlien, bool IsBomb);
+		Entity(int iTypeX, string set_UniqueName, float x2, float y2, float z2, float xVel2, float yVel2, float zVel2, bool IsAlien, bool IsBomb);
+		Entity(int iTypeX, string set_UniqueName, float x2, float y2, float z2);
 		~Entity();
 		void Bomb(float x2D, float y2D, float zDest);
 		void Bomb();
@@ -70,12 +78,13 @@ namespace ExpertMultimediaBase {
 		void Move(int xDir, int yDir);
 		void TurnPitchByFlatPositiveCartesian(float fDeg);
 		void Shoot();
+		void RefreshWeapon();
 		void Shoot(int iDir);
 		void Shoot(float fPitch, float fYaw);
 		void SetDoubleSpeed();
 		void SetRapidFire();
 		void DrawTarget(int alienNum);
-		void GetHit(int iShotIndex);
+		//void GetHit(int iShotIndex); see global function DoCollision instead
 		void DamageDetect();
 		void Draw();
 		void Translate3D();
@@ -98,7 +107,6 @@ namespace ExpertMultimediaBase {
 		int iTickLastRefresh;
 		int iTickLastMetricMove; //only used for metric movement as of 2007
 		//int iFrameBurn;
-
 		void DrawMeters();
 		int FrameFromRot();
 		void ShowDebugInfo();

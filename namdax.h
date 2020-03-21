@@ -1,21 +1,50 @@
 #ifndef DXMAN_H
 #define DXMAN_H
 
-//#include "targastruct.h"
+//#include <targastruct.h>
 //#include <SDL2/SDL.h>
 //#include <SDL2/SDL_mixer.h>
 #include <base.h>
-#include "camera.h"
+#include <camera.h>
 #include "entity.h"
 #include <RAnim_bgra32.h>
 #include <RFont_bgra32.h>
+#include <vector>
+//for cpp:
+#include <SDL2/SDL.h> //remember to add mingw to path in compiler settings, put SDL includes and libs into mingw path, and add SDL libs to linker settings
+//#include <SDL2/SDL_mixer.h>
+//#include <SDL2/SDL_TTF.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <fstream>
+#include <cmath>
+#include <queue>
+#include <RSprite_bgra32.h>
+#include <RImage_bgra32.h> //Dr	awSubPixelArc etc
+//#include <RAnim_bgra32.h>
+//#include <RFont_bgra32.h>
+#include <RMath.h> //LineRelationshipToString etc
+//#include "entity.h"
+//#include <camera.h>
+//#include <base.h>
+#include <frameworkdummy.h>;
+#include <StringQ.h>;
+#include <RSound_audiere.h>;
+
+
+#define MYNAME_AND_VERSION "DXMan 2014-10-25 SDL2"
 
 using namespace std;
 using namespace ExpertMultimediaBase;
 
 ///#region SDL.h and SDL_mixer.h externs
 //from SDL.h, but SDL.h can't be used or linker error (undefined reference to SDL_main) will occur
-typedef struct Mix_Chunk;
+//typedef struct Mix_Chunk;
 typedef uint32_t	Uint32;
 ///#endregion SDL.h externs
 
@@ -35,18 +64,18 @@ namespace ExpertMultimediaBase {
 	#define FXRANGE 20.0f
 	#define FYRANGE 20.0f
 	//default screen size
-	#define SCREEN_WIDTH			640
-	#define SCREEN_HEIGHT			480
-	#define FSCREEN_WIDTH			640.0f
-	#define FSCREEN_HEIGHT			480.0f
-	#define BUFFER_WIDTH			1280
-	#define BUFFER_HEIGHT			960
-	#define BUFFER_PIXELS			1228800 //1280x960
-	#define SCREEN_OFFSET_X			320 //screen (a targa buffer) is offset to avoid clipping
-	#define SCREEN_OFFSET_Y			240
-	#define FSCREEN_OFFSET_X		320.0f //screen (a targa buffer) is offset to avoid clipping
-	#define FSCREEN_OFFSET_Y		240.0f
-	#define SCREEN_BPP				32	 //bits per pixel, GameInit tries 32 or 24 if one is not available
+	//#define SCREEN_WIDTH			640
+	//#define SCREEN_HEIGHT			480
+	//#define FSCREEN_WIDTH			640.0f
+	//#define FSCREEN_HEIGHT			480.0f
+	//#define BUFFER_WIDTH			1280
+	//#define BUFFER_HEIGHT			960
+	//#define BUFFER_PIXELS			1228800 //1280x960
+	//#define SCREEN_OFFSET_X			320 //screen margin to avoid clipping
+	//#define SCREEN_OFFSET_Y			240
+	//#define FSCREEN_OFFSET_X		320.0f //screen margin to avoid clipping
+	//#define FSCREEN_OFFSET_Y		240.0f
+	#define SCREEN_BPP				32	 //bits per pixel, GameInit tries 32 or 24 if other is not available
 	#define CODE_THRESHOLD		  90
 	#define GRAVITY_METERS_PERSEC_PERFRAME	 0.026666666666666666666666666666667f //== (.8f/30.0f) //meters per second per frame (positive) gravity
 	//States for game loop
@@ -104,8 +133,6 @@ namespace ExpertMultimediaBase {
 	#define MAX_ZORDER		  		50   //maximum zOrder value - INCLUSIVE
 	#define FMAX_ZORDER				50.0f
 	// MACROS /////////////////////////////////////////////////
-	//uses limited ranges for more effect:
-	#define SOUNDPAN_FROM3DX(X) (  (int)  ( (X<-6.0f) ? 0 : ((X>6.0f)?255:((X+6.0f)/12.0f*255)) )  )
 
 	#define ZORDER_FROMY_FORCE(Y) (   (  ( FYRANGE-((Y)+(-FYMIN)) ) / FYRANGE )   *   FMAX_ZORDER   )
 	#define ZORDER_FROMY(Y) ( (int) (((Y)<FYMIN) ? MAX_ZORDER : (((Y)>FYMAX)?0:ZORDER_FROMY_FORCE(Y))) )	 //get rendering Z-order from Y-value
@@ -153,20 +180,17 @@ namespace ExpertMultimediaBase {
 	bool GameInit();
 	/////////////////////////////////////////////////////////////
 	bool GameShutdown();
-/*inline*/ int Base_GetTicks_Absolute();
-/*inline*/Uint32 Base_GetTicks_Relative();
-/*inline*/ void SleepWrapper(int iTicks);
+
+	int Base_GetTicks_Absolute();
+	/*inline*/Uint32 Base_GetTicks_Relative();
+	void SleepWrapper(int iTicks);
+
 	void LoadSequence(Anim &animToLoad, string sFileBaseNameOnly, int iFramesExpectedElseError);
+	void LoadImage(GBuffer* &gbToLoad, string sFile);
 	void LoadImage(GBuffer &gbToLoad, string sFile);
 	void DirKeyDown();
 	void DirKeyUp();
 	//////////////////////////////////////////////////
-	int IRandPositive();
-	int IRand(int iMin, int iMax);
-	void ResetRand();
-	float FRand();
-	float FRand(float fMin, float fMax);
-	///////////////////////////////////////////////////////////////
 	bool AddScreenItem(int iType, int zOrder, int iEntityIndex);
 	bool AddScreenItem(int iType, int zOrder, int iEntityIndex, Mass3d& m3dNow);
 	string ScreenItemToString(int iType);
@@ -181,83 +205,29 @@ namespace ExpertMultimediaBase {
 	void DrawRadarDot(float xPos, float yPos, float zPos, UInt32 u32Pixel, bool bFilled);
 	void DrawRadarRect(float left, float top, float bottom, float right, UInt32 u32Pixel, bool bFilled);
 	void DrawRadarField();
-	void DrawExclusiveRect(int left, int top, int bottom, int right, UInt32 u32Pixel, bool bFilled);
-	void DrawAxis(Mass3d& m3dAxisCenter);
-	void Draw3DLine(Mass3d& m3dStart, Mass3d& m3dEnd, byte r, byte g, byte b, byte a, byte a_FadeFarthestPoint_To);
 	////////////////////////////////////////////////////////////////////////////////
 	void ShowDebugVars();
 	////////////////////////////////////////////////////////////////////
-	/*inline*/ void SetPan(int iChan, int iLocation);
-	/*inline*/ void UpdateThrustPan();
-	bool SafeChunkUnload(Mix_Chunk* &mcToNull);
-	void ClearSounds();
 	void DrawPointWithZOffsetIndicator(Mass3d m3dNow, string sDebugMessage);
-	void PlaySound(string sInstanceName, string sSoundName);
-	void PlaySound(string sInstanceName, string sSoundName, Mass3d& m3dLoc);
-	void PlaySound(string sInstanceName, string sSoundName, Mass3d& m3dLoc, Mass3d& m3dVel);
-	void PlaySounds();
-	int PickChan();
-	void InitSound();
-	void InitMusic();
-	void PlayMusic(string sFile, bool bLoop);
-	void StopMusic();
-	bool ShutdownAudio();
-	void VirtualMusicStop();
-	bool VirtualMusicPlay(string sFile, int iRepeatsZeroFor1Neg1ForInf);
-	int MusicThreadFunction(void* pvoidArg);
-	bool ShutdownMusic();
-	void MusicDoneEvent();
+	void DrawPointWithGroundSquareIndicator(Mass3d m3dNow, Pixel color, string sDebugMessage);
+	void MoveSoundSource(string SourceName, Mass3d& thisMass3d);
+	string GetOrCreateSoundInstanceName(string SoundName, string SourceName);
+	void PlaySound(string SoundName, string SourceName);
+	void PlaySound(string SoundName, string SourceName, Mass3d& thisMass3d);
+	void PlaySound(string SoundName, string SourceName, Mass3d& thisMass3d, bool IsLooped);
+	//void PlaySound(string sInstanceName, string sSoundName, Mass3d& m3dLoc, Mass3d& m3dVel);
+	void StopSoundInstance(string SoundName, string SourceName);
 	////////////////////////////////////////////////////////////////////
 	void Refresh3dCursor();
 	void Draw3dCursor(byte byBrightness);
 	void SayWhatIDrewIfFalse(bool bDrawFunctionReturn, int iEntityType, string sDescription);
 	string EntityTypeToString(int iEntityType);
-	void DrawCube(Mass3d &m3dNow, Pixel &pixelNear, Pixel &pixelFar);
 	bool DrawScreen();
-	bool GBuffer_FX_Scaled(GBuffer &gbDest, GBuffer &gbSrc, int x2D, int y2D, float fOpacity, float fExplodedness, UInt32 u32Stat, float fScale);
 	string GameStateToString(int iGameStateX);
+	bool DoEvents();
+	void SleepAllowingEvents(int delay_ms);
+	void DoCollision(Entity* bumpee, Entity* bumper, int shot_index);
 	///#endregion functions
-
-	class SoundInstance {
-	public:
-	//	ALfloat arralfPos[3];
-	//	ALfloat arralfVel[3];
-		string sName;
-		int iSound;
-		void SetLoc(Mass3d& m3dLoc);
-		void SetVel(Mass3d& m3dLoc);
-	private:
-	};
-
-	class Sound {
-	public:
-		string sName;
-		Sound();
-	};
-
-	class Sounder {
-	public:
-		Sounder();
-		void Refresh();
-		void Load(string sName, string sFile);
-		void SetOrCreateInstance(string sName, string sSoundName, Mass3d& m3dLoc);
-		void SetOrCreateInstance(string sName, string sSoundName, Mass3d& m3dLoc,Mass3d& m3dVel);
-		void StopInstance(string sName);
-		void Clear();
-		int GetFreeInstanceIndex();
-		int IndexOfSound(string sName);
-		int IndexOfInstance(string sName);
-		void Close();
-	private:
-		Sound soundarr[SOUND_BUFFERS];
-	//	ALuint aluiarrBuffer[SOUND_BUFFERS];//corresponds to soundarr
-		SoundInstance instancearr[SOUND_SOURCES];
-	//	ALuint aluiarrSource[SOUND_SOURCES];//corresponds to instancearr
-		int iSoundarrLen;
-		int iInstancearrLen;
-		int iSounds;
-		void Init();
-	};
 
 	extern string sarrGameState[];// = {"GAMESTATE_INIT","GAMESTATE_START_AREA","GAMESTATE_START_ENCOUNTER","GAMESTATE_RUN","GAMESTATE_SHUTDOWN","GAMESTATE_EXIT","GAMESTATE_WIN_ENCOUNTER","GAMESTATE_WIN_GAME","GAMESTATE_YOU_LOSE","GAMESTATE_LOSEGUY"};
 	extern long narrGameStateCount[];// = {0,0,0,0,0,0,0,0,0,0};
@@ -265,7 +235,7 @@ namespace ExpertMultimediaBase {
 	///region globals defined in h file
 	//extern int iLastIntersectionType;
 	extern int iLastLineRelationshipType;
-	extern double DBL_HITDETECTION2D_CONSTANT_Z;
+	extern double HITDETECTION2D_CONSTANT_Z_DBL;
 	extern GFont gfontDefault;
 	extern bool bDoneShutdown;
 	extern bool bShuttingDown;
@@ -340,12 +310,12 @@ namespace ExpertMultimediaBase {
 	extern int iRapidFireCodeCounter;//player cheat code
 	extern bool bBombed;
 	extern Anim		animBackdrop;
-	extern GBuffer	gbScreen;
+	extern GBuffer*	screen_ptr;
 	extern GBuffer	gbIntro;
 	extern GBuffer	gbIntroTextBack;
 	extern GBuffer	gbIntroText;
-	extern GBuffer	gbSymbolShield;
-	extern GBuffer	gbSymbolBossHealth;
+	extern GBuffer*	shield_symbol_image_ptr;
+	extern GBuffer*	boss_health_symbol_image_ptr;
 	extern GBuffer	gbLives;
 	extern Anim		animHero;
 	extern Anim		animHeroShadow;
@@ -372,37 +342,11 @@ namespace ExpertMultimediaBase {
 	extern int iAliens;
 	extern int iMaxAliens;//changed later using ini file
 	extern int iMaxAliensNow;//changes by level
-	extern bool bPlayTrumpet;
-	extern int iPlayBomb;
-	extern int iPlayLaserAlien;
-	extern int iPlayLaser;
-	extern int iPlayExplosion;
-	extern int iPlayOuchAlien;
-	extern int iPlayOuchZap;
-	extern int iPlayShieldZap;
-	extern int iPlayBlerrp;
-	extern int iPlayHitDirt;
-	extern int iPlayJump;
-	extern int iPlayScrapeGround;
-	extern int iPlayAngryAlien;
-	extern int iThruster;
-	extern int iChanBomb;
-	extern int iChanLaserAlien;
-	extern int iChanLaser;
-	extern int iChanExplosion;
-	extern int iChanOuchAlien;
-	extern int iChanOuchZap;
-	extern int iChanShieldZap;
-	extern int iChanBlerrp;
-	extern int iChanHitDirt;
-	extern int iChanJump;
-	extern int iChanScrapeGround;
-	extern int iChanAngryAlien;
-	extern int iChanThruster;
-	extern int iChanTrumpet;
+
+
 	extern Camera camera;
 	extern Entity* arrpentShot[MAXSHOTS];
-	extern Entity** arrpentAlien;
+	extern std::vector<Entity*> arrpentAlien;//extern Entity** arrpentAlien;
 	extern Entity* hero;
 	//TODO: improve boss rect alignment
 	////////////////////////////////////////////////////////////////////////////////

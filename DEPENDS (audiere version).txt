@@ -1,0 +1,13 @@
+sdl2
+audiere
+#Load modules for oss emulation so that /dev/dsp is created:
+#as per emeres from <https://bbs.archlinux.org/viewtopic.php?id=184148>
+#Alsa OSS Emulation
+#snd-pcm-oss
+#snd-mixer-oss
+#snd-seq-oss
+
+#or just alsa-oss as per Themaister from <https://bbs.archlinux.org/viewtopic.php?id=99234>:
+alsa-oss
+#NOTE: audiere on sourceforge hasn't been updated since 2006, and on [feature request to support alsa](https://sourceforge.net/p/audiere/feature-requests/67/), anonymous coward posted "Whatever, patches welcome"--that was in 2007.
+#Poikilos/audiere (fork) does not need also-oss, has changes from the upstream svn repo, and has many modernizations and improvements to the code from other forks and to the build system.

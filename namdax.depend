@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1251965264 source:e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\main.c
+1251965264 source:C:\Users\Owner\ownCloud\d.cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\main.c
 	<SDL/SDL.h>
 	<SDL/SDL_mixer.h>
 	<SDL/SDL_TTF.h>
@@ -14,14 +14,18 @@
 	<cmath>
 	"RSprite_bgra32.h"
 
-1221643019 e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\RSprite_bgra32.h
+1251965264 gra32.h"
+
+1221643019 C:\Users\Owner\ownCloud\d.cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\RSprite_bgra32.h
 	<iostream>
 	<iomanip>
 	<fstream>
 	<memory>
 	"base.cpp"
 
-1170112010 e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\base.cpp
+1469556593 
+
+1170112010 C:\Users\Owner\ownCloud\d.cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\base.cpp
 	<sys\types.h>
 	<sys\stat.h>
 	<iostream>
@@ -31,7 +35,7 @@
 	"base.h"
 	<string>
 
-1170097371 e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\base.h
+1170097371 C:\Users\Owner\ownCloud\d.cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\base.h
 	<iostream>
 	<iomanip>
 	<memory>
@@ -39,19 +43,23 @@
 	<fstream>
 	<string>
 
-1253089934 source:e:\projects-cpp\base\RAnim_bgra32.cpp
+1253089934 source:C:\Users\Owner\ownCloud\d.cpp\base\RAnim_bgra32.cpp
 	<RAnim_bgra32.h>
 	<base.h>
 
-1252208449 e:\projects-cpp\base\RAnim_bgra32.h
+1252208449 C:\Users\Owner\ownCloud\d.cpp\base\RAnim_bgra32.h
 	<RImage_bgra32.h>
 
-1253080380 e:\projects-cpp\base\RImage_bgra32.h
+1469509970 ra32.h>
+
+1253080380 C:\Users\Owner\ownCloud\d.cpp\base\RImage_bgra32.h
 	<base.h>
 	<Targa.h>
 	<RGradient_bgra32.h>
 
-1253090609 e:\projects-cpp\base\base.h
+1469510260 _bgra32.h>
+
+1406179965 C:\Users\Owner\ownCloud\d.cpp\base\base.h
 	<cstdlib>
 	<iostream>
 	<iomanip>
@@ -62,68 +70,6 @@
 	<exception>
 	<FrameworkDummy.h>
 	<SDL/SDL.h>
-
-1253070071 e:\projects-cpp\base\FrameworkDummy.h
-	<SDL/SDL_types.h>
-	<cstdio>
-	<string>
-	<float.h>
-	<limits.h>
-
-1252095262 e:\projects-cpp\base\Targa.h
-	<iostream>
-	<iomanip>
-	<fstream>
-	<memory>
-	<RFile.h>
-
-1252095256 e:\projects-cpp\base\RFile.h
-	<cstdlib>
-	<base.h>
-
-1252216283 e:\projects-cpp\base\RGradient_bgra32.h
-	<base.h>
-
-1253090782 source:e:\projects-cpp\base\base.cpp
-	<cstdlib>
-	<iostream>
-	<iomanip>
-	<fstream>
-	<memory>
-	<string>
-	<base.h>
-	<FrameworkDummy.h>
-	<float.h>
-	<limits.h>
-
-1325364961 source:d:\projects-cpp\base\frameworkdummy.cpp
-	"frameworkdummy.h"
-	<fstream>
-	<cstdlib>
-	<iostream>
-	<cmath>
-
-1328409967 d:\projects-cpp\base\frameworkdummy.h
-	<cstdio>
-	<string>
-	<sstream>
-	<cfloat>
-	<climits>
-
-1325374187 source:d:\projects-cpp\base\ranim_bgra32.cpp
-	<RAnim_bgra32.h>
-	<base.h>
-	<RMath.h>
-
-1324638874 d:\projects-cpp\base\ranim_bgra32.h
-	<RImage_bgra32.h>
-
-1328433036 d:\projects-cpp\base\rimage_bgra32.h
-	<base.h>
-	<Targa.h>
-	<RGradient_bgra32.h>
-
-1402687859 d:\projects-cpp\base\base.h
 	<cstdlib>
 	<iostream>
 	<iomanip>
@@ -134,48 +80,126 @@
 	<exception>
 	<frameworkdummy.h>
 	<SDL2/SDL.h>
-	"RTypes.h"
+	<RTypes.h>
 
-1324640461 d:\projects-cpp\base\targa.h
+1253070071 C:\Users\Owner\ownCloud\d.cpp\base\FrameworkDummy.h
+	<SDL/SDL_types.h>
+	<cstdio>
+	<string>
+	<float.h>
+	<limits.h>
+
+1252095262 C:\Users\Owner\ownCloud\d.cpp\base\Targa.h
 	<iostream>
 	<iomanip>
 	<fstream>
 	<memory>
 	<RFile.h>
 
-1324640530 d:\projects-cpp\base\rfile.h
+1252095256 C:\Users\Owner\ownCloud\d.cpp\base\RFile.h
+	<cstdlib>
+	<base.h>
+
+1252216283 C:\Users\Owner\ownCloud\d.cpp\base\RGradient_bgra32.h
+	<base.h>
+
+1406181524 source:C:\Users\Owner\ownCloud\d.cpp\base\base.cpp
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<string>
+	<base.h>
+	<FrameworkDummy.h>
+	<float.h>
+	<limits.h>
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<algorithm>
+	<string>
+	"base.h"
+	<frameworkdummy.h>
+	<float.h>
+	<limits.h>
+	<RMath.h>
+
+1406177631 source:C:\Users\Owner\ownCloud\d.cpp\base\frameworkdummy.cpp
+	"frameworkdummy.h"
+	<fstream>
+	<cstdlib>
+	<iostream>
+	<cmath>
+	<string>
+
+1406181068 C:\Users\Owner\ownCloud\d.cpp\base\frameworkdummy.h
+	<cstdio>
+	<string>
+	<sstream>
+	<cfloat>
+	<climits>
+	<ctime>
+
+1403075055 source:C:\Users\Owner\ownCloud\d.cpp\base\ranim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+	<RMath.h>
+
+1324638874 C:\Users\Owner\ownCloud\d.cpp\base\ranim_bgra32.h
+	<RImage_bgra32.h>
+
+1405234716 C:\Users\Owner\ownCloud\d.cpp\base\rimage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1324640461 C:\Users\Owner\ownCloud\d.cpp\base\targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1324640530 C:\Users\Owner\ownCloud\d.cpp\base\rfile.h
 	<cstdlib>
 	<base.h>
 	<frameworkdummy.h>
 
-1324637001 d:\projects-cpp\base\rgradient_bgra32.h
+1411271218 dummy.h>
+
+1403081026 C:\Users\Owner\ownCloud\d.cpp\base\rgradient_bgra32.h
 	<base.h>
 
-1324645253 source:d:\projects-cpp\base\rfile.cpp
+1404227711 source:C:\Users\Owner\ownCloud\d.cpp\base\rfile.cpp
 	<cstdlib>
 	<iostream>
 	<fstream>
 	<RFile.h>
 	<base.h>
 
-1328436266 source:d:\projects-cpp\base\rfont_bgra32.cpp
+1403470032 source:C:\Users\Owner\ownCloud\d.cpp\base\rfont_bgra32.cpp
 	<RFont_bgra32.h>
 	<base.h>
 
-1324793345 d:\projects-cpp\base\rfont_bgra32.h
+1403080053 C:\Users\Owner\ownCloud\d.cpp\base\rfont_bgra32.h
 	<RGradient_bgra32.h>
 	<RAnim_bgra32.h>
 
-1324661989 source:d:\projects-cpp\base\rgradient_bgra32.cpp
+1469509920 a32.h>
+
+1404227729 source:C:\Users\Owner\ownCloud\d.cpp\base\rgradient_bgra32.cpp
 	<RGradient_bgra32.h>
 	<RImage_bgra32.h>
 
-1328433036 source:d:\projects-cpp\base\rimage_bgra32.cpp
+1406181968 source:C:\Users\Owner\ownCloud\d.cpp\base\rimage_bgra32.cpp
 	<RImage_bgra32.h>
 	<PMath.h>
 	<RMath.h>
 
-1325284439 d:\projects-cpp\base\pmath.h
+1325284439 C:\Users\Owner\ownCloud\d.cpp\base\pmath.h
 	<iostream>
 	<vector>
 	<string>
@@ -186,12 +210,12 @@
 	"pixelinfo.h"
 	<base.h>
 
-1325337146 d:\projects-cpp\base\preporting.h
+1325337146 C:\Users\Owner\ownCloud\d.cpp\base\preporting.h
 	<cstdio>
 	<string>
 	<iostream>
 
-1277885222 d:\projects-cpp\base\pointinfo.h
+1277885222 C:\Users\Owner\ownCloud\d.cpp\base\pointinfo.h
 	<iostream>
 	<iomanip>
 	<fstream>
@@ -200,12 +224,16 @@
 	"pmemory.h"
 	"preporting.h"
 
-1325284439 d:\projects-cpp\base\pmemory.h
+1411350552 g.h"
+
+1325284439 C:\Users\Owner\ownCloud\d.cpp\base\pmemory.h
 	<string>
 	"preporting.h"
 	"frameworkdummy.h"
 
-1277883196 d:\projects-cpp\base\pixelinfo.h
+1411350552 dummy.h"
+
+1277883196 C:\Users\Owner\ownCloud\d.cpp\base\pixelinfo.h
 	<iostream>
 	<iomanip>
 	<fstream>
@@ -214,80 +242,71 @@
 	"pmemory.h"
 	"preporting.h"
 
-1324644688 source:d:\projects-cpp\base\rsprite_bgra32.cpp
+1404227851 source:C:\Users\Owner\ownCloud\d.cpp\base\rsprite_bgra32.cpp
 	<RSprite_bgra32.h>
 
-1324644216 d:\projects-cpp\base\rsprite_bgra32.h
+1411350552 gra32.h>
+
+1324644216 C:\Users\Owner\ownCloud\d.cpp\base\rsprite_bgra32.h
 	<RAnim_bgra32.h>
 
-1324662046 source:d:\projects-cpp\base\rworld.cpp
+1324662046 source:C:\Users\Owner\ownCloud\d.cpp\base\rworld.cpp
 	<RWorld.h>
 
-1324644216 d:\projects-cpp\base\rworld.h
+1324644216 C:\Users\Owner\ownCloud\d.cpp\base\rworld.h
 	<RAnim_bgra32.h>
 	<RSprite_bgra32.h>
 
-1328410668 source:d:\projects-cpp\base\targa.cpp
+1404228072 source:C:\Users\Owner\ownCloud\d.cpp\base\targa.cpp
 	<iostream>
 	<iomanip>
 	<fstream>
 	<memory>
 	<Targa.h>
 
-1328440454 source:d:\projects-cpp\base\base.cpp
-	<cstdlib>
-	<iostream>
-	<iomanip>
-	<fstream>
-	<memory>
-	<string>
-	<base.h>
-	<frameworkdummy.h>
-	<float.h>
-	<limits.h>
-	<RMath.h>
-
-1277874814 source:d:\projects-cpp\base\pixelinfo.cpp
+1277874814 source:C:\Users\Owner\ownCloud\d.cpp\base\pixelinfo.cpp
 	"pixelinfo.h"
 
-1325284439 source:d:\projects-cpp\base\pmath.cpp
+1451768293 .h"
+
+1325284439 source:C:\Users\Owner\ownCloud\d.cpp\base\pmath.cpp
 	"pmath.h"
 	<cmath>
 	<cstdlib>
 	<cstring>
 
-1325284439 source:d:\projects-cpp\base\pmemory.cpp
+1325284439 source:C:\Users\Owner\ownCloud\d.cpp\base\pmemory.cpp
 	"pmemory.h"
 	<cstdlib>
 
-1277874802 source:d:\projects-cpp\base\pointinfo.cpp
+1277874802 source:C:\Users\Owner\ownCloud\d.cpp\base\pointinfo.cpp
 	"pointinfo.h"
 
-1325337215 source:d:\projects-cpp\base\preporting.cpp
+1325337215 source:C:\Users\Owner\ownCloud\d.cpp\base\preporting.cpp
 	"preporting.h"
 
-1325200664 source:d:\projects-cpp\dxman\dxmansdl\camera.cpp
+1325200664 source:C:\Users\Owner\ownCloud\d.cpp\dxman\dxmansdl\camera.cpp
 	"camera.h"
 	"dxman.h"
 	<base.h>
 
-1325198549 d:\projects-cpp\dxman\dxmansdl\camera.h
+1325198549 C:\Users\Owner\ownCloud\d.cpp\dxman\dxmansdl\camera.h
 	<base.h>
 
-1328440568 d:\projects-cpp\dxman\dxmansdl\dxman.h
+1404026694 C:\Users\Owner\ownCloud\d.cpp\dxman\dxmansdl\dxman.h
 	<base.h>
 	"camera.h"
 	"entity.h"
 	<RAnim_bgra32.h>
 	<RFont_bgra32.h>
 
-1325268681 d:\projects-cpp\dxman\dxmansdl\entity.h
+1325268681 C:\Users\Owner\ownCloud\d.cpp\dxman\dxmansdl\entity.h
 	<base.h>
 	<RAnim_bgra32.h>
 
-1402644796 source:d:\projects-cpp\dxman\dxmansdl\dxman.cpp
-	<SDL/SDL.h>
-	<SDL/SDL_mixer.h>
+1406176999 source:C:\Users\Owner\ownCloud\d.cpp\dxman\dxmansdl\dxman.cpp
+	<SDL2/SDL.h>
+	<SDL2/SDL_mixer.h>
 	<cstdio>
 	<cstdlib>
 	<cstring>
@@ -305,39 +324,1169 @@
 	"dxman.h"
 	"entity.h"
 	"camera.h"
+	"base.h"
+	"frameworkdummy.h"
 
-1328433036 source:d:\projects-cpp\dxman\dxmansdl\entity.cpp
+1406182273 source:C:\Users\Owner\ownCloud\d.cpp\dxman\dxmansdl\entity.cpp
 	"entity.h"
 	<base.h>
 	"dxman.h"
 	<RImage_bgra32.h>
 	<RMath.h>
 
-1328492883 source:d:\projects-cpp\base\camera.cpp
+1406181856 source:C:\Users\Owner\ownCloud\d.cpp\base\camera.cpp
 	"camera.h"
 	<base.h>
 	<RMath.h>
 
-1328433036 d:\projects-cpp\base\camera.h
+1406098563 C:\Users\Owner\ownCloud\d.cpp\base\camera.h
 	<base.h>
+	<RImage_bgra32.h>
 
-1325365465 d:\projects-cpp\base\rtypes.h
+1402897247 C:\Users\Owner\ownCloud\d.cpp\base\rtypes.h
 	<base.h>
 	<frameworkdummy.h>
 	<string>
 
-1328492883 source:d:\projects-cpp\base\rmath.cpp
+1406182168 source:C:\Users\Owner\ownCloud\d.cpp\base\rmath.cpp
 	<frameworkdummy.h>
 	<RMath.h>
 	<preporting.h>
 
-1328492884 d:\projects-cpp\base\rmath.h
+1418010678 g.h>
+
+1406181726 C:\Users\Owner\ownCloud\d.cpp\base\rmath.h
 	<frameworkdummy.h>
 	<RTypes.h>
 	<string>
 
-1325366052 source:d:\projects-cpp\base\rtypes.cpp
+1403076933 source:C:\Users\Owner\ownCloud\d.cpp\base\rtypes.cpp
 	"RTypes.h"
 	"base.h"
 	"preporting.h"
+
+1418192207 source:c:\users\owner\onedrive\projects-cpp\base\camera.cpp
+	"camera.h"
+	<base.h>
+	<RMath.h>
+	<math.h>
+
+1418043261 c:\users\owner\onedrive\projects-cpp\base\camera.h
+	<base.h>
+	<RImage_bgra32.h>
+
+1413676042 c:\users\owner\onedrive\projects-cpp\base\base.h
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<frameworkdummy.h>
+	<SDL2/SDL.h>
+	<RTypes.h>
+
+1413675937 c:\users\owner\onedrive\projects-cpp\base\frameworkdummy.h
+	<cstdio>
+	<string>
+	<sstream>
+	<cfloat>
+	<climits>
+	<ctime>
+
+1411346952 c:\users\owner\onedrive\projects-cpp\base\rtypes.h
+	<base.h>
+	<frameworkdummy.h>
+	<string>
+
+1413651588 c:\users\owner\onedrive\projects-cpp\base\rimage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1411265595 c:\users\owner\onedrive\projects-cpp\base\targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1411267618 c:\users\owner\onedrive\projects-cpp\base\rfile.h
+	<cstdlib>
+	<base.h>
+	<frameworkdummy.h>
+
+1403081026 c:\users\owner\onedrive\projects-cpp\base\rgradient_bgra32.h
+	<base.h>
+
+1418011187 c:\users\owner\onedrive\projects-cpp\base\rmath.h
+	<frameworkdummy.h>
+	<RTypes.h>
+	<string>
+
+1413675995 source:c:\users\owner\onedrive\projects-cpp\base\frameworkdummy.cpp
+	"frameworkdummy.h"
+	<fstream>
+	<cstdlib>
+	<iostream>
+	<cmath>
+	<string>
+
+1277874814 source:c:\users\owner\onedrive\projects-cpp\base\pixelinfo.cpp
+	"pixelinfo.h"
+
+1277883196 c:\users\owner\onedrive\projects-cpp\base\pixelinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1411346952 c:\users\owner\onedrive\projects-cpp\base\pmemory.h
+	<string>
+	"preporting.h"
+	"frameworkdummy.h"
+
+1325337146 c:\users\owner\onedrive\projects-cpp\base\preporting.h
+	<cstdio>
+	<string>
+	<iostream>
+
+1325284439 source:c:\users\owner\onedrive\projects-cpp\base\pmath.cpp
+	"pmath.h"
+	<cmath>
+	<cstdlib>
+	<cstring>
+
+1325284439 c:\users\owner\onedrive\projects-cpp\base\pmath.h
+	<iostream>
+	<vector>
+	<string>
+	<climits>
+	"preporting.h"
+	"frameworkdummy.h"
+	"pointinfo.h"
+	"pixelinfo.h"
+	<base.h>
+
+1277885222 c:\users\owner\onedrive\projects-cpp\base\pointinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1411347456 source:c:\users\owner\onedrive\projects-cpp\base\pmemory.cpp
+	"pmemory.h"
+	<cstdlib>
+
+1277874802 source:c:\users\owner\onedrive\projects-cpp\base\pointinfo.cpp
+	"pointinfo.h"
+
+1325337215 source:c:\users\owner\onedrive\projects-cpp\base\preporting.cpp
+	"preporting.h"
+
+1411346952 source:c:\users\owner\onedrive\projects-cpp\base\ranim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+	<RMath.h>
+
+1411346952 c:\users\owner\onedrive\projects-cpp\base\ranim_bgra32.h
+	<RImage_bgra32.h>
+
+1418010678 source:c:\users\owner\onedrive\projects-cpp\base\rmath.cpp
+	<frameworkdummy.h>
+	<RMath.h>
+	<preporting.h>
+
+1411426482 source:c:\users\owner\onedrive\projects-cpp\base\rsprite_bgra32.cpp
+	<RSprite_bgra32.h>
+
+1411346952 c:\users\owner\onedrive\projects-cpp\base\rsprite_bgra32.h
+	<RAnim_bgra32.h>
+
+1411346952 source:c:\users\owner\onedrive\projects-cpp\base\rtypes.cpp
+	"RTypes.h"
+	"base.h"
+	"preporting.h"
+
+1411426482 source:c:\users\owner\onedrive\projects-cpp\base\rworld.cpp
+	<RWorld.h>
+
+1411346952 c:\users\owner\onedrive\projects-cpp\base\rworld.h
+	<RAnim_bgra32.h>
+	<RSprite_bgra32.h>
+
+1418013379 source:c:\users\owner\onedrive\projects-cpp\dxman\dxmansdl\entity.cpp
+	"entity.h"
+	<base.h>
+	"dxman.h"
+	<RImage_bgra32.h>
+	<RMath.h>
+
+1413672380 c:\users\owner\onedrive\projects-cpp\dxman\dxmansdl\entity.h
+	<base.h>
+	<RAnim_bgra32.h>
+
+1413672131 c:\users\owner\onedrive\projects-cpp\dxman\dxmansdl\dxman.h
+	<base.h>
+	"camera.h"
+	"entity.h"
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+
+1414119778 c:\users\owner\onedrive\projects-cpp\base\rfont_bgra32.h
+	<RGradient_bgra32.h>
+	<RAnim_bgra32.h>
+
+1413677276 source:c:\users\owner\onedrive\projects-cpp\base\base.cpp
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<algorithm>
+	<string>
+	"base.h"
+	<frameworkdummy.h>
+	<float.h>
+	<limits.h>
+	<RMath.h>
+
+1413677218 source:c:\users\owner\onedrive\projects-cpp\base\rfile.cpp
+	<cstdlib>
+	<iostream>
+	<fstream>
+	<RFile.h>
+	<base.h>
+
+1418189849 source:c:\users\owner\onedrive\projects-cpp\base\rfont_bgra32.cpp
+	<RFont_bgra32.h>
+	<base.h>
+
+1418096654 source:c:\users\owner\onedrive\projects-cpp\base\rgradient_bgra32.cpp
+	<RGradient_bgra32.h>
+	<RImage_bgra32.h>
+
+1418095920 source:c:\users\owner\onedrive\projects-cpp\base\rimage_bgra32.cpp
+	<RImage_bgra32.h>
+	<PMath.h>
+	<RMath.h>
+
+1411277149 source:c:\users\owner\onedrive\projects-cpp\base\targa.cpp
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<Targa.h>
+
+1418043965 source:c:\users\owner\onedrive\projects-cpp\dxman\dxmansdl\dxman.cpp
+	<SDL2/SDL.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	<queue>
+	"RSprite_bgra32.h"
+	<RImage_bgra32.h>
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	<RMath.h>
+	"dxman.h"
+	"entity.h"
+	"camera.h"
+	"base.h"
+	"frameworkdummy.h"
+	"StringQ.h"
+	"RSound.h"
+
+1413675229 source:c:\users\owner\onedrive\projects-cpp\base\rsound.cpp
+	"RSound.h"
+
+1413675234 c:\users\owner\onedrive\projects-cpp\base\rsound.h
+	<string>
+	<climits>
+
+1414123271 source:c:\users\owner\onedrive\projects-cpp\base\stringq.cpp
+	"StringQ.h"
+	<iostream>
+
+1414123276 c:\users\owner\onedrive\projects-cpp\base\stringq.h
+	<string>
+	<vector>
+
+1469648139 source:c:\users\owner\owncloud\d.cpp\base\base.cpp
+	<cstring>
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<algorithm>
+	<string>
+	"base.h"
+	<frameworkdummy.h>
+	<float.h>
+	<limits.h>
+	<RMath.h>
+
+1469565188 c:\users\owner\owncloud\d.cpp\base\base.h
+	<limits>
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<frameworkdummy.h>
+	<SDL2/SDL.h>
+	<RTypes.h>
+
+1413679537 c:\users\owner\owncloud\d.cpp\base\frameworkdummy.h
+	<cstdio>
+	<string>
+	<sstream>
+	<cfloat>
+	<climits>
+	<ctime>
+
+1411350552 c:\users\owner\owncloud\d.cpp\base\rtypes.h
+	<base.h>
+	<frameworkdummy.h>
+	<string>
+
+1418011187 c:\users\owner\owncloud\d.cpp\base\rmath.h
+	<frameworkdummy.h>
+	<RTypes.h>
+	<string>
+
+1469512423 source:c:\users\owner\owncloud\d.cpp\base\camera.cpp
+	"camera.h"
+	<base.h>
+	<RMath.h>
+	<math.h>
+
+1469509970 c:\users\owner\owncloud\d.cpp\base\camera.h
+	<base.h>
+	<RImage_bgra32.h>
+
+1469510260 c:\users\owner\owncloud\d.cpp\base\rimage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1411269195 c:\users\owner\owncloud\d.cpp\base\targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1411271218 c:\users\owner\owncloud\d.cpp\base\rfile.h
+	<cstdlib>
+	<base.h>
+	<frameworkdummy.h>
+
+1469509920 c:\users\owner\owncloud\d.cpp\base\rgradient_bgra32.h
+	<base.h>
+
+1413679595 source:c:\users\owner\owncloud\d.cpp\base\frameworkdummy.cpp
+	"frameworkdummy.h"
+	<fstream>
+	<cstdlib>
+	<iostream>
+	<cmath>
+	<string>
+
+1277878414 source:c:\users\owner\owncloud\d.cpp\base\pixelinfo.cpp
+	"pixelinfo.h"
+
+1277886796 c:\users\owner\owncloud\d.cpp\base\pixelinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1411350552 c:\users\owner\owncloud\d.cpp\base\pmemory.h
+	<string>
+	"preporting.h"
+	"frameworkdummy.h"
+
+1325337146 c:\users\owner\owncloud\d.cpp\base\preporting.h
+	<cstdio>
+	<string>
+	<iostream>
+
+1325284439 source:c:\users\owner\owncloud\d.cpp\base\pmath.cpp
+	"pmath.h"
+	<cmath>
+	<cstdlib>
+	<cstring>
+
+1325284439 c:\users\owner\owncloud\d.cpp\base\pmath.h
+	<iostream>
+	<vector>
+	<string>
+	<climits>
+	"preporting.h"
+	"frameworkdummy.h"
+	"pointinfo.h"
+	"pixelinfo.h"
+	<base.h>
+
+1277888822 c:\users\owner\owncloud\d.cpp\base\pointinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1411351056 source:c:\users\owner\owncloud\d.cpp\base\pmemory.cpp
+	"pmemory.h"
+	<cstdlib>
+
+1277878402 source:c:\users\owner\owncloud\d.cpp\base\pointinfo.cpp
+	"pointinfo.h"
+
+1325337215 source:c:\users\owner\owncloud\d.cpp\base\preporting.cpp
+	"preporting.h"
+
+1469543168 source:c:\users\owner\owncloud\d.cpp\base\ranim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+	<RMath.h>
+	<cstring>
+
+1469511680 c:\users\owner\owncloud\d.cpp\base\ranim_bgra32.h
+	<RImage_bgra32.h>
+	<vector>
+
+1413680818 source:c:\users\owner\owncloud\d.cpp\base\rfile.cpp
+	<cstdlib>
+	<iostream>
+	<fstream>
+	<RFile.h>
+	<base.h>
+
+1469509920 source:c:\users\owner\owncloud\d.cpp\base\rgradient_bgra32.cpp
+	<RGradient_bgra32.h>
+	<RImage_bgra32.h>
+	<cstring>
+
+1469510259 source:c:\users\owner\owncloud\d.cpp\base\rimage_bgra32.cpp
+	<RImage_bgra32.h>
+	<PMath.h>
+	<RMath.h>
+	<cstring>
+
+1418010678 source:c:\users\owner\owncloud\d.cpp\base\rmath.cpp
+	<frameworkdummy.h>
+	<RMath.h>
+	<preporting.h>
+
+1469631678 source:c:\users\owner\owncloud\d.cpp\base\rsound.cpp
+	"RSound.h"
+
+1469564747 c:\users\owner\owncloud\d.cpp\base\rsound.h
+	<string>
+	<climits>
+
+1411430082 source:c:\users\owner\owncloud\d.cpp\base\rsprite_bgra32.cpp
+	<RSprite_bgra32.h>
+
+1411350552 c:\users\owner\owncloud\d.cpp\base\rsprite_bgra32.h
+	<RAnim_bgra32.h>
+
+1411350552 source:c:\users\owner\owncloud\d.cpp\base\rtypes.cpp
+	"RTypes.h"
+	"base.h"
+	"preporting.h"
+
+1411430082 source:c:\users\owner\owncloud\d.cpp\base\rworld.cpp
+	<RWorld.h>
+
+1411350552 c:\users\owner\owncloud\d.cpp\base\rworld.h
+	<RAnim_bgra32.h>
+	<RSprite_bgra32.h>
+
+1414126871 source:c:\users\owner\owncloud\d.cpp\base\stringq.cpp
+	"StringQ.h"
+	<iostream>
+
+1414126876 c:\users\owner\owncloud\d.cpp\base\stringq.h
+	<string>
+	<vector>
+
+1467998150 source:c:\users\owner\owncloud\d.cpp\base\targa.cpp
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<Targa.h>
+	<cstring>
+
+1469676899 source:c:\users\owner\owncloud\d.cpp\dxman\dxmansdl\entity.cpp
+	"entity.h"
+	<base.h>
+	"dxman.h"
+	<RImage_bgra32.h>
+	<RMath.h>
+
+1469632543 c:\users\owner\owncloud\d.cpp\dxman\dxmansdl\entity.h
+	<base.h>
+	<RAnim_bgra32.h>
+
+1469540967 c:\users\owner\owncloud\d.cpp\dxman\dxmansdl\dxman.h
+	<base.h>
+	"camera.h"
+	"entity.h"
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	<vector>
+
+1469509920 c:\users\owner\owncloud\d.cpp\base\rfont_bgra32.h
+	<RGradient_bgra32.h>
+	<RAnim_bgra32.h>
+
+1469556593 source:c:\users\owner\owncloud\d.cpp\base\rfont_bgra32.cpp
+	<RFont_bgra32.h>
+	<base.h>
+	<RMath.h>
+
+1469715463 source:c:\users\owner\owncloud\d.cpp\dxman\dxmansdl\dxman.cpp
+	<SDL2/SDL.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	<queue>
+	"RSprite_bgra32.h"
+	<RImage_bgra32.h>
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	<RMath.h>
+	"dxman.h"
+	"entity.h"
+	"camera.h"
+	"base.h"
+	"frameworkdummy.h"
+	"StringQ.h"
+	"RSound.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_assert.h"
+	"SDL_atomic.h"
+	"SDL_audio.h"
+	"SDL_clipboard.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_filesystem.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_haptic.h"
+	"SDL_hints.h"
+	"SDL_loadso.h"
+	"SDL_log.h"
+	"SDL_messagebox.h"
+	"SDL_mutex.h"
+	"SDL_power.h"
+	"SDL_render.h"
+	"SDL_rwops.h"
+	"SDL_system.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_version.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 e.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<math.h>
+	<float.h>
+	<iconv.h>
+	<sal.h>
+	"begin_code.h"
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_config.h
+	"SDL_platform.h"
+
+1451768293 orm.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_platform.h
+	"AvailabilityMacros.h"
+	"TargetConditionals.h"
+	<winapifamily.h>
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\begin_code.h
+
+1451768293 c:\sdk\sdl2\include\sdl2\close_code.h
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_assert.h
+	"SDL_config.h"
+	"begin_code.h"
+	<signal.h>
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_atomic.h
+	"SDL_stdinc.h"
+	"SDL_platform.h"
+	"begin_code.h"
+	<mbarrier.h>
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_endian.h
+	"SDL_stdinc.h"
+	<endian.h>
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_atomic.h"
+	"SDL_mutex.h"
+	"begin_code.h"
+	<process.h>
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_clipboard.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	<intrin.h>
+	<intrin.h>
+	<altivec.h>
+	<mmintrin.h>
+	<mm3dnow.h>
+	<xmmintrin.h>
+	<emmintrin.h>
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_gamecontroller.h"
+	"SDL_quit.h"
+	"SDL_gesture.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_surface.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_pixels.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_rect.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_pixels.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_surface.h
+	"SDL_stdinc.h"
+	"SDL_pixels.h"
+	"SDL_rect.h"
+	"SDL_blendmode.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_blendmode.h
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keycode.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_keycode.h
+	"SDL_stdinc.h"
+	"SDL_scancode.h"
+
+1451768293 ode.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_scancode.h
+	"SDL_stdinc.h"
+
+1451768293 c.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_gamecontroller.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_gesture.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"SDL_touch.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_touch.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_filesystem.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_haptic.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_joystick.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_hints.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_log.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_messagebox.h
+	"SDL_stdinc.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_power.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_render.h
+	"SDL_stdinc.h"
+	"SDL_rect.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_system.h
+	"SDL_stdinc.h"
+	"SDL_keyboard.h"
+	"SDL_render.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1451768293 c:\sdk\sdl2\include\sdl2\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1469628078 source:/home/owner/ownCloud/d.cpp/base/RSound.cpp
+	"RSound.h"
+
+1469561147 /home/owner/ownCloud/d.cpp/base/RSound.h
+	<string>
+	<climits>
+
+1414123271 source:/home/owner/ownCloud/d.cpp/base/StringQ.cpp
+	"StringQ.h"
+	<iostream>
+
+1414123276 /home/owner/ownCloud/d.cpp/base/StringQ.h
+	<string>
+	<vector>
+
+1512263063 source:/home/owner/ownCloud/d.cpp/base/base.cpp
+	<base.h>
+
+1511847875 /home/owner/ownCloud/d.cpp/base/base.h
+	<limits>
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<frameworkdummy.h>
+	<SDL2/SDL.h>
+	<RTypes.h>
+	<cstring>
+	<algorithm>
+	<float.h>
+	<limits.h>
+	<RMath.h>
+
+1511847875 /home/owner/ownCloud/d.cpp/base/frameworkdummy.h
+	<cstdio>
+	<string>
+	<sstream>
+	<cfloat>
+	<climits>
+	<ctime>
+	<fstream>
+	<cstdlib>
+	<iostream>
+	<cmath>
+	<cstddef>
+
+1511803795 /home/owner/ownCloud/d.cpp/base/RTypes.h
+	<base.h>
+	<frameworkdummy.h>
+	<string>
+	<preporting.h>
+
+1511795597 /home/owner/ownCloud/d.cpp/base/preporting.h
+	<cstdio>
+	<string>
+	<iostream>
+
+1511847874 /home/owner/ownCloud/d.cpp/base/RMath.h
+	<RTypes.h>
+	<frameworkdummy.h>
+	<string>
+	<preporting.h>
+
+1512263063 source:/home/owner/ownCloud/d.cpp/base/camera.cpp
+	<camera.h>
+
+1511791193 /home/owner/ownCloud/d.cpp/base/camera.h
+	<base.h>
+	<RImage_bgra32.h>
+	<base.h>
+	<RMath.h>
+	<math.h>
+
+1511847874 /home/owner/ownCloud/d.cpp/base/RImage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+	<pmath.h>
+	<RMath.h>
+	<cstring>
+
+1511847875 /home/owner/ownCloud/d.cpp/base/Targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<cstring>
+
+1511791847 /home/owner/ownCloud/d.cpp/base/RFile.h
+	<cstdlib>
+	<base.h>
+	<frameworkdummy.h>
+	<iostream>
+	<fstream>
+
+1511800648 /home/owner/ownCloud/d.cpp/base/RGradient_bgra32.h
+	<base.h>
+	<cstring>
+
+1511797200 /home/owner/ownCloud/d.cpp/base/pmath.h
+	<iostream>
+	<vector>
+	<string>
+	<climits>
+	<preporting.h>
+	<frameworkdummy.h>
+	<pointinfo.h>
+	<pixelinfo.h>
+	<base.h>
+	<cmath>
+	<cstdlib>
+	<cstring>
+
+1511791531 /home/owner/ownCloud/d.cpp/base/pointinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<frameworkdummy.h>
+	<pmemory.h>
+	<preporting.h>
+
+1511791492 /home/owner/ownCloud/d.cpp/base/pmemory.h
+	<string>
+	<preporting.h>
+	<frameworkdummy.h>
+	<cstdlib>
+
+1511791276 /home/owner/ownCloud/d.cpp/base/pixelinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<frameworkdummy.h>
+	<pmemory.h>
+	<preporting.h>
+
+1511847875 source:/home/owner/ownCloud/d.cpp/base/frameworkdummy.cpp
+	<frameworkdummy.h>
+
+1511791305 source:/home/owner/ownCloud/d.cpp/base/pixelinfo.cpp
+	<pixelinfo.h>
+
+1511847875 source:/home/owner/ownCloud/d.cpp/base/pmath.cpp
+	<pmath.h>
+
+1511797200 source:/home/owner/ownCloud/d.cpp/base/pmemory.cpp
+	<pmemory.h>
+
+1511791535 source:/home/owner/ownCloud/d.cpp/base/pointinfo.cpp
+	<pointinfo.h>
+
+1511791566 source:/home/owner/ownCloud/d.cpp/base/preporting.cpp
+	<preporting.h>
+
+1512264956 source:/home/owner/ownCloud/d.cpp/base/RAnim_bgra32.cpp
+	<RAnim_bgra32.h>
+
+1511791607 /home/owner/ownCloud/d.cpp/base/RAnim_bgra32.h
+	<RImage_bgra32.h>
+	<vector>
+	<base.h>
+	<RMath.h>
+	<cstring>
+
+1511847875 source:/home/owner/ownCloud/d.cpp/base/RFile.cpp
+	<RFile.h>
+
+1512262506 source:/home/owner/ownCloud/d.cpp/base/RFont_bgra32.cpp
+	<RFont_bgra32.h>
+
+1511791948 /home/owner/ownCloud/d.cpp/base/RFont_bgra32.h
+	<RGradient_bgra32.h>
+	<RAnim_bgra32.h>
+	<base.h>
+	<RMath.h>
+
+1511847875 source:/home/owner/ownCloud/d.cpp/base/RGradient_bgra32.cpp
+	<RGradient_bgra32.h>
+
+1512264393 source:/home/owner/ownCloud/d.cpp/base/RImage_bgra32.cpp
+	<RImage_bgra32.h>
+
+1511847874 source:/home/owner/ownCloud/d.cpp/base/RMath.cpp
+	<RMath.h>
+
+1511809411 source:/home/owner/ownCloud/d.cpp/base/RSprite_bgra32.cpp
+	<RSprite_bgra32.h>
+
+1511792510 /home/owner/ownCloud/d.cpp/base/RSprite_bgra32.h
+	<RAnim_bgra32.h>
+
+1511809411 source:/home/owner/ownCloud/d.cpp/base/RTypes.cpp
+	<RTypes.h>
+
+1511809419 source:/home/owner/ownCloud/d.cpp/base/RWorld.cpp
+	<RWorld.h>
+
+1511793154 /home/owner/ownCloud/d.cpp/base/RWorld.h
+	<RAnim_bgra32.h>
+	<RSprite_bgra32.h>
+
+1511847875 source:/home/owner/ownCloud/d.cpp/base/Targa.cpp
+	<Targa.h>
+
+1512272599 source:/home/owner/ownCloud/d.cpp/namdax/DXManSDL/dxman.cpp
+	"dxman.h"
+
+1511846996 /home/owner/ownCloud/d.cpp/namdax/DXManSDL/dxman.h
+	<base.h>
+	<camera.h>
+	"entity.h"
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	<vector>
+	<SDL2/SDL.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	<queue>
+	<RSprite_bgra32.h>
+	<RImage_bgra32.h>
+	<RMath.h>
+	<frameworkdummy.h>
+	<StringQ.h>
+	<RSound_audiere.h>
+
+1469628943 /home/owner/ownCloud/d.cpp/namdax/DXManSDL/entity.h
+	<base.h>
+	<RAnim_bgra32.h>
+
+1512263025 source:/home/owner/ownCloud/d.cpp/namdax/DXManSDL/entity.cpp
+	"entity.h"
+	<base.h>
+	"dxman.h"
+	<RImage_bgra32.h>
+	<RMath.h>
+
+1512355125 source:/home/owner/ownCloud/d.cpp/base/RSound_audiere.cpp
+	<RSound_audiere.h>
+
+1512270481 /home/owner/ownCloud/d.cpp/base/RSound_audiere.h
+	<string>
+	<climits>
+	<IRSound.h>
+	<audiere.h>
+	<iostream>
+
+1512261929 /home/owner/ownCloud/d.cpp/base/IRSound.h
+	<string>
+	<climits>
 

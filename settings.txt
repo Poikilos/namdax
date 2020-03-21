@@ -1,5 +1,7 @@
-music=yes
+music=no
 sound=yes
-aim.flip_pitch=yes
-aim.flip_yaw=yes
-debugmode=no
+debugmode=yes
+hero.size.pixelspermeter=81.0
+flyer.size.pixelspermeter=150.0
+shot.size.pixelspermeter=400.0
+boss.size.pixelspermeter=80.0
