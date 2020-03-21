@@ -18,7 +18,7 @@ using namespace std;
 typedef unsigned short USHORT;
 typedef unsigned short WORD;
 typedef unsigned char BYTE;
-//typedef unsigned __int8 DWORD;
+//typedef unsigned __int32 DWORD;
 //typedef unsigned __int16 USHORT;
 //typedef unsigned __int8 BYTE;
 //typedef ULARGE_INTEGER __int64);
@@ -42,9 +42,9 @@ typedef unsigned char BYTE;
 #define BUFFER_WIDTH			1280
 #define BUFFER_HEIGHT			960
 #define BUFFER_SIZE				1228800 //1280x960
-#define SCREEN_OFFSET_X			320 //screen (a targa buffer) is offset to avoid clipping
+#define SCREEN_OFFSET_X			320 //screen (a GBuffer) is offset to avoid clipping
 #define SCREEN_OFFSET_Y			240
-#define FSCREEN_OFFSET_X		320.0f //screen (a targa buffer) is offset to avoid clipping
+#define FSCREEN_OFFSET_X		320.0f //screen (a GBuffer buffer) is offset to avoid clipping
 #define FSCREEN_OFFSET_Y		240.0f
 #define SCREEN_BPP				32	 //bits per pixel, GameInit tries 32 or 24 if one is not available
 #define CODE_THRESHOLD          90
@@ -144,7 +144,7 @@ Variables dat;
 bool bSDLQuitSent=false;
 bool bSplash=false;//if splash screen was drawn
 int iSplashTick;//time when splash screen appeared
-extern BYTE by3dAlphaLookup[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/256+Dest)
+extern BYTE by3dAlphaLookup[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/255+Dest)
 unsigned __int32 dwarrEnergyGrad[256];//gradient for energy currency (ready attack) meter
 unsigned __int32 dwarrHealthGrad[256];//gradient for health meter
 int xCursor=0, yCursor=0, xCursorDown=0, yCursorDown=0;
@@ -168,9 +168,7 @@ int iFramesHero=60,
 	iAreas=3,
 	iBackdrops=iAreas,
 	iFramesCursor=3,
-	iEncounters=3;//TODO: actually use these instead of hard-coding frames
-	                //may be okay as long as they're reset to iFoundFrames upon TargaLoadSeq
-int ix;//temp var for error#'s
+	iEncounters=3;//TODO: finish this: change all usages to Anim::GoToFrame or other Anim methods
 int iEscapeTime=0;
 int iErrorsSaved=0;
 int iFramesDropped=0;
@@ -180,27 +178,27 @@ int keyDelay=0;
 int iDoubleCodeCounter=0; //player cheat code
 int iRapidFireCodeCounter=0;//player cheat code
 bool bBombed=false;
-LPTARGA*            lplptargaBackdrop=NULL;
-LPTARGA				lptargaBackdropNow=NULL;//pointer to index of lplptargaBackdrop
-LPTARGA				lptargaIntro=NULL;
-LPTARGA				lptargaIntroText=NULL;
-LPTARGA             lptargaSymbolShield=NULL;
-LPTARGA             lptargaSymbolBossHealth=NULL;
-LPTARGA             lptargaGuys=NULL;
-LPTARGA*			lplptargaFlyer=NULL;
-LPTARGA*			lplptargaFlyerShadow=NULL;
-LPTARGA*			lplptargaBoss=NULL;
-LPTARGA				lptargaBossShadow=NULL;
-LPTARGA*			lplptargaHero=NULL;
-LPTARGA				lptargaHeroShadow=NULL;
-LPTARGA*			lplptargaShot=NULL;
-LPTARGA				lptargaShotShadow=NULL;
-LPTARGA*			lplptargaGameScreen=NULL;
-LPTARGA*			lplptargaGameScreenArea=NULL;
-LPTARGA*			lplptargaGameScreenEncounter=NULL;
-LPTARGA*            lplptargaCursor=NULL;
+Anim				animBackdrop;
+//LPTARGA				lptargaBackdropNow;//TODO: superceded by animBackdrop.gbFrame
+GBuffer				gbIntro;
+GBuffer				gbIntroText;
+GBuffer             gbSymbolShield;
+GBuffer             gbSymbolBossHealth;
+GBuffer             gbGuys;
+Anim				animFlyer;
+Anim				animFlyerShadow;
+Anim				animBoss;
+GBuffer				gbBossShadow;
+Anim				animHero;
+GBuffer				gbHeroShadow;
+Anim				animShot;
+GBuffer				gbShotShadow;
+Anim				animGameScreen;
+Anim				animGameScreenArea;
+Anim				animGameScreenEncounter;
+Anim				animCursor;
 // erieindianaerieindianaerieindiana
-LPTARGA				lptargaScreen=NULL;
+GBuffer				gbScreen;
 //LPSPRITE*           lpspritearr;//sprite array
 SCREENITEM			screenitemarr[MAX_SCREENITEMS];
 //char sTemp[800];								// general printing buffer
@@ -259,17 +257,16 @@ bool GameInit();
 bool GameMain();
 bool GameShutdown();
 int TargaStride(LPTARGA lptargaSrc);
-bool TargaToTarga32_FX_Scaled(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat, float fOpacity, float fExplodedness, unsigned __int32 dwStat, float scale);
+bool TargaToTarga32_FX_Scaled(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat, float fOpacity, float fExplodedness, unsigned __int32 dwStat, float scale);
 void TargaToScreen_AutoCrop(LPTARGA lptargaSrc);
 void TargaToScreen(LPTARGA lptargaSrc);
-int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat);//, int opacityCap);
-int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat, float fOpacityMultiplier);//, int opacityCap);
-int TargaToTarga32(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat);
+int TargaToTarga32_Alpha(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat);
+int TargaToTarga32_Alpha(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat, float fOpacityMultiplier);
+int TargaToTarga32(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat);
 void ResetRand();
 float FRand();
 float FRand(float fMin, float fMax);
-//universal (24- or 32-bit mode) Targa renderer:
-int TargaToTargaAlphaFX(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat, int opacityCap, float fExplodedness, unsigned __int32 dwStat);
+//int TargaToTargaAlphaFX(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat, int opacityCap, float fExplodedness, unsigned __int32 dwStat);
 int IRandPositive();
 int IRand(int iMin, int iMax);
 bool AddScreenItem(int iType, int zOrder, int iEntityIndex);
@@ -279,7 +276,7 @@ void DrawRadarRect(float left, float top, float bottom, float right, unsigned __
 void DrawExclusiveRect(int left, int top, int bottom, int right, unsigned __int32 dwPixel, bool bFilled);
 void DrawRadarField();
 void ShowDebugVars();
-bool UnloadChunkSafe(Mix_Chunk* &mcToNull);
+bool SafeChunkUnload(Mix_Chunk* &mcToNull);
 void RadarDotAt(int &xPix, int &yPix, float xPos, float yPos);
 float RadarCenterX();
 float RadarCenterY();
@@ -1669,12 +1666,12 @@ void Entity::Draw() {
 		//the next 2 lines are different for shot
 		if (iType==ENTITY_TYPE_SHOT) {
 			if (bShadow) {
-				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaShadow[iShadowFrame], lptargaScreen, SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacity, 0, 0, m2dShadow.fScale),
+				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, lptargaShadow[iShadowFrame], SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacity, 0, 0, m2dShadow.fScale),
 						iType,
 						"shadow");
 			}
 			if (bDraw) {
-				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(frames[iFrame], lptargaScreen, SCREEN_OFFSET_X+m2dEnt.rectRender.left, SCREEN_OFFSET_Y+m2dEnt.rectRender.top, (bAlien?0.5f:1.0f), 0, (bBomb?STATUS_SHIELD:0), m2dEnt.fScale),
+				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, frames[iFrame], SCREEN_OFFSET_X+m2dEnt.rectRender.left, SCREEN_OFFSET_Y+m2dEnt.rectRender.top, (bAlien?0.5f:1.0f), 0, (bBomb?STATUS_SHIELD:0), m2dEnt.fScale),
 						iType,
 						"self");
 				
@@ -1687,12 +1684,12 @@ void Entity::Draw() {
 			if (fShadowOpacityNow>fShadowOpacity) fShadowOpacityNow=fShadowOpacity;
 			else if (fShadowOpacityNow<0.0f) fShadowOpacityNow=0.0f;
 			if (bShadow) {
-				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaShadow[iShadowFrame], lptargaScreen, SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacityNow, fExplodedness, 0, m2dShadow.fScale),
+				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, lptargaShadow[iShadowFrame], SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacityNow, fExplodedness, 0, m2dShadow.fScale),
 						iType,
 						"shadow");
 			}
 			if (bDraw) {
-				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(frames[iFrame], lptargaScreen, SCREEN_OFFSET_X+m2dEnt.rectRender.left, SCREEN_OFFSET_Y+m2dEnt.rectRender.top, fFortitude*fSpeedMultiplier, fExplodedness, dwStatus, m2dEnt.fScale),
+				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, frames[iFrame], SCREEN_OFFSET_X+m2dEnt.rectRender.left, SCREEN_OFFSET_Y+m2dEnt.rectRender.top, fFortitude*fSpeedMultiplier, fExplodedness, dwStatus, m2dEnt.fScale),
 						iType,
 						"self");
 			}
@@ -1704,21 +1701,21 @@ void Entity::Draw() {
 			else if (fShadowOpacityNow<0.0f) fShadowOpacityNow=0.0f;
 			if (bShadow) {
 				//debug only:
-				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaShadow[iShadowFrame], lptargaScreen, SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacityNow, 0.0f, 0, m2dShadow.fScale),
+				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, lptargaShadow[iShadowFrame], SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacityNow, 0.0f, 0, m2dShadow.fScale),
 						iType,
 						"shadow");
 				//commented for debug only (crashes WITHOUT warning or output):
-				//SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaShadow[iShadowFrame], lptargaScreen, SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacityNow, fExplodedness, 0, m2dShadow.fScale),
+				//SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, lptargaShadow[iShadowFrame], SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, fShadowOpacityNow, fExplodedness, 0, m2dShadow.fScale),
 				//		iType,
 				//		"shadow");
 			}
 			//if (bShadow) {
-			//	SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaHeroShadow, lptargaScreen, SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, 1.0f, 0, 0, m2dEnt.fScale),
+			//	SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, lptargaHeroShadow, SCREEN_OFFSET_X+m2dShadow.rectRender.left, SCREEN_OFFSET_Y+m2dShadow.rectRender.top, 1.0f, 0, 0, m2dEnt.fScale),
 			//			iType,
 			//			"shadow");
 			//}
 			if (bDraw) {
-				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(frames[iFrame], lptargaScreen, SCREEN_OFFSET_X+m2dEnt.rectRender.left, SCREEN_OFFSET_Y+m2dEnt.rectRender.top, fFortitude*fSpeedMultiplier, fExplodedness, dwStatus, m2dEnt.fScale),
+				SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaScreen, frames[iFrame], SCREEN_OFFSET_X+m2dEnt.rectRender.left, SCREEN_OFFSET_Y+m2dEnt.rectRender.top, fFortitude*fSpeedMultiplier, fExplodedness, dwStatus, m2dEnt.fScale),
 						iType,
 						"self");
 			}
@@ -1871,7 +1868,7 @@ void Entity::DrawMeters() {
 	int yStart=yFlat-lptargaSymbolShield->height;
 	xFlat+=32;
 	if (HasAttrib(STATUS_VARIABLESHIELD)) {
-        TargaToTarga32_Alpha(lptargaSymbolShield, lptargaScreen, xFlat, yStart, ( (fShield<1.0f) ? ((fShield>0.0f)?fShield:0.0f) : 1.0f ) );
+        TargaToTarga32_Alpha(lptargaScreen, lptargaSymbolShield, xFlat, yStart, ( (fShield<1.0f) ? ((fShield>0.0f)?fShield:0.0f) : 1.0f ) );
 		xFlat+=lptargaSymbolShield->width+lptargaSymbolShield->width/2;
 	}
 	try {
@@ -1882,7 +1879,7 @@ void Entity::DrawMeters() {
 			float yMax=FSCREEN_HEIGHT-10;
 			float yMin=FSCREEN_HEIGHT-20;
 			fRatio=fBoss/fBossMax;
-			TargaToTarga32_Alpha(lptargaSymbolBossHealth, lptargaScreen, xFlat, yStart, ( (fShield<1.0f) ? ((fRatio>0.0f)?fRatio:0.0f) : 1.0f ) );
+			TargaToTarga32_Alpha(lptargaScreen, lptargaSymbolBossHealth, xFlat, yStart, ( (fShield<1.0f) ? ((fRatio>0.0f)?fRatio:0.0f) : 1.0f ) );
 			/*
 			pixelNow.a=255;
 			Pixel pixelEnd;
@@ -2193,14 +2190,14 @@ void Entity::DeformTerrain() {
 		m2dEnt.rectRender.bottom=m2dEnt.rectRender.top+(int)(m2dShadow.rectOriginal.bottom*m2dShadow.fScale);//add extra for safety
 		m2dEnt.rectRender.right=m2dEnt.rectRender.left+(int)(m2dShadow.rectOriginal.right*m2dShadow.fScale);
 		if ( m2dEnt.rectRender.left>=0
-		  && m2dEnt.rectRender.bottom<lptargaBackdropNow->height
-		  && m2dEnt.rectRender.right<lptargaBackdropNow->width
+		  && m2dEnt.rectRender.bottom<animBackdrop.Height();
+		  && m2dEnt.rectRender.right<animBackdrop.Width();
 		  && m2dEnt.rectRender.top>=0)
 			bDraw=true;
 		else bDraw=false;
 		if (lptargaShadow[iShadowFrame]==NULL) bDraw=false;
 		if (bDraw) {
-			SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(lptargaShadow[iShadowFrame], lptargaBackdropNow, m2dEnt.rectRender.left, m2dEnt.rectRender.top, .078, 0, 0, m2dShadow.fScale),
+			SayWhatIDrewIfFalse(TargaToTarga32_FX_Scaled(animBackdrop.gbFrame, lptargaShadow[iShadowFrame], m2dEnt.rectRender.left, m2dEnt.rectRender.top, .078, 0, 0, m2dShadow.fScale),
 					iType,
 					"turf damage");
 		}
@@ -2429,8 +2426,8 @@ int main(int iArgs, char** lpsArg) {
 	//main event loop:
    	if (!bDone) cout<<"Running main event loop."<<endl;
    	else ShowError("Bypassing main loop, due to failed init.");
+	unsigned __int32 dwLastRefresh=SDL_GetTicks();
 	while (!bDone) {
-		unsigned __int32 dwStartTick=SDL_GetTicks();
 		//Check for events
 		while (SDL_PollEvent (&event)) {
 			switch (event.type) {
@@ -2590,11 +2587,17 @@ int main(int iArgs, char** lpsArg) {
 		}//end while checking keyboard event
 		
 		if (!bDone) {
-			while((SDL_GetTicks() - dwStartTick) < 28) { //TODO: improve this and remove loop
+			//while((SDL_GetTicks() - dwLastRefresh) < 28) { //TODO: improve this and remove loop
 				SleepWrapper(1);
-			} //lock to approx 30fps
-			//SleepWrapper( (SDL_GetTicks()-dwStartTick) + 28)
-			GameMain();
+			//} 
+			//SleepWrapper( (SDL_GetTicks()-dwLastRefresh) + 28)
+			
+			//TODO: separate Redraw from Refresh GameMain below
+			
+			if ( (SDL_GetTicks()-dwLastRefresh) >= 28 ) {//lock to approx 30fps
+				dwLastRefresh=SDL_GetTicks()
+				GameMain();
+			)
 			PlaySounds();
 			if (bSDLQuitDone) bDone=true;
 		}//end if not bDone do normal stuff
@@ -2617,7 +2620,7 @@ int TargaStride(LPTARGA lptargaSrc) {
 	}
 	return iReturn;
 }
-bool TargaToTarga32_FX_Scaled(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat, float fOpacity, float fExplodedness, unsigned __int32 dwStat, float fScale) {
+bool TargaToTarga32_FX_Scaled(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat, float fOpacity, float fExplodedness, unsigned __int32 dwStat, float fScale) {
 	bool bGood=true;
 	bool bShowTargaToTargaVars=false;
 	float fInverseScale;
@@ -2995,10 +2998,10 @@ void TargaToScreen(LPTARGA lptargaSrc) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat) {
-	return TargaToTarga32_Alpha(lptargaSrc, lptargaDest, xFlat, yFlat, 1.0f);
+int TargaToTarga32_Alpha(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat) {
+	return TargaToTarga32_Alpha(lptargaDest, lptargaSrc, xFlat, yFlat, 1.0f);
 }
-int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat, float fOpacityMultiplier) {
+int TargaToTarga32_Alpha(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat, float fOpacityMultiplier) {
 	// copy the Targa image to the primary buffer line by line
 	//	direct draw surface description 
 	// set size of the structure
@@ -3044,7 +3047,7 @@ int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int
 				lpbyDest++;
 				red=(*lpbyDest + red)/2;
 				lpbyDest+=2; //increment past alpha
-				pixel=_RGB32BIT(256,red,green,blue);
+				pixel=_RGB32BIT(255,red,green,blue);
 				//Manual clip and set pixel:
 				//if (xSrc+xFlat<SCREEN_WIDTH)
 				//	if (xSrc+xFlat>=0)
@@ -3055,7 +3058,7 @@ int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int
 			}
 			else if (alpha==255) {
 				lpbyDest+=4;
-				pixel=_RGB32BIT(256,red,green,blue);
+				pixel=_RGB32BIT(255,red,green,blue);
 				//Manual clip and set pixel:
 				//if (xSrc+xFlat<SCREEN_WIDTH)
 				//	if (xSrc+xFlat>=0)
@@ -3064,15 +3067,15 @@ int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int
 								lpdwDest[xFlat + xSrc + ((ySrc+yFlat)*iStride >> 2)]=pixel;
 			}
 			else {
-				//Do alpha, FORMULA: ((Source-Dest)*alpha/256+Dest)
-				register float cookedAlpha=alpha/256.00;
+				//Do alpha, FORMULA: ((Source-Dest)*alpha/255+Dest)
+				register float cookedAlpha=alpha/255.00;
 				blue=SafeByte(  ((blue - *lpbyDest) * cookedAlpha + *lpbyDest)  );
 				lpbyDest++;
 				green=SafeByte(  ((green - *lpbyDest) * cookedAlpha + *lpbyDest)  );
 				lpbyDest++;
 				red=SafeByte(  ((red - *lpbyDest) * cookedAlpha + *lpbyDest)  );
 				lpbyDest+=2; //increment past alpha
-				pixel=_RGB32BIT(256,red,green,blue);
+				pixel=_RGB32BIT(255,red,green,blue);
 				//Uint32 alphaPix=_RGB32BIT(1,alpha/255,alpha/255,alpha/255);
 				//Manual clip and set pixel:
 				//if (xSrc+xFlat<SCREEN_WIDTH)
@@ -3155,7 +3158,7 @@ float FRand(float fMin, float fMax) {
 ///////////////////////////////////////////////////////////////
 
 
-int TargaToTarga32(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat) {
+int TargaToTarga32(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yFlat) {
   try {
 	Uint32* lpdwDest=(Uint32*)lptargaDest->buffer;
 	int iStride=TargaStride(lptargaDest);
@@ -3191,7 +3194,7 @@ int TargaToTarga32(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int Targa32ToAnyTarga(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yTo, int opacityCap, float fExplodedness, Uint32 dwStat) {
+int Targa32ToAnyTarga(LPTARGA lptargaDest, LPTARGA lptargaSrc, int xFlat, int yTo, int opacityCap, float fExplodedness, Uint32 dwStat) {
 	//register Uint32* lpdwDest=(Uint32*)lptargaDest->buffer;
   try {
 	int iStride=TargaStride(lptargaDest);
@@ -3327,7 +3330,7 @@ bool GameMain() {
 	if (iGameState!=GAMESTATE_EXIT) {
 		if ((dwPressing&GAMEKEY_EXIT)&&(SDL_GetTicks()-iEscapeTime)>1000) {//int answer=0;
 			iEscapeTime=SDL_GetTicks();
-			TargaToTarga32_Alpha(lplptargaGameScreen[2], lptargaScreen,
+			TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreen[2],
 				SCREEN_WIDTH/2-lplptargaGameScreen[2]->width/2+SCREEN_OFFSET_X,
 				SCREEN_HEIGHT/2-lplptargaGameScreen[2]->height/2+SCREEN_OFFSET_Y);
 			TargaToScreen_AutoCrop(lptargaScreen);
@@ -3359,7 +3362,7 @@ bool GameMain() {
 					//	yfCursor=yCursor;
 					//	bMouseMove=true;
 					//}
-					//try { TargaToTarga32_Alpha(lplptargaCursor[0], lptargaScreen, xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter); }
+					//try { TargaToTarga32_Alpha(lptargaScreen, lplptargaCursor[0], xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter); }
 					//catch (...) {}
 				}//end if key is pressed
     
@@ -3371,7 +3374,7 @@ bool GameMain() {
 
 	if (iGameState == GAMESTATE_INIT) {
 		DrawExclusiveRect(0,0,SCREEN_HEIGHT,SCREEN_WIDTH,0x00000000,true);
-		TargaToTarga32(lptargaIntro, lptargaScreen, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaIntro->width/2),SCREEN_OFFSET_Y);
+		TargaToTarga32(lptargaScreen, lptargaIntro, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaIntro->width/2),SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
 		Uint32 dwStartTick=SDL_GetTicks();
 		//while((SDL_GetTicks() - dwStartTick) < 1000) {
@@ -3393,7 +3396,7 @@ bool GameMain() {
 			SleepWrapper(100);
 		}//end while
 		DrawExclusiveRect(0,0,SCREEN_HEIGHT,SCREEN_WIDTH,0x00000000,true);
-		TargaToTarga32(lptargaIntroText, lptargaScreen, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaIntroText->width/2),SCREEN_OFFSET_Y);
+		TargaToTarga32(lptargaScreen, lptargaIntroText, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaIntroText->width/2),SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
 		dwStartTick=SDL_GetTicks();
 		SleepWrapper(1000);//while((SDL_GetTicks() - dwStartTick) < 2000) ;
@@ -3416,7 +3419,7 @@ bool GameMain() {
 				//	yfCursor=yCursor;
 				//	bMouseMove=true;
 				//}
-				//try { TargaToTarga32_Alpha(lplptargaCursor[0], lptargaScreen, xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter); }
+				//try { TargaToTarga32_Alpha(lptargaScreen, lplptargaCursor[0], xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter); }
 				//catch (...) {}
 			}//end if key is pressed
 			SleepWrapper(100);
@@ -3461,7 +3464,7 @@ bool GameMain() {
 	}//end if GAMESTATE_INIT
 	else if (iGameState == GAMESTATE_START_AREA) {//START AREA
 	    try {
-			lptargaBackdropNow=lplptargaBackdrop[iArea-1];
+			animBackdrop.GotoFrame(iArea-1);
 		}
 		catch (int iExn) { if (ShowError()) cerr<<"int exception in (getting lplptargaBackdrop) START_AREA state: "<<iExn<<endl; bGood=false; }
 		catch (char* sExn) { if (ShowError()) cerr<<"Exception error in (getting lplptargaBackdrop) START_AREA state: "<<sExn<<endl; bGood=false; }
@@ -3479,8 +3482,8 @@ bool GameMain() {
 		StopMusic();
 		iGuys--;
 		if (hero==NULL) hero=new Entity(ENTITY_TYPE_HERO);
-		TargaToTarga32(lptargaBackdropNow, lptargaScreen, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
-		TargaToTarga32_Alpha(lptargaGuys,lptargaScreen,
+		TargaToTarga32(lptargaScreen, animBackdrop.gbFrame, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
+		TargaToTarga32_Alpha(lptargaScreen,lptargaGuys,
 				SCREEN_WIDTH/2-lptargaGuys->width/2+SCREEN_OFFSET_X,
 				SCREEN_HEIGHT/2-lptargaGuys->height+SCREEN_OFFSET_Y);
 		int iTotalWidth=SCREEN_WIDTH;
@@ -3499,7 +3502,7 @@ bool GameMain() {
 		static int yOffset=SCREEN_HEIGHT/2;
 		dat.GetOrCreate(yOffset,"hero.lives.counter.offset.y");
 		for (int iGuy=0; iGuy<iGuys; iGuy++) {
-			TargaToTarga32_FX_Scaled(lplptargaHero[0], lptargaScreen, SCREEN_OFFSET_X+iOffset, SCREEN_OFFSET_Y+yOffset, 255, 0, 0, fScaleGuy);
+			TargaToTarga32_FX_Scaled(lptargaScreen, lplptargaHero[0], SCREEN_OFFSET_X+iOffset, SCREEN_OFFSET_Y+yOffset, 255, 0, 0, fScaleGuy);
 			iOffset+=iOffsetter;
 		}
 		iEncounter=1;//go back to first encounter of this area
@@ -3515,11 +3518,11 @@ bool GameMain() {
 		ClearSounds();
 		iPlayExplosion=128;
 		PlaySounds();
-		TargaToTarga32(lptargaBackdropNow, lptargaScreen, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
-		TargaToTarga32_Alpha(lplptargaGameScreenArea[iArea-1],lptargaScreen,
+		TargaToTarga32(lptargaScreen, animBackdrop.gbFrame, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
+		TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreenArea[iArea-1],
 				SCREEN_WIDTH/2-lplptargaGameScreenArea[iArea-1]->width/2+SCREEN_OFFSET_X,
 				SCREEN_HEIGHT/2-lplptargaGameScreenArea[iArea-1]->height+SCREEN_OFFSET_Y);
-		TargaToTarga32_Alpha(lplptargaGameScreenEncounter[iEncounter-1],lptargaScreen,
+		TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreenEncounter[iEncounter-1],
 				SCREEN_WIDTH/2-lplptargaGameScreenEncounter[iEncounter-1]->width/2+SCREEN_OFFSET_X,
 				SCREEN_HEIGHT/2+SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
@@ -3591,7 +3594,7 @@ bool GameMain() {
 		if (iDoubleCodeCounter>=CODE_THRESHOLD && hero->dwStatus ^ STATUS_DOUBLESPEED) hero->doublespeed();
 		if (iRapidFireCodeCounter>=CODE_THRESHOLD && hero->dwStatus ^ STATUS_RAPIDFIRE) hero->rapidfire();
 
-		TargaToTarga32(lptargaBackdropNow, lptargaScreen, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
+		TargaToTarga32(lptargaScreen, animBackdrop.gbFrame, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
 		//DrawRadarField();
 
 		//Update all the existing lparrAlien, delete the rest
@@ -3807,12 +3810,12 @@ bool GameMain() {
 		}
 		else {
 			//
-			//	TargaToTarga32_Alpha(lplptargaGameScreen[iScreenNow], lptargaScreen,
+			//	TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreen[iScreenNow],
 			//		SCREEN_WIDTH/2-lplptargaGameScreen[iScreenNow]->width/2,
 			//		SCREEN_HEIGHT/2-lplptargaGameScreen[iScreenNow]->height/2);
 			//
 			Uint32 dwStartScreen;
-			TargaToTarga32_Alpha(lplptargaGameScreen[iScreenNow],lptargaScreen,
+			TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreen[iScreenNow],
 					SCREEN_WIDTH/2-lplptargaGameScreen[iScreenNow]->width/2+SCREEN_OFFSET_X,
 					SCREEN_HEIGHT/2-lplptargaGameScreen[iScreenNow]->height/2+SCREEN_OFFSET_Y);
 			TargaToScreen_AutoCrop(lptargaScreen);
@@ -3827,10 +3830,10 @@ bool GameMain() {
 		}
 		if (iRapidFireCodeCounter>=CODE_THRESHOLD|| (hero&&hero->dwStatus&STATUS_RAPIDFIRE)) iScreenNow=8;
 
-		//	TargaToTarga32_Alpha(lplptargaGameScreen[iScreenNow], lpddsPrimary,
+		//	TargaToTarga32_Alpha(lpddsPrimary,lplptargaGameScreen[iScreenNow],
 		//		SCREEN_WIDTH/2-lplptargaGameScreen[iScreenNow]->width/2,
 		//		SCREEN_HEIGHT/2-lplptargaGameScreen[iScreenNow]->height/2);
-		TargaToTarga32_Alpha(lplptargaGameScreen[iScreenNow], lptargaScreen,
+		TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreen[iScreenNow],
 				SCREEN_WIDTH/2-lplptargaGameScreen[iScreenNow]->width/2+SCREEN_OFFSET_X,
 				SCREEN_HEIGHT/2-lplptargaGameScreen[iScreenNow]->height/2+SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
@@ -3863,7 +3866,7 @@ bool GameMain() {
 				//	yfCursor=yCursor;
 				//	bMouseMove=true;
 				//}
-				//try { TargaToTarga32_Alpha(lplptargaCursor[0], lptargaScreen, xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter); }
+				//try { TargaToTarga32_Alpha(lptargaScreen, lplptargaCursor[0], xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter); }
 				//catch (...) {}
 			}
 		iGameState=GAMESTATE_EXIT;
@@ -3877,7 +3880,7 @@ bool GameMain() {
 			PlayMusic("music/Orangejuice-DXMan-Intro.ogg", -1);
 		}
 
-		TargaToTarga32_Alpha(lplptargaGameScreen[0], lptargaScreen,
+		TargaToTarga32_Alpha(lptargaScreen,lplptargaGameScreen[0],
 			SCREEN_WIDTH/2-lplptargaGameScreen[0]->width/2+SCREEN_OFFSET_X,
 			SCREEN_HEIGHT/2-lplptargaGameScreen[0]->height/2+SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
@@ -4070,7 +4073,7 @@ bool GameInit() {
 		else {
 			DrawExclusiveRect(0,0,SCREEN_HEIGHT,SCREEN_WIDTH,0xFFFFFFFF,true);
 			if (lptargaSplash) {
-				TargaToTarga32(lptargaSplash, lptargaScreen, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaSplash->width/2),SCREEN_OFFSET_Y+(SCREEN_HEIGHT/2-lptargaSplash->height/2));
+				TargaToTarga32(lptargaScreen, lptargaSplash, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaSplash->width/2),SCREEN_OFFSET_Y+(SCREEN_HEIGHT/2-lptargaSplash->height/2));
 				bSplashDrawn=true;
 			}
 		}
@@ -4195,25 +4198,25 @@ bool GameInit() {
 				return(0);
 			}
 		}
-		//	if (!TargaToTarga32(lptargaBackdropNow, lptargaScreendrop, 0, 0))
+		//	if (!TargaToTarga32(lptargaScreendrop, animBackdrop.gbFrame, 0, 0))
 		//	{
 		//		cerr<<"\nCould not load targaBack to 32-bit BackDrop in GameInit";
 		//		iErrors++;
 		//		return(0);
 		//	}
-		//TargaUnload(lptargaBackdropNow);
-		//cout<<"In GameInit--finished unload lptargaBackdropNow";
+		//TargaUnload(animBackdrop.gbFrame);
+		//cout<<"In GameInit--finished unload animBackdrop.gbFrame";
 
 
 		//DDrawFillSurface(lptargaExplosion,0);
 		int iFramesFound;
 
 		iFramesFound=iFramesHero;
-		//cout<<"In GameInit--Loading heroani";
-		lplptargaHero=TargaLoadSeq("images/heroani", iFramesFound);
-		//cout<<"In GameInit--finished attempting to load images/heroani*.tga";
-		ShowError(iLastErr,"images/heroani*.tga failed to load","GameInit");
-		if (iFramesFound!=iFramesHero) ShowError("not all heroani*.tga frames loaded.");
+		//cout<<"In GameInit--Loading hero";
+		lplptargaHero=TargaLoadSeq("images/hero", iFramesFound);
+		//cout<<"In GameInit--finished attempting to load images/hero*.tga";
+		ShowError(iLastErr,"images/hero*.tga failed to load","GameInit");
+		if (iFramesFound!=iFramesHero) ShowError("not all hero*.tga frames loaded.");
 
 		iFramesFound=iFramesFlyer;
 		lplptargaFlyer=TargaLoadSeq("images/flyer", iFramesFound);
@@ -4337,75 +4340,27 @@ bool GameShutdown() {
 	    if (SDL_ShowCursor(SDL_QUERY)==SDL_DISABLE) {
             SDL_ShowCursor(SDL_ENABLE);
 		}
-		//Unload Targas
-		TargaUnloadSeq(lplptargaFlyerShadow, iFramesFlyerShadow);//TargaUnloadSeq(lplptargaFlyerShadow, 1);
-		ShowError(iLastErr, "lplptargaFlyerShadow", "GameShutDown");
-		TargaUnload(lptargaBossShadow);//TargaUnloadSeq(lptargaBossShadow, 1);
-		ShowError(iLastErr, "lptargaBossShadow", "GameShutDown");
-		TargaUnload(lptargaHeroShadow);//TargaUnloadSeq(lptargaHeroShadow, 1);
-		ShowError(iLastErr, "lptargaHeroShadow", "GameShutDown");
-		TargaUnload(lptargaShotShadow);//TargaUnloadSeq(lptargaShotShadow, 1);
-		ShowError(iLastErr, "lptargaShotShadow", "GameShutDown");
-
-		TargaUnloadSeq(lplptargaFlyer, iFramesFlyer);
-		ShowError(iLastErr, "lplptargaFlyer", "GameShutDown");
-		TargaUnloadSeq(lplptargaBoss, iFramesBoss);
-		ShowError(iLastErr, "lplptargaBoss", "GameShutDown");
-		TargaUnloadSeq(lplptargaHero, iFramesHero);
-		ShowError(iLastErr, "lp ", "GameShutDown");
-		TargaUnloadSeq(lplptargaShot, iFramesShot);
-		ShowError(iLastErr, "lplptargaShot", "GameShutDown");
-
-		TargaUnloadSeq(lplptargaGameScreen, iFramesGameScreen);
-		ShowError(iLastErr, "lplptargaGameScreen", "GameShutDown");
-		
-		TargaUnloadSeq(lplptargaGameScreenArea, iAreas);
-		ShowError(iLastErr, "lplptargaGameScreenArea", "GameShutDown");
-
-		TargaUnloadSeq(lplptargaGameScreenEncounter, iEncounters);
-		ShowError(iLastErr, "lplptargaGameScreenEncounter", "GameShutDown");
-
-		TargaUnloadSeq(lplptargaCursor, iFramesCursor);
-		ShowError(iLastErr, "lplptargaCursor", "GameShutDown");
-
-		TargaUnload(lptargaIntro);
-		ShowError(iLastErr, "lptargaIntro", "GameShutDown");
-
-		TargaUnload(lptargaIntroText);
-		ShowError(iLastErr, "lptargaIntroText", "GameShutDown");
-
-		TargaUnload(lptargaSymbolBossHealth);
-		ShowError(iLastErr, "lptargaSymbolBossHealth", "GameShutDown");
-
-		TargaUnload(lptargaGuys);
-		ShowError(iLastErr, "lptargaGuys", "GameShutDown");
-
-
-		TargaUnload(lptargaScreen);
-		ShowError(iLastErr, "lptargaScreen", "GameShutDown");
-		TargaUnloadSeq(lplptargaBackdrop, iBackdrops);
-		ShowError(iLastErr, "lplptargaBackdrop", "GameShutDown");
-		// return success or failure or your own return code here
-		
-		UnloadChunkSafe(mcBomb);
-		UnloadChunkSafe(mcLaserAlien);
-		UnloadChunkSafe(mcLaser);
-		UnloadChunkSafe(mcExplosion);
-		UnloadChunkSafe(mcOuchAlien);
-		UnloadChunkSafe(mcOuchZap);
-		UnloadChunkSafe(mcShieldZap);
-		UnloadChunkSafe(mcBlerrp);
-		UnloadChunkSafe(mcHitDirt);
-		UnloadChunkSafe(mcJump);
-		UnloadChunkSafe(mcScrapeGround);
-		UnloadChunkSafe(mcAngryAlien);
-		UnloadChunkSafe(mcTrumpet);
-		UnloadChunkSafe(mcThruster);
-		UnloadChunkSafe(mcLaser);
-		UnloadChunkSafe(mcThruster);
-		
+		SafeChunkUnload(mcBomb);
+		SafeChunkUnload(mcLaserAlien);
+		SafeChunkUnload(mcLaser);
+		SafeChunkUnload(mcExplosion);
+		SafeChunkUnload(mcOuchAlien);
+		SafeChunkUnload(mcOuchZap);
+		SafeChunkUnload(mcShieldZap);
+		SafeChunkUnload(mcBlerrp);
+		SafeChunkUnload(mcHitDirt);
+		SafeChunkUnload(mcJump);
+		SafeChunkUnload(mcScrapeGround);
+		SafeChunkUnload(mcAngryAlien);
+		SafeChunkUnload(mcTrumpet);
+		SafeChunkUnload(mcThruster);
+		SafeChunkUnload(mcLaser);
+		SafeChunkUnload(mcThruster);
 		ShutdownMusic();
-        free(lparrAlien);
+		if (lparrAlien!=NULL) {
+			//for (int iNow=0; iNow<
+        	SafeFree(lparrAlien);
+		}
 	}
 	catch (int iExn) { if (ShowError()) cerr<<"int exception in GameShutdown: "<<iExn<<endl; bGood=false; }
 	catch (char* sExn) { if (ShowError()) cerr<<"Exception error in GameShutdown: "<<sExn<<endl; bGood=false; }
@@ -4588,7 +4543,7 @@ void ShowDebugVars() {//debug doesn't work, isn't used
 	}
 }
 ////////////////////////////////////////////////////////////////////
-bool UnloadChunkSafe(Mix_Chunk* &mcToNull) {
+bool SafeChunkUnload(Mix_Chunk* &mcToNull) {
 	if (mcToNull!=NULL) {
         Mix_FreeChunk(mcToNull);
         mcToNull=NULL;
@@ -4875,7 +4830,7 @@ void Refresh3dCursor() {
 			//}
 			bMouseMove=false;
 		}//end if hero
-		else TargaToTarga32_Alpha(lplptargaCursor[0], lptargaScreen, xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter);
+		else TargaToTarga32_Alpha(lptargaScreen, lplptargaCursor[0], xCursor+SCREEN_OFFSET_X-xCursorCenter, yCursor+SCREEN_OFFSET_Y-yCursorCenter);
 	}
 	catch (int iExn) { if (ShowError()) cerr<<"int exception in Refresh3dCursor: "<<iExn<<endl; bGood=false; }
 	catch (char* sExn) { if (ShowError()) cerr<<"Exception error in Refresh3dCursor: "<<sExn<<endl; bGood=false; }
