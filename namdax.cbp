@@ -2,13 +2,13 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="DXMan" />
+		<Option title="DXManSDL" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="default">
 				<Option output="bin\DXMan" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin" />
+				<Option working_dir="..\dxman-crossplatform\bin" />
 				<Option object_output="obj" />
 				<Option type="0" />
 				<Option compiler="gcc" />
@@ -19,7 +19,7 @@
 			<Add option="-g" />
 			<Add option="-Dmain=SDL_main" />
 			<Add directory="C:\Dev-Cpp\include\SDL" />
-			<Add directory="..\..\..\base" />
+			<Add directory="..\..\base" />
 		</Compiler>
 		<Linker>
 			<Add library="mingw32" />
@@ -28,37 +28,52 @@
 			<Add library="SDL_Mixer" />
 			<Add library="SDL_ttf" />
 		</Linker>
-		<Unit filename="..\..\..\base\anim32bgra.cpp" />
-		<Unit filename="..\..\..\base\anim32bgra.h" />
-		<Unit filename="..\..\..\base\base.cpp" />
-		<Unit filename="..\..\..\base\base.h" />
-		<Unit filename="..\..\..\base\byter.cpp" />
-		<Unit filename="..\..\..\base\byter.h" />
-		<Unit filename="..\..\..\base\frameworkdummy.cpp" />
-		<Unit filename="..\..\..\base\frameworkdummy.h" />
-		<Unit filename="..\..\..\base\gbuffer32bgra.cpp" />
-		<Unit filename="..\..\..\base\gbuffer32bgra.h" />
-		<Unit filename="..\..\..\base\gfont32bgra.cpp" />
-		<Unit filename="..\..\..\base\gfont32bgra.h" />
-		<Unit filename="..\..\..\base\gradient32bgra.cpp" />
-		<Unit filename="..\..\..\base\gradient32bgra.h" />
-		<Unit filename="..\..\..\base\sprite.cpp" />
-		<Unit filename="..\..\..\base\sprite.h" />
-		<Unit filename="..\..\..\base\targa.cpp" />
-		<Unit filename="..\..\..\base\targa.h" />
-		<Unit filename="..\..\..\base\world.cpp" />
-		<Unit filename="..\..\..\base\world.h" />
-		<Unit filename="camera.cpp" />
-		<Unit filename="camera.h" />
+		<Unit filename="..\..\base\RAnim_bgra32.cpp" />
+		<Unit filename="..\..\base\RAnim_bgra32.h" />
+		<Unit filename="..\..\base\RFile.cpp" />
+		<Unit filename="..\..\base\RFile.h" />
+		<Unit filename="..\..\base\RFont_bgra32.cpp" />
+		<Unit filename="..\..\base\RFont_bgra32.h" />
+		<Unit filename="..\..\base\RGradient_bgra32.cpp" />
+		<Unit filename="..\..\base\RGradient_bgra32.h" />
+		<Unit filename="..\..\base\RImage_bgra32.cpp" />
+		<Unit filename="..\..\base\RImage_bgra32.h" />
+		<Unit filename="..\..\base\RMath.cpp" />
+		<Unit filename="..\..\base\RMath.h" />
+		<Unit filename="..\..\base\RSprite_bgra32.cpp" />
+		<Unit filename="..\..\base\RSprite_bgra32.h" />
+		<Unit filename="..\..\base\RTypes.cpp" />
+		<Unit filename="..\..\base\RTypes.h" />
+		<Unit filename="..\..\base\RWorld.cpp" />
+		<Unit filename="..\..\base\RWorld.h" />
+		<Unit filename="..\..\base\Targa.cpp" />
+		<Unit filename="..\..\base\Targa.h" />
+		<Unit filename="..\..\base\base.cpp" />
+		<Unit filename="..\..\base\base.h" />
+		<Unit filename="..\..\base\camera.cpp" />
+		<Unit filename="..\..\base\camera.h" />
+		<Unit filename="..\..\base\frameworkdummy.cpp" />
+		<Unit filename="..\..\base\frameworkdummy.h" />
+		<Unit filename="..\..\base\pixelinfo.cpp" />
+		<Unit filename="..\..\base\pixelinfo.h" />
+		<Unit filename="..\..\base\pmath.cpp" />
+		<Unit filename="..\..\base\pmath.h" />
+		<Unit filename="..\..\base\pmemory.cpp" />
+		<Unit filename="..\..\base\pmemory.h" />
+		<Unit filename="..\..\base\pointinfo.cpp" />
+		<Unit filename="..\..\base\pointinfo.h" />
+		<Unit filename="..\..\base\preporting.cpp" />
+		<Unit filename="..\..\base\preporting.h" />
 		<Unit filename="dxman.cpp" />
 		<Unit filename="dxman.h" />
 		<Unit filename="entity.cpp" />
 		<Unit filename="entity.h" />
 		<Extensions>
 			<code_completion>
-				<search_path add="../base" />
+				<search_path add="../../base" />
 			</code_completion>
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

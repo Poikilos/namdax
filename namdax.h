@@ -7,8 +7,8 @@
 #include <base.h>
 #include "camera.h"
 #include "entity.h"
-#include <anim32bgra.h>
-#include <gfont32bgra.h>
+#include <RAnim_bgra32.h>
+#include <RFont_bgra32.h>
 
 using namespace std;
 using namespace ExpertMultimediaBase;
@@ -23,6 +23,8 @@ int main(int iArgs, char *lpsArg[]); //int main(int iArgs, char** lpsArg) {
 
 namespace ExpertMultimediaBase {
 	// DEFINES ////////////////////////////////////////////////
+	#define SOUND_BUFFERS 15
+	#define SOUND_SOURCES 20
 	#define BOUNDARY_BOUNCE 0
 	#define BOUNDARY_STOP   1
 	#define BOUNDARY_DIE	2
@@ -89,21 +91,24 @@ namespace ExpertMultimediaBase {
 	#define GAMEKEY_DOWN2	 		2048
 	#define GAMEKEY_LEFT2		   4096
 	#define GAMEKEY_RIGHT2			8192
-	#define SCREENITEM_ALIEN	1
-	#define SCREENITEM_SHOT		2
-	#define SCREENITEM_HERO		3
-	#define SCREENITEM_3DCURSOR 4
-	#define MAXSHOTS			50
-	#define MAX_SCREENITEMS		58  //maximum number of objects to render per frame
-	#define MAX_ZORDER		  50   //maximum zOrder value - INCLUSIVE
-	#define FMAX_ZORDER		 50.0f
-
+	#define SCREENITEM_NULL			0
+	#define SCREENITEM_ALIEN		1
+	#define SCREENITEM_SHOT			2
+	#define SCREENITEM_HERO			3
+	#define SCREENITEM_3DCURSOR	4
+	#define SCREENITEM_CUBE			5
+	extern int iScreenItemTypes;//=6;
+	extern string sarrScreenItem_DONTUSEMEDIRECTLY[];// = {"(invalid screenitem:0)","SCREENITEM_ALIEN","SCREENITEM_SHOT","SCREENITEM_HERO","SCREENITEM_3DCURSOR","SCREENITEM_CUBE"};
+	#define MAXSHOTS					50
+	#define MAX_SCREENITEMS			58  //maximum number of objects to render per frame
+	#define MAX_ZORDER		  		50   //maximum zOrder value - INCLUSIVE
+	#define FMAX_ZORDER				50.0f
 	// MACROS /////////////////////////////////////////////////
 	//uses limited ranges for more effect:
-	#define SOUNDPAN_FROM3DX(x) (  (int)  ( (x<-6.0f) ? 0 : ((x>6.0f)?255:((x+6.0f)/12.0f*255)) )  )
+	#define SOUNDPAN_FROM3DX(X) (  (int)  ( (X<-6.0f) ? 0 : ((X>6.0f)?255:((X+6.0f)/12.0f*255)) )  )
 
-	#define ZORDER_FROMY_FORCE(y) (   (  ( FYRANGE-((y)+(-FYMIN)) ) / FYRANGE )   *   FMAX_ZORDER   )
-	#define ZORDER_FROMY(y) ( (int) (((y)<FYMIN) ? MAX_ZORDER : (((y)>FYMAX)?0:ZORDER_FROMY_FORCE(y))) )	 //get rendering z-order from y-value
+	#define ZORDER_FROMY_FORCE(Y) (   (  ( FYRANGE-((Y)+(-FYMIN)) ) / FYRANGE )   *   FMAX_ZORDER   )
+	#define ZORDER_FROMY(Y) ( (int) (((Y)<FYMIN) ? MAX_ZORDER : (((Y)>FYMAX)?0:ZORDER_FROMY_FORCE(Y))) )	 //get rendering Z-order from Y-value
 	//Build a 32 bit color value in A.8.8.8 format (8-bit alpha mode):
 	#define _RGB32BIT(a,r,g,b) ((b) + ((g) << 8) + ((r) << 16) + ((a) << 24))
 	//24-bit specific, needed because of some video cards:
@@ -112,7 +117,7 @@ namespace ExpertMultimediaBase {
 	#define L_FROM_FACTOR(factorzerotoone) ((int)((1.0f-factorzerotoone)*255.0f))
 	#define R_FROM_FACTOR(factorzerotoone) ((int)(factorzerotoone*255.0f))
 	//Get the b,g,r or a of BGRA pixel:
-	//#define _BYTEXOFPIXEL(m3dEnt.x,pixel) ((pixel >> 8*4(m3dEnt.x-1)) & 255)
+	//#define _BYTEXOFPIXEL(m3dEnt.X,pixel) ((pixel >> 8*4(m3dEnt.X-1)) & 255)
 
 	#define ENTITY_TYPE_HERO  1
 	#define ENTITY_TYPE_SHOT  2
@@ -123,15 +128,17 @@ namespace ExpertMultimediaBase {
 	#define FRADAR_ZOOMINNER	1.0f
 	#define XPIX_RADAR  		564
 	#define YPIX_RADAR			55
-	#define RADAR_TOP		   0
+	#define RADAR_TOP			0
 	#define RADAR_BOTTOM		110
-	#define RADAR_LEFT		  490
-	#define RADAR_RIGHT		 639
+	#define RADAR_LEFT			490
+	#define RADAR_RIGHT			639
 
 	typedef struct SCREENITEM_STRUCT {
 		int iType;//entity type i.e. SCREENITEM_ALIEN
 		int zOrder;
 		int index;//entity index, irrelevant for hero etc
+		//IPoint ip2dCenter;//usually unused unless custom
+		Mass3d m3dCube;//usually unused unless custom
 	} SCREENITEM, * LPSCREENITEM;
 
 	///#region functions
@@ -146,15 +153,11 @@ namespace ExpertMultimediaBase {
 	bool GameInit();
 	/////////////////////////////////////////////////////////////
 	bool GameShutdown();
-/*inline*/ int GetTicks_Absolute();
-/*inline*/Uint32 GetTicks_Relative();
+/*inline*/ int Base_GetTicks_Absolute();
+/*inline*/Uint32 Base_GetTicks_Relative();
 /*inline*/ void SleepWrapper(int iTicks);
 	void LoadSequence(Anim &animToLoad, string sFileBaseNameOnly, int iFramesExpectedElseError);
 	void LoadImage(GBuffer &gbToLoad, string sFile);
-	void InitSound();
-	bool ShutdownAudio();
-	/*inline*/ void SetPan(int iChan, int iLocation);
-	/*inline*/ void UpdateThrustPan();
 	void DirKeyDown();
 	void DirKeyUp();
 	//////////////////////////////////////////////////
@@ -165,6 +168,8 @@ namespace ExpertMultimediaBase {
 	float FRand(float fMin, float fMax);
 	///////////////////////////////////////////////////////////////
 	bool AddScreenItem(int iType, int zOrder, int iEntityIndex);
+	bool AddScreenItem(int iType, int zOrder, int iEntityIndex, Mass3d& m3dNow);
+	string ScreenItemToString(int iType);
 	///////////////////////////////////////////////////////////////
 	void QuitSafe();
 	////////////////////////////////////////////////////////////////////////////////
@@ -172,48 +177,100 @@ namespace ExpertMultimediaBase {
 	float RadarCenterY();
 	float RadarHeight();
 	void RadarDotAt(int &xPixReturn, int &yPixReturn, float xPos, float yPos);
-	void DrawRadarDot(float xPos, float yPos, float zPos, unsigned __int32 u32Pixel);
-	void DrawRadarDot(float xPos, float yPos, float zPos, unsigned __int32 u32Pixel, bool bFilled);
-	void DrawRadarRect(float left, float top, float bottom, float right, unsigned __int32 u32Pixel, bool bFilled);
+	void DrawRadarDot(float xPos, float yPos, float zPos, UInt32 u32Pixel);
+	void DrawRadarDot(float xPos, float yPos, float zPos, UInt32 u32Pixel, bool bFilled);
+	void DrawRadarRect(float left, float top, float bottom, float right, UInt32 u32Pixel, bool bFilled);
 	void DrawRadarField();
-	void DrawExclusiveRect(int left, int top, int bottom, int right, unsigned __int32 u32Pixel, bool bFilled);
+	void DrawExclusiveRect(int left, int top, int bottom, int right, UInt32 u32Pixel, bool bFilled);
+	void DrawAxis(Mass3d& m3dAxisCenter);
+	void Draw3DLine(Mass3d& m3dStart, Mass3d& m3dEnd, byte r, byte g, byte b, byte a, byte a_FadeFarthestPoint_To);
 	////////////////////////////////////////////////////////////////////////////////
 	void ShowDebugVars();
 	////////////////////////////////////////////////////////////////////
+	/*inline*/ void SetPan(int iChan, int iLocation);
+	/*inline*/ void UpdateThrustPan();
 	bool SafeChunkUnload(Mix_Chunk* &mcToNull);
 	void ClearSounds();
-	int PlaySounds();
+	void DrawPointWithZOffsetIndicator(Mass3d m3dNow, string sDebugMessage);
+	void PlaySound(string sInstanceName, string sSoundName);
+	void PlaySound(string sInstanceName, string sSoundName, Mass3d& m3dLoc);
+	void PlaySound(string sInstanceName, string sSoundName, Mass3d& m3dLoc, Mass3d& m3dVel);
+	void PlaySounds();
+	int PickChan();
+	void InitSound();
+	void InitMusic();
+	void PlayMusic(string sFile, bool bLoop);
+	void StopMusic();
+	bool ShutdownAudio();
+	void VirtualMusicStop();
+	bool VirtualMusicPlay(string sFile, int iRepeatsZeroFor1Neg1ForInf);
+	int MusicThreadFunction(void* pvoidArg);
+	bool ShutdownMusic();
+	void MusicDoneEvent();
 	////////////////////////////////////////////////////////////////////
 	void Refresh3dCursor();
 	void Draw3dCursor(byte byBrightness);
 	void SayWhatIDrewIfFalse(bool bDrawFunctionReturn, int iEntityType, string sDescription);
-	string EntityTypeRString_ToString(int iEntityType);
-	float MetersToMove(float fMetersPerSecondX, int iForThisManyMilliseconds);
-	float DegreesToMove(float fDegreesPerSecondX, int iForThisManyMilliseconds);
+	string EntityTypeToString(int iEntityType);
 	void DrawCube(Mass3d &m3dNow, Pixel &pixelNear, Pixel &pixelFar);
 	bool DrawScreen();
-	bool GBuffer_FX_Scaled(GBuffer &gbDest, GBuffer &gbSrc, int xDest, int yDest, float fOpacity, float fExplodedness, UInt32 u32Stat, float fScale);
-	//public string GameStateRString_ToString(int iGameStateX);
-	int PickChan();
-	void InitMusic();
-	void VirtualMusicStop();
-	bool VirtualMusicPlay(string sFile, int iRepeatsZeroFor1Neg1ForInf);
-	bool ShutdownMusic();
-	void MusicDoneEvent();
-	int MusicThreadFunction(void* pvoidArg);
-
+	bool GBuffer_FX_Scaled(GBuffer &gbDest, GBuffer &gbSrc, int x2D, int y2D, float fOpacity, float fExplodedness, UInt32 u32Stat, float fScale);
+	string GameStateToString(int iGameStateX);
 	///#endregion functions
 
+	class SoundInstance {
+	public:
+	//	ALfloat arralfPos[3];
+	//	ALfloat arralfVel[3];
+		string sName;
+		int iSound;
+		void SetLoc(Mass3d& m3dLoc);
+		void SetVel(Mass3d& m3dLoc);
+	private:
+	};
 
-	//extern string sarrGameState[] = {"GAMESTATE_INIT","GAMESTATE_START_AREA","GAMESTATE_START_ENCOUNTER","GAMESTATE_RUN","GAMESTATE_SHUTDOWN","GAMESTATE_EXIT","GAMESTATE_WIN_ENCOUNTER","GAMESTATE_WIN_GAME","GAMESTATE_YOU_LOSE","GAMESTATE_LOSEGUY"};
-	//extern long narrGameStateCount[] = {0,0,0,0,0,0,0,0,0,0};
+	class Sound {
+	public:
+		string sName;
+		Sound();
+	};
+
+	class Sounder {
+	public:
+		Sounder();
+		void Refresh();
+		void Load(string sName, string sFile);
+		void SetOrCreateInstance(string sName, string sSoundName, Mass3d& m3dLoc);
+		void SetOrCreateInstance(string sName, string sSoundName, Mass3d& m3dLoc,Mass3d& m3dVel);
+		void StopInstance(string sName);
+		void Clear();
+		int GetFreeInstanceIndex();
+		int IndexOfSound(string sName);
+		int IndexOfInstance(string sName);
+		void Close();
+	private:
+		Sound soundarr[SOUND_BUFFERS];
+	//	ALuint aluiarrBuffer[SOUND_BUFFERS];//corresponds to soundarr
+		SoundInstance instancearr[SOUND_SOURCES];
+	//	ALuint aluiarrSource[SOUND_SOURCES];//corresponds to instancearr
+		int iSoundarrLen;
+		int iInstancearrLen;
+		int iSounds;
+		void Init();
+	};
+
+	extern string sarrGameState[];// = {"GAMESTATE_INIT","GAMESTATE_START_AREA","GAMESTATE_START_ENCOUNTER","GAMESTATE_RUN","GAMESTATE_SHUTDOWN","GAMESTATE_EXIT","GAMESTATE_WIN_ENCOUNTER","GAMESTATE_WIN_GAME","GAMESTATE_YOU_LOSE","GAMESTATE_LOSEGUY"};
+	extern long narrGameStateCount[];// = {0,0,0,0,0,0,0,0,0,0};
 
 	///region globals defined in h file
+	//extern int iLastIntersectionType;
+	extern int iLastLineRelationshipType;
+	extern double DBL_HITDETECTION2D_CONSTANT_Z;
 	extern GFont gfontDefault;
 	extern bool bDoneShutdown;
 	extern bool bShuttingDown;
 	extern string sVerb_Engine;
-	extern unsigned __int32 u32Pressing;
+	extern UInt32 u32Pressing;
 	//DEBUG: ZBUFFER_YRATIO MUST be 50/YRANGE
 	extern int iScreenItems;
 	extern bool bInMenu;
@@ -221,16 +278,18 @@ namespace ExpertMultimediaBase {
 	extern Uint32 dwAbsoluteTickLastGameStateState_Run;
 	extern bool bShowOnce_TargaToTarga32_ANY_Debug;
 	extern FPOINT3D p3dHero;
+	//extern bool bDebug
 	extern long iMainEventLoopCount;//counts iterations of main event loop
-	extern Mass3d m3dDebug[9];
+	extern Mass3d m3dTemp;
+	extern Mass3d m3darrDebug[9];
 	extern Mass3d m3dHeroEye, m3dCursor;
-	//extern float xAimFlipper.0f;
-	//extern float yAimFlipper.0f;
-	//extern float zAimFlipper.0f;
-	extern bool bFlipYaw;
-	extern bool bFlipPitch;
-	extern float fBoss;//(Entity*)arrpentAlien[iBoss]->fHealth;
-	extern float fBossMax;//(Entity*)arrpentAlien[iBoss]->fMaxHealth;
+	//extern float xAimFlipper;
+	//extern float yAimFlipper;
+	//extern float zAimFlipper;
+	//extern bool bFlipYaw;
+	//extern bool bFlipPitch;
+	extern float fBoss;//arrpentAlien[iBoss]->fHealth;
+	extern float fBossMax;//arrpentAlien[iBoss]->fMaxHealth;
 	extern int iBoss;//global link to boss;
 	extern bool bSDLQuitDone;
 	extern Variables settings;
@@ -238,17 +297,24 @@ namespace ExpertMultimediaBase {
 	extern bool bSDLQuitSent;
 	extern bool bSplash;//if splash screen was drawn
 	extern int iSplashTick;//time when splash screen appeared
-	//now in gbuffer32bgra.h extern BYTE by2d_ByteAsByte_times_ByteAsFloatLookup[256][256];//lookup multiplication result of byte-as-byte times byte-as-decimal-zero-to-one
-	extern Uint32 arru32EnergyGrad[256];//gradient for energy currency (ready attack) meter //unsigned __int32
-	extern Uint32 arru32HealthGrad[256];//gradient for health meter //unsigned __int32
+	//now in RImage_bgra32.h extern BYTE by2d_ByteAsByte_times_ByteAsFloatLookup[256][256];//lookup multiplication result of byte-as-byte times byte-as-decimal-zero-to-one
+	extern UInt32 arru32EnergyGrad[256];//gradient for energy currency (ready attack) meter
+	extern UInt32 arru32HealthGrad[256];//gradient for health meter
 	extern int xCursor, yCursor, xCursorDown, yCursorDown;
 	extern bool bMouseDown;
 	extern bool bMouseMove;
 	extern bool bMouseDownR;
 	extern float xfCursor,yfCursor,xfCursorDown,yfCursorDown;
+
 	extern int xCursorCenter, yCursorCenter;
 	extern int iGuysStart;
 	extern int iGuys;
+
+	extern int iAreas,
+		iBackdrops,
+		iFramesCursor,
+		iEncounters;
+
 	extern int iFramesHero,
 		iFramesHeroShadow,
 		iFramesFlyer,
@@ -259,12 +325,10 @@ namespace ExpertMultimediaBase {
 		iFramesShotShadow,
 		iFramesBurn,
 		iFramesExpArt,
-		iFramesGameScreen,
-		iAreas,
-		iBackdrops,
-		iFramesCursor,
-		iEncounters;//TODO: actually use these instead of hard-coding frames
+		iFramesGameScreen;
+		//TODO: actually use these instead of hard-coding frames
 						//may be okay as long as they're reset to iFoundFrames upon TargaLoadSeq
+	extern int iEscapeTime;
 	extern int ix;//temp var for error#'s
 	extern int iTickAbsoluteEscapeLastPress;
 	extern int iErrorsSaved;
@@ -275,6 +339,7 @@ namespace ExpertMultimediaBase {
 	extern int iDoubleCodeCounter; //player cheat code
 	extern int iRapidFireCodeCounter;//player cheat code
 	extern bool bBombed;
+	extern Anim		animBackdrop;
 	extern GBuffer	gbScreen;
 	extern GBuffer	gbIntro;
 	extern GBuffer	gbIntroTextBack;
@@ -282,7 +347,6 @@ namespace ExpertMultimediaBase {
 	extern GBuffer	gbSymbolShield;
 	extern GBuffer	gbSymbolBossHealth;
 	extern GBuffer	gbLives;
-	extern Anim		animBackdrop;
 	extern Anim		animHero;
 	extern Anim		animHeroShadow;
 	extern Anim		animFlyer;
@@ -346,6 +410,7 @@ namespace ExpertMultimediaBase {
 	//extern SDL_Surface *screen;
 	extern int iDirKeysDown;
 	extern bool bDone;
+	extern bool bFirstRunOfCurrentState;
 	///#endregion globals in h file
 
 }//end namespace
