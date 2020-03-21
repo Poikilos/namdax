@@ -1,6 +1,9 @@
 #ifndef BASEFUNC_CPP
 #define BASEFUNC_CPP
-#include <windows.h>
+#include <cmath>
+#include <fstream>
+#include <iostream>
+//#include <windows.h>
 #define STEMPLEN 2048
 #define SNUMLEN 128
 char sNum[SNUMLEN];
@@ -118,9 +121,6 @@ typedef struct PIXEL24BGR_STRUCT
 	BYTE g;
 	BYTE r;
 }PIXEL24BGR, *LPPIXEL24BGR;
-#include <cmath>
-#include <fstream>
-#include <iostream>
 using namespace std;
 inline bool stringerrors(char *string, DWORD dwMaxBuff)
 {

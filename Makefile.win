@@ -1,18 +1,18 @@
 # Project: DXMan
 # Makefile created by Dev-C++ 4.9.9.2
 
-CPP  = g++.exe -D__DEBUG__
-CC   = gcc.exe -D__DEBUG__
+CPP  = g++.exe
+CC   = gcc.exe
 WINDRES = windres.exe
-RES  = Release/DXMan_SE_private.res
-OBJ  = Release/DXMan.o $(RES)
-LINKOBJ  = Release/DXMan.o $(RES)
-LIBS =  -L"C:/Dev-Cpp/lib" -mwindows -lSDL  -g3 
+RES  = DXMan_private.res
+OBJ  = main.o $(RES)
+LINKOBJ  = main.o $(RES)
+LIBS =  -L"C:/Dev-Cpp/lib" -mwindows -lmingw32 -lSDLmain -lSDL -lSDL_mixer  
 INCS =  -I"C:/Dev-Cpp/include" 
 CXXINCS =  -I"C:/Dev-Cpp/lib/gcc/mingw32/3.4.2/include"  -I"C:/Dev-Cpp/include/c++/3.4.2/backward"  -I"C:/Dev-Cpp/include/c++/3.4.2/mingw32"  -I"C:/Dev-Cpp/include/c++/3.4.2"  -I"C:/Dev-Cpp/include" 
 BIN  = Release/DXMan.exe
-CXXFLAGS = $(CXXINCS)   -g3
-CFLAGS = $(INCS)   -g3
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = $(INCS) -Dmain=SDL_main  
 RM = rm -f
 
 .PHONY: all all-before all-after clean clean-custom
@@ -26,8 +26,8 @@ clean: clean-custom
 $(BIN): $(OBJ)
 	$(CPP) $(LINKOBJ) -o "Release\DXMan.exe" $(LIBS)
 
-Release/DXMan.o: DXMan.cpp
-	$(CPP) -c DXMan.cpp -o Release/DXMan.o $(CXXFLAGS)
+main.o: main.c
+	$(CPP) -c main.c -o main.o $(CXXFLAGS)
 
-Release/DXMan_SE_private.res: DXMan_SE_private.rc 
-	$(WINDRES) -i DXMan_SE_private.rc --input-format=rc -o Release/DXMan_SE_private.res -O coff 
+DXMan_private.res: DXMan_private.rc 
+	$(WINDRES) -i DXMan_private.rc --input-format=rc -o DXMan_private.res -O coff 

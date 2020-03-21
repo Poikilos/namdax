@@ -1,15 +1,13 @@
-#ifndef TGA_CPP
-#define TGA_CPP
-#include <ios>
-#include <ostream>
-#include <iostream>
-#include <fstream>
-#include <windows.h>
-#include <memory>
-#include <ios>
+#ifndef SPRITE_CPP
+#define SPRITE_CPP
+//#include <ios>
+//#include <ostream>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <windows.h>
+#include <memory>
+
 //#include "basefunc.cpp"
 //#include "errlog.cpp"
 using namespace std;
@@ -44,8 +42,22 @@ typedef struct TARGAINFOFOOTER_STRUCT
 	DWORD dwSizeofDump;
 } TARGAINFOFOOTER, *LPTARGAINFOFOOTER;
 
-typedef struct TARGA_STRUCT
-{
+typedef struct SPRITE_STRUCT {
+		int iFrames;
+		int width;
+		int height;
+		int iStride;
+		int iBuffer;
+		BYTE **lplpBuffer;
+		int iBytesPP;
+		int iFrame;
+		int y;
+		int x;
+		int zOrder;
+		bool bDraw;
+}SPRITE, * LPSPRITE;
+
+typedef struct TARGA_STRUCT {
 	// Begin header fields in order of writing //
 	BYTE bySizeofID;
 	BYTE byMapType;
@@ -65,6 +77,68 @@ typedef struct TARGA_STRUCT
 	BYTE *buffer;
 	TARGAINFOFOOTER footer;
 } TARGA, *LPTARGA;
+
+
+//////////////////////////////////////////////////////////////////////
+
+LPSPRITE SpriteFromTargaSeq(TARGA** lplpTargaSeq, int iFrames, bool bCopyDataNotPointer) {
+	LPSPRITE lpspReturn;
+	lpspReturn=(LPSPRITE)malloc(sizeof(SPRITE));
+	lpspReturn->width=lplpTargaSeq[0]->width;
+	lpspReturn->height=lplpTargaSeq[0]->height;
+	lpspReturn->iBytesPP=lplpTargaSeq[0]->byBitDepth/8;
+	lpspReturn->iStride=lpspReturn->width*lpspReturn->iBytesPP;
+	lpspReturn->iBuffer=lpspReturn->iStride*lpspReturn->height;
+	lpspReturn->lplpBuffer=(BYTE**)malloc(iFrames * sizeof(BYTE*));
+	lpspReturn->iFrame=0;
+	lpspReturn->y=0;
+	lpspReturn->x=0;
+	lpspReturn->zOrder=0;
+	lpspReturn->bDraw=false;
+	for (int iFrame=0; iFrame++; iFrame<iFrames) {
+		if (bCopyDataNotPointer) {
+			lpspReturn->lplpBuffer[iFrame]=(BYTE*)malloc(lpspReturn->iBuffer);
+			memcpy(lpspReturn->lplpBuffer[iFrame],lplpTargaSeq[iFrame]->buffer,lpspReturn->iBuffer);
+		}
+		else lpspReturn->lplpBuffer[iFrame]=lplpTargaSeq[iFrame]->buffer;
+	}
+	return lpspReturn;
+}
+//////////////////////////////////////////////////////////////////////
+
+LPSPRITE SpriteFromTargaSeq(TARGA** lplpTargaSeq, int iFrames) {
+	 return SpriteFromTargaSeq(lplpTargaSeq, iFrames, false);
+}
+
+//////////////////////////////////////////////////////////////////////
+
+//void AddSprite(LPSPRITE* spritepointerarray, int &iSpriteIndexToIncrement, LPTARGA* lplpTargaSeq, int iFrames) {
+//	spritepointerarray[iSpriteIndexToIncrement]=SpriteFromTargaSeq(lplpTargaSeq, iFrames);
+//    iSpriteIndexToIncrement++;
+//	if (iSpriteIndexToIncrement>=MAX_SPRITES) iSpriteIndexToIncrement=0;
+//}
+
+//////////////////////////////////////////////////////////////////////
+
+void SpriteUnload(LPSPRITE &lpspNow) {
+	if (lpspNow) {
+		if (lpspNow->lplpBuffer) {
+			for (int iFrame=0; iFrame<lpspNow->iFrames; iFrame++) {
+				if (lpspNow->lplpBuffer[iFrame]) {
+					free(lpspNow->lplpBuffer[iFrame]);
+				}
+			}
+			free(lpspNow->lplpBuffer);
+		}
+		memset(lpspNow,0,sizeof(SPRITE)); //also sets above pointers to null
+		free(lpspNow);
+		lpspNow=NULL;
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+
 //TGA functions
 //Credits:
 // -by J a k e	G u s t a f s o n

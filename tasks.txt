@@ -1,0 +1,45 @@
+ALPHA
+-fix new Shot calls
+-fix new Alien calls
+
+BETA:
+-implement game.dat
+-change readme for new keys
+-replace integer sound calls (iPlayBomb etc) with float values ranging from -1.0f to 1.0f
+-crashes on exit, (only sometimes, not on defeat?) -- try cleaning up sound chunks?
+-change images to png and use SDL_image
+-check bQuickAlpha per call instead of per pixel
+-comment out any lines that contain "debug only"
+-fix lines that say "re-implement"
+-change keys in readme (&screens)
+-make graphics for Each Level and stage (or create digits 0-9 and number engine) and composite them
+-composite life bar background onto backdrop ONCE
+-display lives with number engine
+-return to first stage of level on death
+-unload sound instances after playing them (?)
+-add splash screen during slow first load
+-add intro (just scroll a tga with words on it) "say it is the year x" where x is the current year plus 20!
+
+FINAL:
+-add jump sound
+-deform terrain when bombs hit, and when other entities hit ground
+-make moving background & make DXMan flying
+-more lives
+-fix any lines that say "Is this right?"
+-uncomment error reporting in basefunc and tga.cpp (except lines with ////)
+-Make explodedness a per-pixel offset instead of a multiplicative offset.
+-Stop music before playing next music file (i.e. trumpet)
+-fix "//flip pages" function to allow colorspace conversion
+-fix value of REAL_BPP and REAL_BYTEDEPTH when they are set during init
+-make sure lptargaBack is drawn when lpddsBackdrop used to be drawn
+-replace KEYDOWN with:/*start code*/ SDL_Event event;       /* Check for events: */while (SDL_PollEvent (&event)) {
+		switch (event.type) {
+            	case SDL_KEYDOWN:
+            	    break;
+            	case SDL_QUIT:
+                		done = 1;
+                		break;
+            	default:
+                		break;
+		}
+	}

@@ -1,70 +1,43 @@
-// Author: J a k e	 G u s t a f s o n
-// Title: "DX Man: Defeat the Aliens"
-//
-// Credits:
-// Thanks to Andrew LaMoth's book for help with the simplified DirectDraw functions
-// Thanks to NukeDX for ideas for alpha drawing
-//
-// Notes:
-// -The size of hero00**.TGA's are 169x185
-// -The size of alienf*.TGA's are 273x81
-// -The size of 480intro.TGA is 480x480
-// -All images are loaded as Targa structs except the background Targa which is loaded into a DDSTRUCT
-//
-
-//Known Safe order:
- //INCLUDES//
- //DEFINES// and //MACROS//
- //TYPES// and //STRUCTS
- //GLOBALS//
- //PROTOTYPES//
- //CLASSES// then //CLASS POINTERS// then //MORE CLASSES, THAT USE OTHERS' POINTERS//
- //FUNCTIONS//
-
-
-// INCLUDES ///////////////////////////////////////////////
-
-#define WIN32_LEAN_AND_MEAN	//tells windows.h to skip MFC
-//#define RBE_DEBUG //tells ERRLOG.CPP to output function call titles even when there is no error.
-#define INITGUID
-
-//Important Windows stuff:
-#include <windows.h>
-//#include <windowsx.h> 
-//#include <mmsystem.h>
-//Important C/C++ stuff
-#include <iostream>
-//#include <conio.h>
-#include <cstdlib>
-//#include <malloc.h>
-#include <memory>
-#include <cstring>
-//#include <stdarg.h>
 #include <cstdio>
-#include <cmath>
-#include <ios>
-//#include <io.h>
-//#include <fcntl.h>
-//More includes:
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <fstream>
-#include "resource.h"
+#include <cmath>
 #include <SDL/SDL.h>
-using namespace std;
+#include <SDL/SDL_mixer.h>
+#include <windows.h>
+// TYPES //////////////////////////////////////////////////////
+//typedef struct {int left; int right; int top; int bottom;} RECT;
+typedef unsigned short USHORT;
+typedef unsigned short WORD;
+typedef unsigned char BYTE;
+//typedef unsigned __int8 DWORD;
+//typedef unsigned __int16 USHORT;
+//typedef unsigned __int8 BYTE;
+//typedef ULARGE_INTEGER __int64);
+
+//#include "filewrap.h"
+#include "resource.h"
 #include "basefunc.cpp"
 #include "errlog.cpp"
-#include "tga.cpp"
-//namespace dxmanse {
-
-//Defines for windows
-#define WINDOW_CLASS_NAME "WINCLASS1"
+#include "sprite.cpp"
 // DEFINES ////////////////////////////////////////////////
 //Default screen size
 #define SCREEN_WIDTH			640
 #define SCREEN_HEIGHT			480
-#define SCREEN_OFFSET_X           320//screen (a targa buffer) is offset to avoid clipping
-#define SCREEN_OFFSET_Y           240
+#define BUFFER_WIDTH			1280
+#define BUFFER_HEIGHT			960
+#define SCREENBUFFER_SIZE		1228800 //1280x960
+#define SCREEN_OFFSET_X			320 //screen (a targa buffer) is offset to avoid clipping
+#define SCREEN_OFFSET_Y			240
 #define SCREEN_BPP				32	 //bits per pixel, GameInit tries 32 or 24 if one is not available
-//#define MAX_COLORS_PALETTE		256
+#define FMAX_EXPLODEDNESS		10.0f //how much an entity is exploded before it is "dead"
+#define MAX_EXPLODEDNESS		10 //how much an entity is exploded before it is "dead"
+#define AIM_MIN					0.0f
+#define AIM_MAX					0.1f // max m/s for zVel
+#define AIM_RESOLUTION			0.01f
+#define CODE_THRESHOLD          90
 //States for game loop
 #define GAME_STATE_INIT			0
 #define GAME_STATE_START_LEVEL	1
@@ -89,114 +62,167 @@ using namespace std;
 #define STATUS_BOMBER			32
 #define STATUS_BOSS				64
 #define STATUS_PRECISIONAIM		128
+#define STATUS_RAPIDFIRE        256
 #define MAXALIENS				4
 #define MAXSHOTS				20
 
+#define GAMEKEY_UP				1
+#define GAMEKEY_DOWN	 		2
+#define GAMEKEY_LEFT	 		4
+#define GAMEKEY_RIGHT			8
+#define GAMEKEY_FIRE	 		16
+#define GAMEKEY_JUMP	 		32
+#define GAMEKEY_EXIT	 		64
+#define GAMEKEY_RAPIDFIRE 		128
+#define GAMEKEY_PRECISIONAIM	256
+#define GAMEKEY_DOUBLESPEED		512
+DWORD dwPressing=0;
 
+#define SCREENITEM_ALIEN	1
+#define SCREENITEM_SHOT		2
+#define SCREENITEM_HERO		3
+#define MAX_SCREENITEMS		50  //maximum number of objects to render per frame
+#define MAX_ZORDER               50   //maximum zOrder value - INCLUSIVE
+#define ZBUFFER_YRATIO		5.55f //multiply yNearness by this to get z-order
+// STRUCTS ////////////////////////////////////////////////
+typedef struct SCREENITEM_STRUCT {
+	int iType;//entity type i.e. SCREENITEM_ALIEN
+	int zOrder;
+	int index;//entity index, irrelevant for hero
+} SCREENITEM, * LPSCREENITEM;
+int iScreenItems=0;
 // MACROS /////////////////////////////////////////////////
-
-// tests if a key is up or down
-#define KEYDOWN(vk_code) ((GetAsyncKeyState(vk_code) & 0x8000) ? 1 : 0)
-#define KEYUP(vk_code)	 ((GetAsyncKeyState(vk_code) & 0x8000) ? 0 : 1)
-//Initialize a direct draw struct:
-//#define DDRAW_INIT_STRUCT(ddstruct) { memset(&ddstruct,0,sizeof(ddstruct)); ddstruct.dwSize=sizeof(ddstruct);}
+#define ZORDER_FROMY_FORCE(y) ((((y)-4.0f)*-1)*ZBUFFER_YRATIO)
+#define ZORDER_FROMY(y) ((int)(y<-4.0f) ? 0 : ((y>5.0f)?MAX_ZORDER:ZORDER_FROMY_FORCE(y)))	 //get rendering z-order from y-value
 //Build a 32 bit color value in A.8.8.8 format (8-bit alpha mode):
 #define _RGB32BIT(a,r,g,b) ((b) + ((g) << 8) + ((r) << 16) + ((a) << 24))
 //24-bit specific, needed because of some video cards:
 #define _RGB24BIT(r,g,b) ((b) + ((g) << 8) + ((r) << 16))
+//audio panning:
+#define L_FROM_FACTOR(factorzerotoone) ((int)((1.0f-factorzerotoone)*255.0f))
+#define R_FROM_FACTOR(factorzerotoone) ((int)(factorzerotoone*255.0f))
+//geometry:
+#define APPROACH(start,toward,factor) ((start)-((start)-(toward))*(factor))
 //Get the b,g,r or a of BGRA pixel:
 //#define _BYTEXOFPIXEL(x,pixel) ((pixel >> 8*4(x-1)) & 255)
 
-// TYPES //////////////////////////////////////////////////////
-
-// basic unsigned types
-typedef unsigned short USHORT;
-typedef unsigned short WORD;
-typedef unsigned char	BYTE;
-typedef unsigned char	BYTE;
-
-
 // GLOBALS ////////////////////////////////////////////////
 BYTE alphaLook[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/256+Dest)
-
+	int iFramesHero=21,
+		iFramesAlien=2,
+		iFramesAlienBoss=3,
+		iFramesShot=3,
+		iFramesGameScreen=9;
 int ix;//temp var for error#'s
+int iEscapeTime=0;
 int iErrorsSaved=0;
 int iFramesDropped=0;
 int REAL_BPP=32;
 int REAL_BYTEDEPTH=4;
 int keyDelay=0;
 int doublecode=0; //player cheat code
-int precisecode=0; //player cheat code 
+int precisecode=0; //player cheat code (enabled by default now)
+int rapidfirecode=0;//player cheat code
 int bombed=0;
-//WinAPI globals:
-HWND			hwndMain = NULL; // globally track main window
-int			 window_closed			= 0;		// tracks if window is closed
-HINSTANCE hinstance_app			= NULL; // globally track hinstance
-SDL_Surface *screen = NULL;
-//Other globals:
 DWORD								 start_clock_count = 0; // used for timing
 LPTARGA				lptargaBackdrop=NULL;
 LPTARGA				lptargaIntro=NULL;
-LPTARGA				*lptargaAlien;
-LPTARGA				*lptargaAlienBoss;
-LPTARGA				*lptargaHero;
-LPTARGA				*lptargaShot;
-LPTARGA				*lptargaGameScreen;
-LPTARGA             lptargaScreen;
-
-char buffer[80];														 // general printing buffer
+LPTARGA*			lptargaAlien;
+LPTARGA*			lptargaAlienBoss;
+LPTARGA*			lptargaHero;
+LPTARGA*			lptargaShot;
+LPTARGA*			lptargaGameScreen;
+LPTARGA				lptargaScreen;
+//LPSPRITE*           lpspritearr;//sprite array
+SCREENITEM			screenitemarr[MAX_SCREENITEMS];
+char buffer[80];								// general printing buffer
 int explosionResult = 0;
 int gameState = GAME_STATE_INIT;
 int gameLevel = 1;					//3 Levels total
 int gameStage = 1;					//3 Stages total, stages are within Levels
-int index;		 // looping index
 int numOfAliens = 0;
 
+bool bPlayTrumpet=false;
+int iPlayBomb=-1;
+int iPlayLaserAlien=-1;
+int iPlayLaser=-1;
+int iPlayExplosion=-1;
+int iPlayOuchAlien=-1;
+int iPlayOuchZap=-1;
+int iPlayShieldZap=-1;
+int iThruster=-1;
+Mix_Chunk *mcBomb=NULL;
+Mix_Chunk *mcLaserAlien=NULL;
+Mix_Chunk *mcLaser=NULL;
+Mix_Chunk *mcExplosion=NULL;
+Mix_Chunk *mcOuchAlien=NULL;
+Mix_Chunk *mcOuchZap=NULL;
+Mix_Chunk *mcShieldZap=NULL;
+Mix_Chunk *mcTrumpet=NULL;
+Mix_Chunk *mcThruster=NULL;
+int iChanBomb=-1;
+int iChanLaserAlien=-1;
+int iChanLaser=-1;
+int iChanExplosion=-1;
+int iChanOuchAlien=-1;
+int iChanOuchZap=-1;
+int iChanShieldZap=-1;
+int iChanThruster=-1;
+int iChanTrumpet=-1;
 
 // PROTOTYPES	//////////////////////////////////////////////
-
+int GameInit();
+int GameMain();
+int GameShutdown();
 int TargaStride(LPTARGA image);
 void TargaToScreen_AutoCrop(LPTARGA image);
 void TargaToScreen(LPTARGA image);
 int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY);//, int opacityCap);
-int TargaToTarga32_AlphaQuickEdge_FX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
-int TargaToTarga32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale);
+int TargaToTarga32_FX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
+int TargaToTarga32_FX_Scaled(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale);
 int TargaToTarga32(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY);
 //universal (24- or 32-bit mode) Targa renderer:
 int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat);
-
+bool AddScreenItem(int iType, int zOrder, int iEntityIndex);
+void DrawRadarDot(float xPos, float yPos, float zPos, DWORD dwPixel);
+void DrawExclusiveRect(int left, int top, int bottom, int right, DWORD dwPixel, bool bFilled);
+void DrawRadarField();
+//void Approach(float &xMoveMe, float &yMoveMe, float &xToward, float &yToward);
 // CLASSES ////////////////////////////////////////////////
-class Shot
-{
+class Shot {
 private:
-	LPTARGA frames[2];
-	int width, height;	//actual Targa size
-	int frameNow;
-	int xVel, yVel, zVel; //zVelocity is ALWAYS divided by 10.0 when used because
-							// z is only 4 levels, but the zVel is in a pixel-like measurement unit size
+	RECT rectRendered; //inclusive edges
+	LPTARGA frames[3];
+	int iFrameNow, iFrames;
+	float xVel, yVel, zVel;
+	float fBaseScale;
 public:
+	float wMeters;//width (spherical diameter) in meters
+	float scale;
+	int width, height;	//actual Targa size
 	int isAlien, isBomb; //used as booleans
-	int x,y; //these are centerpoints, placement of image is calculated
-	float z;
+	float x,y,z; //centerpoint in meters-- placement of image is calculated
 
 	int dead;
 	Shot();
-	Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2);
+	Shot(float x2, float y2, float z2, float xVel2, float yVel2, float zVel2, int isAlien2, int isBomb2);
 	void refresh();
-	void redraw(register RECT &rectRendered, register float &scale);
+	void Translate3D();
+	void redraw();//void redraw(register RECT &rectRendered, register float &scale);
 	void setVars(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2);
-
 };
-Shot::Shot()
-{
+Shot::Shot() {
 	width = lptargaShot[0]->width; //set real size
 	height = lptargaShot[0]->height;
-
+	wMeters=.25;
+	fBaseScale=1;
+	iFrames=iFramesShot;
 	frames[0]=lptargaShot[0];
 	frames[1]=lptargaShot[1];
-	frameNow=rand()%2;
-	x=SCREEN_WIDTH/2+width/2;
-	y=SCREEN_HEIGHT/2+width/2;
+	frames[2]=lptargaShot[2];
+	iFrameNow=rand()%iFrames;
+	x=0;
+	y=0;
 	z=4;
 	xVel=1;
 	yVel=1;
@@ -205,14 +231,16 @@ Shot::Shot()
 	isBomb=0;
 	dead=0;
 }
-Shot::Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2)
-{
+Shot::Shot(float x2, float y2, float z2, float xVel2, float yVel2, float zVel2, int isAlien2, int isBomb2) {
 	width = lptargaShot[0]->width; //set real size
 	height = lptargaShot[0]->height;
-
+	wMeters=.25;
+    fBaseScale=1;
+	iFrames=iFramesShot;
 	frames[0]=lptargaShot[0];
 	frames[1]=lptargaShot[1];
-	frameNow=rand()%2;
+	frames[2]=lptargaShot[2];
+	iFrameNow=rand()%iFrames;
 	x=x2;
 	y=y2;
 	z=z2;
@@ -223,8 +251,60 @@ Shot::Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2
 	isBomb=isBomb2;
 	dead=0;
 }
-void Shot::refresh()
-{
+void Shot::Translate3D() {
+
+	//ratios
+	static float
+		fScaleFarNearWidthRatio = 4.96460,//561.0f/113.0f;//calculated by hand from a backdrop
+		fNearScale=APPROACH(561.0f,113.0f,.5f)/561.0f;//ratio of middle to near//1.25;//scale at yNear
+	//screen pixel reference lines
+	static int
+		yZero=SCREEN_HEIGHT*0.616667,
+		xZero=SCREEN_WIDTH/2,
+		xFocalPoint2D=SCREEN_HEIGHT/2,
+		yFocalPoint2D=SCREEN_HEIGHT*0.29375,
+		yBelowFocus2D=SCREEN_HEIGHT-yFocalPoint2D,
+		yAboveFocus2D=SCREEN_HEIGHT-yBelowFocus2D,
+		xNearExtreme=SCREEN_WIDTH*fNearScale,//virtual pixel width of range, at near y
+        fHalfScreenW=SCREEN_WIDTH/2,
+        xNearScreenW=fNearScale*SCREEN_WIDTH;//width of grid is beyond screen width at near y
+	//3D reference lines at parts of screen
+	static float
+		zTop=9, //top of screen when y==-4
+		zBottom=0,
+		zFocalPoint3D=4.5,
+		yFar=4,//a minimum movement range for the game
+		yNear=-4, //bottom of screen when z==0, top when z==zTop
+		yRange=8,//range from far to near
+		xEdge=6;//edge of screen when y==0
+
+	//keep in mind that positive y is farther away
+	//--negative y is closer
+
+
+	//translate 2d coords to 3d
+	int xTranslate, yTranslate;
+	//float zFocused=z-zFocalPoint3D;
+	float yFromFar=-(y-yFar);
+	float yNearness=yFromFar/yRange;
+	float yNearnessExp=(yFromFar*yFromFar)/(yRange*yRange);
+	yTranslate = (z<zFocalPoint3D)//(zFocused<0)
+		? (yFocalPoint2D+yNearnessExp*yBelowFocus2D)
+		: (yFocalPoint2D-yNearnessExp*yAboveFocus2D);
+	//xTranslate = (y>=0)  //remember +y is farther
+	//	? APPROACH(x/xEdge*fHalfScreenW+fHalfScreenW, xFocalPoint2D, yNearnessExp)
+	//	: (x/xEdge*fHalfScreenW*(yNearNessExp+))+fHalfScreenW
+	xTranslate=APPROACH(x/xEdge*(fNearScale*fHalfScreenW)+fHalfScreenW,xFocalPoint2D,yNearnessExp);
+	scale=fNearScale*(yFromFar/yRange);//SET SCALE
+	scale*=fBaseScale;
+	if (scale<.05) scale=.05;//prevents zero size after using scale
+	rectRendered.left=xTranslate-width/2*scale;
+	rectRendered.top=yTranslate-height/2*scale;
+	rectRendered.right=rectRendered.left+scale*width;
+	rectRendered.bottom=rectRendered.top+scale*height;
+
+}
+void Shot::refresh() {
 // ORDER: // (hit detect after draw is okay since the only hit detection here is edge hitting; alien and hero are better)
 	//SET RECT//
 	//DRAW//
@@ -233,40 +313,30 @@ void Shot::refresh()
 
 
 	// SET RECT //
-	register float scale = z/4.0f;
-	register RECT rectRendered; //inclusive edges
+	Translate3D();
 
-	rectRendered.left=x-width/2*scale;
-	rectRendered.right=rectRendered.left+scale*width;
-	rectRendered.top=y-height/2*scale;
-	rectRendered.bottom=rectRendered.top+scale*height;
+	iFrameNow++;
+	if (iFrameNow>=iFrames) iFrameNow=0;
 
-
-	frameNow = (frameNow) ? 0 : 1; //advance frame
-
-	//TO IMPLEMENT: DO NOT REDRAW if behind an object!:
-	redraw(rectRendered, scale);
+	redraw();//redraw(rectRendered, scale);
 
 	x+=xVel;
 	y+=yVel;
-	z+=zVel/10.0;
+	z+=zVel;
 
 	if (rectRendered.left<0 || rectRendered.right>=SCREEN_WIDTH || rectRendered.top<0 || rectRendered.bottom>=SCREEN_WIDTH
-		|| z<.5)
+		|| z<=0)
 		dead = 1;
 }
-void Shot::redraw(register RECT &rectRendered, register float &scale)
-{	
-	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
+void Shot::redraw() {
+	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[iFrameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
 	
-	
-	if (z==4)
-		TargaToTarga32_AlphaQuickEdge_FX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0);
-	else
-	    TargaToTarga32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-isAlien*127, isBomb, 0, scale);
+	////if (z==4)
+	////	TargaToTarga32_FX(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+rectRendered.left, SCREEN_OFFSET_Y+rectRendered.top, 255-isAlien*127, isBomb, 0);
+	////else
+		TargaToTarga32_FX_Scaled(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+rectRendered.left, SCREEN_OFFSET_Y+rectRendered.top, 255-isAlien*127, isBomb, 0, scale);
 }
-void Shot::setVars(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2)
-{
+void Shot::setVars(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2){
 	x=x2;
 	y=y2;
 	z=z2;
@@ -281,54 +351,63 @@ void Shot::setVars(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int 
 Shot				*shots[MAXSHOTS];
 ////////////////////////////////////////////////////////////
 
-class Alien
-{
+class Alien {
 public:
+	int iFrames;
 	LPTARGA frames[4]; //frames of animation for cycle
-	DWORD dwStatus;					//For special powers, color channels omitted etc.
-	int iHP;						//Hit Points left
-	int stunnedness;				//If true: slow down, flash red, and decrement this
-	int x,y,z;												//CENTERPOINTS - Position of alien. z MUST be 1 to 4: multiplied by .25 to get scale
-	int xVelocity;
-	int yVelocity;
-	//int verticle;
-	int frameNow;							//Current frame of animation
-	int frameDelay;
+	DWORD dwStatus;				//For special powers, color channels omitted etc.
+	int iHP;					//Hit Points left
+	float fFortitude;			//If < 1: slow down, flash red, and approach 1
+	float x,y,z;			//3D CENTERPOINT
+	int xVel;
+	int yVel;
+	int zVel;
+	int iFrameNow;							//Current frame of animation
+	int iFrameDelay;
+	int iFrameDelayed;
 	int width;
 	int height;										 //Size of surface
 	int explodedBy;					//Size of explosion, incremented when dead
 	int exploding; //used as boolean
 	int shootDelay;
-	
+    RECT rectRendered;
+	float scale;
+	float wMeters, dMeters, hMeters;//size in meters
+
+	float fBaseScale;
 	Alien();
-	Alien(int x2, int y2, int z2);
+	Alien(float x2, float y2, float z2);
 	~Alien();
 	void setAsBoss();
 	void refresh();
-	void hitDetect(float &scaler);
-	int yCenter();
-	int leftEdge();
-	int rightEdge();
+	void hitDetect();
+	void redraw();//void redraw(register RECT &rectRendered, register float &scale);
+	void GetHit(int iShotIndex);
+	void Translate3D();
 private:
-	void redraw(register RECT &rectRendered, register float &scale);
 	void shoot();
 	void bomb();
 };
-Alien::Alien()
-{
+Alien::Alien() {
+	iFrames=4;
+    fBaseScale=1.0f;
 	numOfAliens++;
-	srand(GetTickCount());
+	srand(SDL_GetTicks());
 	dwStatus = STATUS_ALIVE;
 	iHP = 30 * gameStage;
-	stunnedness = 0;
-	x = SCREEN_WIDTH*.75;
-	y = SCREEN_HEIGHT*.75;
+	fFortitude = 1.0f;
+	x = 0;
+	y = 0;
 	z = 4;
-	xVelocity = -(2 + rand()%2) - gameStage;
-	yVelocity = -1;
-	//verticle = -1;
-	frameNow = 0;
-	frameDelay = 0;
+	wMeters=2;
+	dMeters=.5;
+	hMeters=.5;
+	xVel = -(.2 + (rand()%4)*.05) - gameStage*.05;
+	yVel = .1;
+	zVel = 0;
+	iFrameNow = 0;
+	iFrameDelay = 7;
+	iFrameDelayed=0;
 	shootDelay = 20;
 	width = lptargaAlien[0]->width; // set real size
 	height = lptargaAlien[0]->height;
@@ -340,21 +419,26 @@ Alien::Alien()
 	frames[2] = lptargaAlien[0];
 	frames[3] = lptargaAlien[1];
 }
-Alien::Alien(int x2, int y2, int z2)
-{
+Alien::Alien(float x2, float y2, float z2) {
+	iFrames=4;
+    fBaseScale=1.0f;
 	numOfAliens++;
-	srand(GetTickCount());
+	srand(SDL_GetTicks());
 	dwStatus = STATUS_ALIVE;
 	iHP = 30 * gameStage;
-	stunnedness = 0;
+	fFortitude = 1.0f;
 	x = x2;
 	y = y2;
 	z = z2;
-	xVelocity = -(2 + rand()%2) - gameStage;
-	yVelocity = -1;
-	//verticle = -1;
-	frameNow = 0;
-	frameDelay = 0;
+	wMeters=2;
+	dMeters=.5;
+	hMeters=.5;
+	xVel = -(2 + rand()%2) - gameStage;
+	yVel = -1;
+	zVel = 0;
+	iFrameNow = 0;
+	iFrameDelay = 7;
+	iFrameDelayed=0;
 	shootDelay = 20;
 	width = lptargaAlien[0]->width; // set real size
 	height = lptargaAlien[0]->height;
@@ -371,12 +455,61 @@ Alien::Alien(int x2, int y2, int z2)
 	if (gameLevel==3 && gameStage==3) dwStatus |= STATUS_SHIELD;
 
 }
-Alien::~Alien()
-{
+Alien::~Alien(){
 	numOfAliens--;
 }
-void Alien::setAsBoss()
-{
+void Alien::Translate3D() {
+	//ratios
+	static float
+		fScaleFarNearWidthRatio = 4.96460,//561.0f/113.0f;//calculated by hand from a backdrop
+		fNearScale=APPROACH(561.0f,113.0f,.5f)/561.0f;//ratio of middle to near//1.25;//scale at yNear
+	//screen pixel reference lines
+	static int
+		yZero=SCREEN_HEIGHT*0.616667,
+		xZero=SCREEN_WIDTH/2,
+		xFocalPoint2D=SCREEN_HEIGHT/2,
+		yFocalPoint2D=SCREEN_HEIGHT*0.29375,
+		yBelowFocus2D=SCREEN_HEIGHT-yFocalPoint2D,
+		yAboveFocus2D=SCREEN_HEIGHT-yBelowFocus2D,
+		xNearExtreme=SCREEN_WIDTH*fNearScale,//virtual pixel width of range, at near y
+        fHalfScreenW=SCREEN_WIDTH/2,
+        xNearScreenW=fNearScale*SCREEN_WIDTH;//width of grid is beyond screen width at near y
+	//3D reference lines at parts of screen
+	static float
+		zTop=9, //top of screen when y==-4
+		zBottom=0,
+		zFocalPoint3D=4.5,
+		yFar=4,//a minimum movement range for the game
+		yNear=-4, //bottom of screen when z==0, top when z==zTop
+		yRange=8,//range from far to near
+		xEdge=6;//edge of screen when y==0
+
+	//keep in mind that positive y is farther away
+	//--negative y is closer
+
+
+	//translate 2d coords to 3d
+	int xTranslate, yTranslate;
+	//float zFocused=z-zFocalPoint3D;
+	float yFromFar=-(y-yFar);
+	float yNearness=yFromFar/yRange;
+	float yNearnessExp=(yFromFar*yFromFar)/(yRange*yRange);
+	yTranslate = (z<zFocalPoint3D)//(zFocused<0)
+		? (yFocalPoint2D+yNearnessExp*yBelowFocus2D)
+		: (yFocalPoint2D-yNearnessExp*yAboveFocus2D);
+	//xTranslate = (y>=0)  //remember +y is farther
+	//	? APPROACH(x/xEdge*fHalfScreenW+fHalfScreenW, xFocalPoint2D, yNearnessExp)
+	//	: (x/xEdge*fHalfScreenW*(yNearNessExp+))+fHalfScreenW
+	xTranslate=APPROACH(x/xEdge*(fNearScale*fHalfScreenW)+fHalfScreenW,xFocalPoint2D,yNearnessExp);
+	scale=fNearScale*(yFromFar/yRange);//SET SCALE
+	scale*=fBaseScale;
+	if (scale<.05) scale=.05;//prevents zero size after using scale
+	rectRendered.left=xTranslate-width/2*scale;
+	rectRendered.top=yTranslate-height/2*scale;
+	rectRendered.right=rectRendered.left+scale*width;
+	rectRendered.bottom=rectRendered.top+scale*height;
+}
+void Alien::setAsBoss(){
 	width = lptargaAlienBoss[0]->width; // set real size
 	height = lptargaAlienBoss[0]->height;
 
@@ -388,10 +521,8 @@ void Alien::setAsBoss()
 	dwStatus = STATUS_ALIVE | STATUS_BOMBER | STATUS_SHIELD | STATUS_BOSS;
 	iHP=1000;
 }
-void Alien::refresh()
-{
-	register RECT rectRendered; //inclusive edges
-	register float scale = z/4.0f;
+void Alien::refresh(){
+	//scale = z/4.0f;
 
 // ORDER: //
 
@@ -402,63 +533,53 @@ void Alien::refresh()
 	//- HITDETECT&CHECK LIFE// -this way it is using the rectRendered for hit detection
 
 	// UPDATE+MOVE //
-	if (stunnedness) stunnedness--;
+	if (fFortitude<1.0f) fFortitude+=.1f;
+	if (fFortitude>1.0f) fFortitude=1.0f;
 	if (shootDelay) shootDelay--;
 		// animate frames with frame delay
-	if (++frameDelay >= (8 - xVelocity))
-	{
-		// reset frameDelay for the animation frame
-		frameDelay = 0;
-		// advance to next frame
-		frameNow++;
-		if (frameNow>3) frameNow=0;
+	if (++iFrameDelayed >= iFrameDelay) {
+		iFrameDelayed = 0;
+		iFrameNow++;
+		if (iFrameNow>=iFrames) iFrameNow=0;
 	}
 
-	if (!(dwStatus & STATUS_BOSS))
-	{
+	if (!(dwStatus & STATUS_BOSS)) {
 		//Move non-boss at its given velocity
-		x += (xVelocity<0) ? (xVelocity - z + stunnedness) : (xVelocity + z + stunnedness);
-		y+=yVelocity;
+		x += xVel*fFortitude;// (xVel<0) ? (xVel - z + stunnedness) : (xVel + z + stunnedness);
+		y+=yVel;
 	}
-	else
-	{//Boss's speed not affected by stunnedness, but by double speed status
-		if (dwStatus & STATUS_DOUBLESPEED) x+=xVelocity*2;
-		else x+=xVelocity;
+	else {//Boss's speed not affected by stunnedness, but is by double speed status
+		if (dwStatus & STATUS_DOUBLESPEED) x+=xVel*2;
+		else x+=xVel;
 	}
+
+
 
 
 	// FIX POSITION //
-	//Update needed rectRendered members for hit detection (z omitted because z doesn't change)
-	rectRendered.left=x-width/2*scale;
-	rectRendered.right=rectRendered.left+scale*width;
-	rectRendered.top=y-height/2*scale;
-	rectRendered.bottom=rectRendered.top+scale*height;
+	Translate3D();
 	// right wrapping omitted because aliens always move left
 
-	if (rectRendered.right<0)
-		x=int(SCREEN_WIDTH+width/2*scale);
+	//if (rectRendered.right<0)
+	//	x=int(SCREEN_WIDTH+width/2*scale);
 
-	if (rectRendered.bottom>SCREEN_HEIGHT/2)
-	{
-		yVelocity=-yVelocity;
-		y=SCREEN_HEIGHT/2-height/2*scale;//bounce it out of the danger zone
+	if (z<=0) {
+		zVel=-zVel;
 	}
-	else if (rectRendered.top<=0)
-	{
-		yVelocity=-yVelocity;
-		y=height/2*scale; //bounce it out of the danger zone
+	else if (rectRendered.top<=0) {
+		zVel=-zVel;
 	}
 
-	// RESET RECT //
-	scale = z/4.0f;
-	rectRendered.left=x-width/2*scale;
-	rectRendered.right=rectRendered.left+scale*width;
-	rectRendered.top=y-height/2*scale;
-	rectRendered.bottom=rectRendered.top+scale*height;
+	//x=320;y=240;scale=1;//debug only
 
+	// RESET RECT after fixing position //
+	//scale = z/4.0f;
+	//Translate3D();//update again after avoiding edges of screen
 
 	// DRAW //
-	redraw(rectRendered, scale);
+	if ( rectRendered.right>=0
+		&& rectRendered.left<SCREEN_WIDTH
+		&& y>-4.5) redraw();//redraw(rectRendered, scale);
 
 	// AI ACTIONS //
 	if (dwStatus & STATUS_SHOOTER)
@@ -466,119 +587,105 @@ void Alien::refresh()
 	else if (dwStatus & STATUS_BOMBER)
 		bomb();
 
-
 	// HITDETECT //
-	hitDetect(scale);
+	hitDetect();
 	// CHECK LIFE //
-	if (iHP<0)
-	{//died, stop shooting etc.
-		if (dwStatus & STATUS_ALIVE) dwStatus ^= STATUS_ALIVE;
-		if (dwStatus & STATUS_SHOOTER) dwStatus ^= STATUS_SHOOTER;
-		if (dwStatus & STATUS_BOMBER) dwStatus ^= STATUS_BOMBER;
-	}
+	if (iHP<0) //died, stop shooting etc.
+		dwStatus&=(STATUS_ALIVE|STATUS_SHOOTER|STATUS_BOMBER)^0xFFFFFFFF;
 
 	if (!(dwStatus & STATUS_ALIVE))
 	{
 		if (!explodedBy)
 		{
+			iPlayExplosion=x;
 			////PlaySound((const char*)SOUND_ID_EXPLOSION/*"explosion.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 			exploding=1;
 		}
 		explodedBy++;
 	}
 }
-void Alien::redraw(register RECT &rectRendered, register float &scale)
-{
-	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
+void Alien::redraw() {//register RECT &rectRendered, register float &scale)
+	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[iFrameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
 	
 	//static int animation_seq[4] = {0,1,0,2};
-	if (z==4) TargaToTarga32_AlphaQuickEdge_FX(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
-	else			TargaToTarga32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lptargaScreen, rectRendered.left, rectRendered.top, 255-stunnedness, explodedBy, dwStatus, z/4.00);
-	
+	//if (z==4) TargaToTarga32_FX(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+rectRendered.left, SCREEN_OFFSET_Y+rectRendered.top, 255-stunnedness, explodedBy, dwStatus);
+	//else
+		//TargaToTarga32(frames[iFrameNow],lptargaScreen,SCREEN_OFFSET_X+rectRendered.left,SCREEN_OFFSET_Y+rectRendered.top);//debug only
+		//TargaToTarga32(frames[iFrameNow],lptargaScreen,SCREEN_OFFSET_X+rectRendered.left,SCREEN_OFFSET_Y+rectRendered.top);//debug only
+		TargaToTarga32_FX_Scaled(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+rectRendered.left, SCREEN_OFFSET_Y+rectRendered.top, 255*fFortitude, explodedBy, dwStatus, scale);
+		//TargaToTarga32_FX_Scaled(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+rectRendered.left, SCREEN_OFFSET_Y+(363-(4-z)*52), 255-stunnedness, explodedBy, dwStatus, z/4.00);
 }
-void Alien::hitDetect(float &scaler)
-{
-	//register float scaler=z/4.0f;
-	for (int index=0; index<MAXSHOTS; index++)
-	{
-		if (shots[index] != NULL)
-		{//DISTANCE FORMULA: uses centerpoints (x,y,z)
-			if (abs(shots[index]->x-x) < width/2*scaler)
-				if (abs(shots[index]->y-y) < height/2*scaler)
-					if (abs(shots[index]->z-float(z)) < .25*scaler && (!shots[index]->isAlien))
-					{
-						if (dwStatus & STATUS_SHIELD)
-						{//invincible with shield except boss
-							if (dwStatus & STATUS_BOSS) dwStatus ^= STATUS_SHIELD; //only Boss loses shield, other shields are removed when boss dies
-							//stunnedness=10;
-							iHP+=8;
-							delete shots[index];
-							shots[index]=NULL;
-							//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*//*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-						}
-						else
-						{
-							stunnedness=10;
-							iHP-=16;
-							delete shots[index];
-							shots[index]=NULL;
-							//PlaySound((const char*)SOUND_ID_OUCHALIEN/*"ouchalien.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-						}
+void Alien::hitDetect() {
+	//ranges are set to approximate meters
+	//scale is NOT used since hit detection is pure 3D
+	static float xMyRange=wMeters/2,
+		yMyRange=dMeters/2,
+		zMyRange=hMeters/2;
+	for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
+		if (shots[iShotNow]!=NULL) {//DISTANCE FORMULA: uses centerpoint (x,y,z)
+			static float xOurRange=shots[iShotNow]->wMeters/2+xMyRange;
+			static float yOurRange=shots[iShotNow]->wMeters/2+yMyRange;
+			static float zOurRange=shots[iShotNow]->wMeters/2+zMyRange;
+			if (abs(shots[iShotNow]->y-y) < yOurRange) {
+				if (abs(shots[iShotNow]->x-x) < xOurRange) {
+					if ( (abs(shots[iShotNow]->z-z) < zOurRange) && (!shots[iShotNow]->isAlien)) {
+						GetHit(iShotNow);
 					}
+				}
+			}
 		}
 	}
 }
-int Alien::yCenter()
-{
-	return (y);
+void Alien::GetHit(int iShotIndex) {
+	if (dwStatus & STATUS_SHIELD) {
+	//invincible with shield except boss
+		if (dwStatus & STATUS_BOSS) dwStatus ^= STATUS_SHIELD; //only Boss loses shield, other shields are removed when boss dies
+		//stunnedness=10;
+		iHP+=8;
+		delete shots[iShotIndex];
+		shots[iShotIndex]=NULL;
+		iPlayShieldZap=x;
+		//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*//*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+	}
+	else {
+		fFortitude=.1;//stunnedness=10;
+		iHP-=16;
+		delete shots[iShotIndex];
+		shots[iShotIndex]=NULL;
+		iPlayOuchAlien=x;
+		//PlaySound((const char*)SOUND_ID_OUCHALIEN/*"ouchalien.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+	}
 }
-int Alien::leftEdge()
-{
-	return (x-width/2*z/4.0f);
-}
-int Alien::rightEdge()
-{
-	return (x+width/2*z/4.0f);
-}
-void Alien::shoot()
-{
-	if (!shootDelay)
-	{
+void Alien::shoot(){
+	if (!shootDelay) {
 		shootDelay=rand()%30+10;
-		float scaler=z/4.0f;
-		int eyePosX = x-10*scaler;
-		int eyePosY = y;
-		int maxX = SCREEN_WIDTH-eyePosX;
-		int shotSpeed=16;
-		for (int index=0; index<MAXSHOTS; index++)
-		{
-			if (shots[index] == NULL)
-			{//create a shot at the first available shot pointer
+		float xEye = x-wMeters/2.0f;
+		float shotSpeed=0.0333;//this per frame results in 1 m/s
+		for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
+			if (shots[iShotNow] == NULL) {
+			//create a shot at the first available shot pointer
+				iPlayLaserAlien=x;
 				//Assume shoot left
 				//Prototype: Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isRed2)
-				shots[index] = new Shot(eyePosX, eyePosY, z, -shotSpeed, 0, 0, 1, 0);
+				shots[iShotNow] = new Shot(xEye, y, z, -shotSpeed, 0, 0, 1, 0);
 				break;
 			}
 		}
 	}
 }
-void Alien::bomb()
-{
+void Alien::bomb(){
 	if (!shootDelay)
 	{
 		shootDelay=rand()%10+10;
-		float scaler=z/4.0f;
-		int eyePosX = x-10*scaler;
-		int eyePosY = y+height/2*scaler;
-		int maxX = SCREEN_WIDTH-eyePosX;
+		//float scale=z/4.0f;
+		float yFrom=y-0.1f;
 		int shotSpeed=8;
-		for (int index=0; index<MAXSHOTS; index++)
-		{
-			if (shots[index] == NULL)
-			{//create a shot at the first available shot pointer
+		for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
+			if (shots[iShotNow] == NULL) {//create a shot at the first available shot pointer
 				//Assume shoot left
+				iPlayBomb=x;
 				//Prototype: Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2 , int isBomb2)
-				shots[index] = new Shot(eyePosX, eyePosY, z, -shotSpeed, 4, -1, 1, 1);
+				shots[iShotNow] = new Shot(x, yFrom, z, -shotSpeed, .2, -.1, 1, 1);
 				break;
 			}
 		}
@@ -591,70 +698,181 @@ Alien				*aliens[MAXALIENS];
 ///////////////////////////////////////////////////
 
 //Hero Class
-class Hero
-{
+class Hero {
 public:
+	float fBaseScale;
 	LPTARGA frames[21]; // 2 frames of animation for cycle
-	int x, y, z; //z location 1 to 4 (2 to 4 is usage for game) mult by .25 for scale
+	float x,y,z; //z location 1 to 4 (2 to 4 is usage for game) mult by .25 for scale
 	int moveDelay; //delays motion of z
+    int aimDelay;
+	float fAimZ; //multiplier for aim z velocity, could theoretically be negative and be okay
 	int shootDelay; //
 	int width, height;
+	float wMeters, hMeters, dMeters;//size in meters
 	DWORD dwStatus;
 	int iHP;
 	int stunnedness;
 	int explodedBy;
-	int frameNow; //used to calculate current rotation as well as frame number
+	int iFrameNow; //used to calculate current rotation as well as frame number
 	int direction; //-1=left 0=turning 1=right
 	int rotationDir; //rotation: neg=left 0=done pos=right
-	int verticle; //jumping variable added to y
-	int v; //jumping upward velocity in pixels/s
-	int xvel; //x velocity
+	int xVel; //x velocity
+	int yVel; 
+	int zVel; //jumping upward velocity
 	float gunPower; //gun power in percent, max=1
 	int exploding;
+	RECT rectRendered;
+	float scale;
 
 	Hero();
 	void refresh();
 	void turn(int dir);
 	void jump();
-	void move(int dir);
-	void moveX(int dir);
+	void move(int xDir, int yDir);
+	void aim(int dir);
 	void shoot();
 	void doublespeed();
 	void precisionaim();
+	void rapidfire();
 	void drawTarget(int alienNum);
-private:
 	void redraw();
+	void Translate3D();
+private:
 	void hitDetect();
 	void drawMeters();
 };
-Hero::Hero()
-{
+Hero::Hero() {
+    fBaseScale=1.0f;
 	exploding=0;
-	for (int index=0;index<=20;index++)
-	{
-		frames[index]=lptargaHero[index];
+	for (int iFrame=0;iFrame<=20;iFrame++) {
+		frames[iFrame]=lptargaHero[iFrame];
 	}
 	width=lptargaHero[0]->width;
 	height=lptargaHero[0]->height;
-	x = SCREEN_WIDTH/2 - width/2;
-	y = SCREEN_HEIGHT*.75 - height/2;
-	z = 4;
+	x=0;//(SCREEN_WIDTH/2 - width/2)-21;
+	y=0;//(SCREEN_HEIGHT*.75 -height/2)-90;//y = SCREEN_HEIGHT*.75 - height/2;
+	z=4; //starts falling from air
+	wMeters=.2f;
+	hMeters=1.6f;
+	dMeters=.2f;
+	fAimZ=0.0f;
 	moveDelay = 0;
+	aimDelay = 0;
 	shootDelay = 0;
-	dwStatus = STATUS_ALIVE;// | STATUS_ANTIGRAVITY;
+	dwStatus = STATUS_ALIVE | STATUS_PRECISIONAIM;// | STATUS_ANTIGRAVITY;
 	iHP = 255;
 	stunnedness = 10;
 	explodedBy = 0;
-	frameNow=9;
+	iFrameNow=9;
 	direction=0;
 	rotationDir=1;
-	verticle = 100*z/4.00;
-	v = 0;
-	xvel = 0;
+	zVel = 0;
+	xVel = 0;
+	yVel = 0;
 	gunPower = 1;
 }
-void Hero::refresh()
-{
+void Hero::turn(int dir) {
+	//if (z==0)moveX(dir); //move horizontally
+	if (dir==-1 || dir==1 || dir==2) { //else ignore bad arguments
+		if (direction) { //if not turning
+			if (dir==direction) {
+
+			}
+			else {
+				direction=0; //set character in state of motion
+				if (dir>direction) rotationDir=1;
+				else if (dir<direction)	rotationDir=-1;
+			}
+		}
+		else {//moving, so see if direction in argument is different than rotation direction
+			//if (dir == 2 && (iFrameNow<=0 || iFrameNow>=20)) rotationDir = (iFrameNow<=0) ? -1 : 1;
+			if (dir != rotationDir) rotationDir= -rotationDir;
+		}
+	}
+}
+void Hero::jump() {
+	if (!moveDelay) {
+		if ((z==0.0f) || (dwStatus & STATUS_ANTIGRAVITY)) {//don't unless not jumping or if ANTIGRAVITY status
+			zVel=40.0f;//debug only, uncomment next line
+			//zVel=(dwStatus & STATUS_ANTIGRAVITY) ? .07f :.42f;
+			if (dwStatus & STATUS_DOUBLESPEED) zVel *= 2.0f;
+			if (!(dwStatus & STATUS_ANTIGRAVITY)) //if no antigravity, delay movement in air
+				moveDelay= (dwStatus & STATUS_DOUBLESPEED) ? 15 : 30;
+		}
+	}
+}
+void Hero::move(int xDir, int yDir) { //for up and down movement
+	static float factor=.2f;
+	if (!moveDelay) {
+		if (dwStatus&STATUS_DOUBLESPEED) factor=.4f;
+		if (yDir>0) {//move up (back, +y)
+			if (y<4.0f) {
+				y+=factor;
+				yVel=factor*yDir;
+			}
+		}
+		else if (yDir<0) {//move down (forward, -y)
+			if (y>-4.0f) {
+				y-=factor;
+				yVel=factor*yDir;
+			}
+		}
+		if (xDir<0) {//move left, -x
+			if (x>-6.0f) {
+				x-=factor;
+				xVel=factor*xDir;
+			}
+		}
+		else if (xDir>0) {//move right +x
+			if (x<6.0f) {
+				x+=factor;
+				xVel=factor*xDir;
+			}
+		}
+	}
+}
+void Hero::aim(int dir) {//for up and down aim
+	if (!aimDelay) {
+		if (dir<0 && fAimZ>AIM_MIN) fAimZ-=AIM_RESOLUTION;
+		else if (fAimZ<AIM_MAX) fAimZ+=AIM_RESOLUTION;
+		aimDelay = 1;
+	}
+}
+void Hero::shoot() {
+	if ((!shootDelay) && gunPower>=.45) {
+		if (dwStatus&STATUS_RAPIDFIRE) {
+			shootDelay=2;
+		}
+		else {
+			gunPower-=.45;
+			shootDelay=10;
+		}
+		float zEye = z+hMeters/2;
+		float shotSpeed=0.03333;//meters per frame (1ms~.03333)
+		float fTurnedness=((float)iFrameNow-10.0f)/10.0f;
+		float fForwardness=(fTurnedness>0) ? 1.0f-fTurnedness : 1.0f+fTurnedness;
+		float xEye = x+scale*fForwardness/100.0f; //position of hero's eye to shoot blast from
+		for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
+			if (shots[iShotNow] == NULL) {//create a shot at the first available shot pointer
+				if (direction==-1) //shoot left
+					//Prototype: Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isRed2)
+					shots[iShotNow] = new Shot(xEye, y, zEye, direction*shotSpeed, 0, 0, 0, 0);
+				else if (direction==1) //shoot right
+					shots[iShotNow] = new Shot(xEye, y, zEye, direction*shotSpeed, 0, 0, 0, 0);
+				else //shoot downward
+					shots[iShotNow] = new Shot(xEye, y, zEye, shotSpeed*fTurnedness, shotSpeed*fForwardness, fAimZ, 0, 0);
+					//shots[iShotNow] = new Shot(eyePosX-20*scale+scale*iFrameNow, eyePosY, z, ((iFrameNow-10)*6), fAimZ*20, shotSpeed, 0, 0);
+					//new shot prototype: Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isAlien2, int isBomb2)
+				iPlayLaser=x;
+				break;
+				//iChanLaser = Mix_PlayChannel(2, mcLaser, 0);//chan, sound, #loops
+				//PlaySound((const char*)SOUND_ID_LASER/*"laser.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+				////PlaySound((const char*)SOUND_ID_LASER, hinstance_app, SND_RESOURCE | SND_ASYNC);
+			}
+		}
+	}
+}
+void Hero::refresh() {
 // ORDER: //
 	//4. UPDATE+MOVE//
 	//5. FIX POSITION// -get it ready for the next set rect and next render
@@ -663,31 +881,28 @@ void Hero::refresh()
 	//3. HITDETECT&CHECK LIFE// -this way it is using the rectRendered for hit detection
 
 	// UPDATE //
-	//drawMeters();
+	drawMeters();
 	if (moveDelay) moveDelay--;
+	if (aimDelay) aimDelay--;
 	if (shootDelay) shootDelay--;
 	if (stunnedness) stunnedness--;
 	//Animate if not turned all the way
-	if (!direction)
-	{
-		frameNow+=rotationDir * ((dwStatus & STATUS_DOUBLESPEED) ? 2 : 1);
-		if (frameNow<0)
-		{
-			frameNow=0;
+	if (!direction) {
+		iFrameNow+=rotationDir * ((dwStatus & STATUS_DOUBLESPEED) ? 2 : 1);
+		if (iFrameNow<0) {
+			iFrameNow=0;
 			rotationDir=0;
 			direction=-1;
 		}
-		else if (frameNow>20)
-		{
-			frameNow=20;
+		else if (iFrameNow>20) {
+			iFrameNow=20;
 			rotationDir=0;
 			direction=1;
 		}
 	}
 	if ((dwStatus & STATUS_PRECISIONAIM) && direction==0) direction = 2;
 	//re-charge gun
-	if (gunPower<1)
-	{
+	if (gunPower<1) {
 		gunPower+= (dwStatus & STATUS_DOUBLESPEED) ? .066 : .033;
 		if (gunPower>1) gunPower=1;
 	}
@@ -696,30 +911,29 @@ void Hero::refresh()
 	//about 80 pixels per meter (actual hero is 150 pixels high inside the Targa)
 	//30 frames per second
 	//gravitational acceleration is 1.8 m/s/s
-	verticle += float(v) * z/4.0;
-	v-=.8*80/30; //only .8 gravitational acceleration, for high jumping (/pixel/m /frame/s)
-	if (verticle<=0)
-	{//hit ground
-		v=0; //reset velocity
-		verticle=0; //make sure we aren't below ground
-		xvel=0;
+	z+=zVel;
+	zVel-=.8/30.0f; //only .8m/s/s gravitational acceleration (.8/30perframe), for high jumping
+	if (z<=0) {//hit ground
+		zVel=0;
+		z=0;
+		xVel=0;
+		yVel=0;
 	}
-	if (verticle)
-	{
-		x+=xvel;
+	if (z>0) {
+		x+=xVel;
+		y+=yVel;
 	}
 
+	Translate3D();
+	//scale=z/4.00;
 
 	// FIX POSITION //
-	if (verticle>200*z/4.00)//(y-verticle < 0)
-	{//make sure you don't fly too high
-		verticle=200*z/4.00;
-		v=0;
+	if (rectRendered.top<=0) {
+		zVel=0;
 	}
-	if (x<0) x=0;
-	if (x>SCREEN_WIDTH-width*z/4) x=(SCREEN_WIDTH-width*z/4);
 
-
+	//will be rendered according to scale and this rect:
+	Translate3D();
 	redraw();
 	//drawTarget;
 	//if (boolShowTarget) drawTarget();
@@ -728,135 +942,89 @@ void Hero::refresh()
 	if (!stunnedness) hitDetect();
 	// CHECK LIFE //
 	if (iHP<=0) dwStatus = 0; //died, stop other special abilities too
-	if (!(dwStatus & STATUS_ALIVE))
-	{
+	if (!(dwStatus & STATUS_ALIVE)) {
 		explodedBy++;
-		if (!exploding)
-		{
+		if (!exploding) {
+			iPlayExplosion=x;
 			//PlaySound((const char*)SOUND_ID_EXPLOSION/*"explosion.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 			exploding=1;
 		}
 	}
 }
-void Hero::turn(int dir)
-{
-					if (!verticle)moveX(dir);
-	if (dir==-1 || dir==1 || dir==2) //ignore bad arguments
-	{
-		if (direction) //if not turning
-		{
-			if (dir==direction)
-			{
+void Hero::redraw() {
+	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[iFrameNow], lptargaScreen, x, y, 255-stunnedness, explodedBy, dwStatus);
+	//if (z==4) TargaToTarga32_FX(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+x, SCREEN_OFFSET_Y+y, 255-stunnedness, explodedBy, dwStatus);
+	//else
+	TargaToTarga32_FX_Scaled(frames[iFrameNow], lptargaScreen, SCREEN_OFFSET_X+rectRendered.left, SCREEN_OFFSET_Y+rectRendered.top, 255-stunnedness, explodedBy, dwStatus, scale);
+}
+void Hero::Translate3D() {
+	//ratios
+	static float
+		fScaleFarNearWidthRatio = 4.96460,//561.0f/113.0f;//calculated by hand from a backdrop
+		fNearScale=APPROACH(561.0f,113.0f,.5f)/561.0f;//ratio of middle to near//1.25;//scale at yNear
+	//screen pixel reference lines
+	static int
+		yZero=SCREEN_HEIGHT*0.616667,
+		xZero=SCREEN_WIDTH/2,
+		xFocalPoint2D=SCREEN_HEIGHT/2,
+		yFocalPoint2D=SCREEN_HEIGHT*0.29375,
+		yBelowFocus2D=SCREEN_HEIGHT-yFocalPoint2D,
+		yAboveFocus2D=SCREEN_HEIGHT-yBelowFocus2D,
+		xNearExtreme=SCREEN_WIDTH*fNearScale,//virtual pixel width of range, at near y
+        fHalfScreenW=SCREEN_WIDTH/2,
+        xNearScreenW=fNearScale*SCREEN_WIDTH;//width of grid is beyond screen width at near y
+	//3D reference lines at parts of screen
+	static float
+		zTop=9, //top of screen when y==-4
+		zBottom=0,
+		zFocalPoint3D=4.5,
+		yFar=4,//a minimum movement range for the game
+		yNear=-4, //bottom of screen when z==0, top when z==zTop
+		yRange=8,//range from far to near
+		xEdge=6;//edge of screen when y==0
 
-			}
-			else
-			{
-				direction=0; //set character in state of motion
-				if (dir>direction) rotationDir=1;
-				else if (dir<direction)	rotationDir=-1;
-			}
-		}
-		else //moving, so see if direction in argument is different than rotation direction
-		{
-			//if (dir == 2 && (frameNow<=0 || frameNow>=20)) rotationDir = (frameNow<=0) ? -1 : 1;
-			if (dir != rotationDir) rotationDir= -rotationDir;
-		}
-	}
-}
-void Hero::jump()
-{
-	if (!moveDelay)
-	{
-		if ((!verticle) || (dwStatus & STATUS_ANTIGRAVITY)) //don't unless not jumping or if ANTIGRAVITY status
-		{
-			v=(dwStatus & STATUS_ANTIGRAVITY) ? 5 :30;
-			if (dwStatus & STATUS_DOUBLESPEED) v *= 2;
-			if (!(dwStatus & STATUS_ANTIGRAVITY)) //if no antigravity, delay movement in air
-				moveDelay= (dwStatus & STATUS_DOUBLESPEED) ? 15 : 30;
-		}
-	}
-}
-void Hero::move(int dir)
-{
-	if (!moveDelay)
-	{
-		if (dir<0)
-		{
-			if (z>1)
-			{	x+=17;
-				y-=z*10;
-				z--;
-			}
-		}
-		else
-		{	
-			if (z<4)
-			{	z++;
-				y+=z*10;
-				x-=17;
-			}
-		}
-		moveDelay = 3;
-	}
-}
-void Hero::moveX(int dir)
-{
-	x += (dwStatus & STATUS_DOUBLESPEED) ? dir*10+z*2*dir : dir*5+z*2*dir;
-	xvel = (dwStatus & STATUS_DOUBLESPEED) ? dir*10+z*2*dir : dir*5+z*2*dir;
-	//moveDelay = (dwStatus & STATUS_DOUBLESPEED)? 1 : 2;
-}
-void Hero::shoot()
-{
-	if ((!shootDelay) && gunPower>=.45)
-	{
-		gunPower-=.45;
-		shootDelay=10;
-		float scaler=z/4.0f;
-		int eyePosX = x+97-(4-z)*25; //position of hero's eye to shoot blast from
-		int eyePosY = y+24-(4-z)*5 - verticle -abs(10-frameNow)/4*scaler + 4*scaler - (4-z);
-		int maxX = SCREEN_WIDTH-eyePosX;
-		int shotSpeed=16;
-		for (index=0; index<MAXSHOTS; index++)
-		{
-			if (shots[index] == NULL)
-			{//create a shot at the first available shot pointer
-				if (direction==-1) //shoot left
-					//Prototype: Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isRed2)
-					shots[index] = new Shot(eyePosX-20*scaler, eyePosY, z, direction*shotSpeed, 0, 0, 0, 0);
-				else if (direction==1) //shoot right
-					shots[index] = new Shot(eyePosX, eyePosY, z, direction*shotSpeed, 0, 0, 0, 0);
-				else //shoot downward
-					shots[index] = new Shot(eyePosX-20*scaler+scaler*frameNow, eyePosY, z, (frameNow-10)*6, 20, shotSpeed, 0, 0);
-				break;
-				//PlaySound((const char*)SOUND_ID_LASER/*"laser.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-				////PlaySound((const char*)SOUND_ID_LASER, hinstance_app, SND_RESOURCE | SND_ASYNC);
-			}
-		}
-	}
-}
-void Hero::redraw()
-{
-	//USES ALPHALOOK//TargaToTargaAlphaFX(frames[frameNow], lptargaScreen, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
-	if (z==4) TargaToTarga32_AlphaQuickEdge_FX(frames[frameNow], lptargaScreen, x, y-verticle, 255-stunnedness, explodedBy, dwStatus);
-	else		TargaToTarga32_AlphaQuickEdge_FX_Scaled(frames[frameNow], lptargaScreen, x, y-verticle, 255-stunnedness, explodedBy, dwStatus, z/4.00);
-}
-void Hero::drawMeters()
-{
+	//keep in mind that positive y is farther away
+	//--negative y is closer
 
-	//register DWORD *this_buffer = 
+
+	//translate 2d coords to 3d
+	int xTranslate, yTranslate;
+	//float zFocused=z-zFocalPoint3D;
+	float yFromFar=-(y-yFar);
+	float yNearness=yFromFar/yRange;
+	float yNearnessExp=(yFromFar*yFromFar)/(yRange*yRange);
+	yTranslate = (z<zFocalPoint3D)//(zFocused<0)
+		? (yFocalPoint2D+yNearnessExp*yBelowFocus2D)
+		: (yFocalPoint2D-yNearnessExp*yAboveFocus2D);
+	//xTranslate = (y>=0)  //remember +y is farther
+	//	? APPROACH(x/xEdge*fHalfScreenW+fHalfScreenW, xFocalPoint2D, yNearnessExp)
+	//	: (x/xEdge*fHalfScreenW*(yNearNessExp+))+fHalfScreenW
+	xTranslate=APPROACH(x/xEdge*(fNearScale*fHalfScreenW)+fHalfScreenW,xFocalPoint2D,yNearnessExp);
+	scale=fNearScale*(yFromFar/yRange);//SET SCALE
+	scale*=fBaseScale;
+	if (scale<.05) scale=.05;//prevents zero size after using scale
+	rectRendered.left=xTranslate-width/2*scale;
+	rectRendered.top=yTranslate-height/2*scale;
+	rectRendered.right=rectRendered.left+scale*width;
+	rectRendered.bottom=rectRendered.top+scale*height;
+}
+void Hero::drawMeters() {
+
+	//register DWORD *lpdwDest = 
 	register BYTE *byteBuffer = lptargaScreen->buffer;
+	byteBuffer+=SCREEN_OFFSET_Y*lptargaScreen->width*4+SCREEN_OFFSET_X*4;
 	static int iStride=TargaStride(lptargaScreen);
 	//register DWORD pixel;// = _RGB32BIT(255,255,255,255); //remember this MACRO is ARGB unlike actual screen
 	register int toX=2, toY=SCREEN_HEIGHT-3;
-	for (int index=0; index<=gunPower*100; index++)
+	for (int iLevel=0; iLevel<=gunPower*100; iLevel++)
 	{
-		//pixel=_RGB32BIT(255,55+index*2,55+index*2,155+index); 
+		//pixel=_RGB32BIT(255,55+iX*2,55+iX*2,155+iX); 
 		for (register int offset=0; offset<=13; offset++)
 		{
-			//this_buffer[toX + ((toY)*iStride >> 2)] = pixel;
-			//this_buffer[int(index*100)] = pixel;
+			//lpdwDest[toX + ((toY)*iStride >> 2)] = pixel;
+			//lpdwDest[int(iX*100)] = pixel;
 			for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-				byteBuffer[(toX + offset)*REAL_BYTEDEPTH + (toY-index)*iStride + byteNow] = 255-130+offset*10-index;
+				byteBuffer[(toX + offset)*REAL_BYTEDEPTH + (toY-iLevel)*iStride + byteNow] = 255-130+offset*10-iLevel;
 			
 		}
 	}
@@ -865,146 +1033,168 @@ void Hero::drawMeters()
 	toY=SCREEN_HEIGHT-2;
 /*
 	pixel=_RGB32BIT(255,255,BYTE(iHP*.85),0);
-	for (index=0; index<iHP; index++)
+	for (iX=0; iX<iHP; iX++)
 	{
-		this_buffer[toX + index + ((toY)*iStride >> 2)] = pixel;
+		lpdwDest[toX + iX + ((toY)*iStride >> 2)] = pixel;
 		//for (byteNow
 	}
 */
-    
-	for (index=0; index<iHP; index++)
-	{
 
+	for (int iLevel=0; iLevel<iHP; iLevel++) {
 		for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-			byteBuffer[(toX+index)*REAL_BYTEDEPTH + toY*iStride + byteNow] = (byteNow==3) ? 255 : (byteNow==2) ? 255 : iHP;
+			byteBuffer[(toX+iLevel)*REAL_BYTEDEPTH + toY*iStride + byteNow] = (byteNow==3) ? 255 : (byteNow==2) ? 255 : iHP;
 	}
 }
-void Hero::drawTarget(int alienNum)
-{
-
+void Hero::drawTarget(int alienNum) {
 	//for (int alienNow = 0; alienNow < MAXALIENS; alienNow++)
 	//{
 		//if (aliens[alienNum] != NULL)
-	    
-		if (aliens[index]->z==z) if (aliens[index]->x>5) if (aliens[index]->x<SCREEN_WIDTH-6)
-		{
-			//register DWORD *this_buffer = 
+		int iX=alienNum;
+		if (aliens[iX]==NULL) return;
+
+		static float zOurRange=hMeters/2+aliens[iX]->hMeters/2;
+		//I switched the right and left edges on purpose to be more inclusive
+		//since screen offset prevents bad writes
+		if (aliens[iX]->z-z<zOurRange && aliens[iX]->rectRendered.right>0 && aliens[iX]->rectRendered.left<SCREEN_WIDTH ) {
+			//register DWORD *lpdwDest = 
 			register BYTE *byteBuffer = lptargaScreen->buffer;
 			static int iStride=TargaStride(lptargaScreen);
 			//register DWORD pixel;// = _RGB32BIT(255,255,255,255); //remember this MACRO is ARGB unlike actual screen
-			register int toX=aliens[index]->x-3, toY=aliens[index]->y-3;
-
-			for (int index=0; index<7; index++)
-			{
-				for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-				{//draw a crosshairs
-					byteBuffer[(toX+index)*REAL_BYTEDEPTH + (toY+3)*iStride + byteNow] = (byteNow==1)? 255 : 0; //across
-					byteBuffer[(toX+3)*REAL_BYTEDEPTH + (toY+index)*iStride + byteNow] = (byteNow==1)? 255 : 0; //down
+			register int toX=aliens[iX]->rectRendered.left, toY=aliens[iX]->rectRendered.top;
+			toX+=SCREEN_OFFSET_X;
+			toY+=SCREEN_OFFSET_Y;
+			for (int iX=0; iX<7; iX++) {
+				for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++) {
+				//draw crosshairs
+					byteBuffer[(toX+iX)*REAL_BYTEDEPTH + (toY+3)*iStride + byteNow] = (byteNow==1)? 255 : 0; //across
+					byteBuffer[(toX+3)*REAL_BYTEDEPTH + (toY+iX)*iStride + byteNow] = (byteNow==1)? 255 : 0; //down
 				}
 			}
 			
-/*			toX=aliens[index]->x;
-			toY=aliens[index]->y-2;
-			for (index=0; index<5; index++)
+/*			toX=aliens[iX]->x;
+			toY=aliens[iX]->y-2;
+			for (iX=0; iX<5; iX++)
 			{
 	
 				for (register int byteNow=0; byteNow<REAL_BYTEDEPTH; byteNow++)
-					byteBuffer[(toX)*REAL_BYTEDEPTH + (toY+index)*iStride + byteNow] = (byteNow==1)? 255 : 0;
+					byteBuffer[(toX)*REAL_BYTEDEPTH + (toY+iX)*iStride + byteNow] = (byteNow==1)? 255 : 0;
 			}
 */			
 
 		}
 	//}
 }
-void Hero::hitDetect()
-{
-	register float scaler=z/4.0f;
-	int xCenter=x+width/2*scaler;
-	int yCenter=y-verticle+height/2*scaler;
-
+void Hero::hitDetect() {
+	//ranges are set to approximate meters
+	//scale is NOT used since hit detection is pure 3D
+	static float xMyRange=wMeters/2,
+		yMyRange=dMeters/2,
+		zMyRange=hMeters/2;
 	//HIT ALIEN:
-	for (int index=0; index<MAXALIENS; index++)
-	{
-		
-		if (aliens[index] != NULL) {
-                          
-        //CENTERPOINT DISTANCE-BASED
-		//	if ( abs(aliens[index]->x-50-xCenter) < 100) //100 IS SLOPPY BUT USSIVL DIST -50 SO HIT IS NEAR FRONT
-		//		if ( abs(aliens[index]->y-yCenter) < 80) //80 IS SLOPPY BUT USSIVL DIST
-		//			if (aliens[index]->z==z)
-		//   		{
-		//				PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-		//       		stunnedness=10;
-		//				iHP-=50;
-		//			}
+	for (int iAlien=0; iAlien<MAXALIENS; iAlien++) {
+		if (aliens[iAlien] != NULL) {
+			static float xOurRange=aliens[iAlien]->wMeters/2+xMyRange;
+			static float yOurRange=aliens[iAlien]->dMeters/2+yMyRange;
+			static float zOurRange=aliens[iAlien]->hMeters/2+zMyRange;
+		//CENTERPOINT DISTANCE-BASED
+			if ( abs(aliens[iAlien]->x-x) < xOurRange) {
+				if ( abs(aliens[iAlien]->y-y) < yOurRange) {
+					if (aliens[iAlien]->z-z < zOurRange) {
+						if (dwStatus & STATUS_SHIELD) {
+							dwStatus ^= STATUS_SHIELD;
+							iPlayShieldZap=x;
+							//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+							stunnedness=10;
+							iHP+=50;
+						}
+						else {
+							iPlayOuchZap=x;
+							//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+							stunnedness=10;
+							iHP-=50;
+						}
+					}
+				}
+			}
 		
 		//RECT-BASED
-			int widthMod = 80*scaler;
-			if (aliens[index]->rightEdge()>x+widthMod+widthMod)
-				if (aliens[index]->leftEdge()<x+width*scaler-widthMod)
-					if (aliens[index]->yCenter()>y-verticle)
-						if (aliens[index]->yCenter()<y-verticle+height*scaler)
-							if (aliens[index]->z==z)
-							{
-								if (dwStatus & STATUS_SHIELD)
-								{
-									dwStatus ^= STATUS_SHIELD;
-									//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-									stunnedness=10;
-									iHP+=50;
-								}
-								else
-								{
-									//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-									stunnedness=10;
-									iHP-=50;
-								}
-							}
-		}
-	}
+		//	int widthMod = 80*scale;
+		//	if (aliens[iAlien]->rightEdge()>x+widthMod+widthMod)
+		//		if (aliens[iAlien]->leftEdge()<x+width*scale-widthMod)
+		//			if (aliens[iAlien]->y>y)
+		//				if (aliens[iAlien]->y<y+height*scale)
+		//					if (aliens[iAlien]->z==z)
+		//					{
+		//						if (dwStatus & STATUS_SHIELD)
+		//						{
+		//							dwStatus ^= STATUS_SHIELD;
+		//							iPlayShieldZap=x;
+		//							//PlaySound((const char*)SOUND_ID_SHIELDZAP/*"shieldzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+		//							stunnedness=10;
+		//							iHP+=50;
+		//						}
+		//						else
+		//						{
+		//							iPlayOuchZap=x;
+		//							//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+		//							stunnedness=10;
+		//							iHP-=50;
+		//						}
+		//					}
+		}//end if non-null alien
+	}//end for aliens
 	//HIT BULLET: edit the shot::hitDetect to do this instead maybe
-	for (index=0; index<MAXSHOTS; index++)
-	{
-		if (shots[index] != NULL)
-		{//DISTANCE FORMULA: uses centerpoints (x,y,z)
-			if (abs(shots[index]->x-xCenter) < width/2*scaler)
-				if (abs(shots[index]->y-yCenter) < height/2*scaler)
-					if (abs(shots[index]->z-float(z)) < .25*scaler && (shots[index]->isAlien))
-					{
-						if (dwStatus & STATUS_SHIELD)
-						{
+	for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
+		if (shots[iShotNow] != NULL) {//DISTANCE FORMULA: uses centerpoint (x,y,z)
+			static float xOurRange=shots[iShotNow]->wMeters/2+xMyRange;
+			static float yOurRange=shots[iShotNow]->wMeters/2+yMyRange;
+			static float zOurRange=shots[iShotNow]->wMeters/2+zMyRange;
+			if (abs(shots[iShotNow]->x-x) < xOurRange) {
+				if (abs(shots[iShotNow]->y-y) < yOurRange) {
+					if (abs(shots[iShotNow]->z-z) < zOurRange && (shots[iShotNow]->isAlien)) {
+						if (dwStatus & STATUS_SHIELD) {
 							dwStatus ^= STATUS_SHIELD;
 							stunnedness=10;
 							iHP+=15;
-							delete shots[index];
-							shots[index]=NULL;
+							delete shots[iShotNow];
+							shots[iShotNow]=NULL;
+							iPlayShieldZap=x;
 							//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 						}
-						else
-						{
+						else {
 							stunnedness=10;
 							iHP-=15;
-							delete shots[index];
-							shots[index]=NULL;
+							delete shots[iShotNow];
+							shots[iShotNow]=NULL;
+							iPlayOuchZap=x;
 							//PlaySound((const char*)SOUND_ID_OUCHZAP/*"ouchzap.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 						}
 					}
-		}
-	}
+				}
+			}
+		}//end if shot not null
+	}//end for iShotNow
 }
-void Hero::doublespeed()
-{
+void Hero::doublespeed() {
 	if (!(dwStatus & STATUS_DOUBLESPEED))
 	{
 	dwStatus |= STATUS_DOUBLESPEED;
+			 bPlayTrumpet=true;
 	//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 	}
 }
-void Hero::precisionaim()
-{
+void Hero::precisionaim() {
 	if (!(dwStatus & STATUS_PRECISIONAIM))
 	{
 	dwStatus |= STATUS_PRECISIONAIM;
+			 bPlayTrumpet=true;
+	//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
+	}
+}
+void Hero::rapidfire() {
+	if (!(dwStatus & STATUS_RAPIDFIRE)) {
+	dwStatus |= STATUS_RAPIDFIRE;
+			 bPlayTrumpet=true;
 	//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 	}
 }
@@ -1012,41 +1202,311 @@ void Hero::precisionaim()
 // GLOBAL CLASS POINTERS ////////////////////////////////////////////
 Hero				*hero = NULL;
 
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+bool bEvent=false;
+/* The screen surface */
+SDL_Surface *screen = NULL;
+int xDir=0;
+int yDir=0;
+int audio_rate=44100;
+Uint16 audio_format=AUDIO_S16; /* 16-bit stereo */
+int audio_channels=2;
+int audio_buffers=4096;
+Mix_Music *music=NULL;
+int iDirKeysDown=0;
+int PickChan() {
+	static int iPickChan=-1;
+	iPickChan++;
+	if (iPickChan>=8) iPickChan=0;
+	return(iPickChan);
+}
+void MusicDone() { //runs when music is done
+	//Mix_HaltMusic();
+	//Mix_FreeMusic(music);
+	//music = NULL;
+}
+inline void SetPan(int iChan, int iLocation) {
+	 float fLoc=(float)iLocation/(float)SCREEN_WIDTH;
+	 if (fLoc<0) fLoc=0;
+	 else if (fLoc>1) fLoc=1;
+	 Mix_SetPanning(iChan, L_FROM_FACTOR(fLoc), R_FROM_FACTOR(fLoc));
+}
+inline void UpdateThrustPan() {
+	 SetPan(iChanThruster,hero->x);
+	 //fThruster=(float)hero->x/(float)SCREEN_WIDTH;
+	 //if (fThruster<0) fThruster=0;
+	 //else if (fThruster>1) fThruster=1;
+	 //Mix_SetPanning(iChanThruster, L_FROM_FACTOR(fThruster), R_FROM_FACTOR(fThruster));
+}
+void DirKeyDown() {
+	 if ((hero!=NULL&&hero->z!=0.0f) && (hero->dwStatus & STATUS_ANTIGRAVITY)) {
+		if (iDirKeysDown<=0) {
+			iChanThruster = Mix_PlayChannel(-1, mcThruster, -1);//chan, sound, #loops
+			//iReturn=Mix_FadeInChannelTimed(iChan, mcThruster,
+			//			iLoops, iMillisecondsFadeIn, iTicksDuration)
+		}
+		UpdateThrustPan();
+	 }
+	 iDirKeysDown++;
+}
+void DirKeyUp() {
+	 iDirKeysDown--;
+	 if (iDirKeysDown<=0) {
+		Mix_HaltChannel(iChanThruster);
+		iChanThruster = -1;
+		iDirKeysDown=0;
+	 }
+}
+/* This function draws to the screen; replace this with your own code! */
+static void draw ()
+{
+
+	static int xTest=2;
+	static int yTest=2;
+	static int direction = 0;
+	static int value = 0;
+	static int which = 0;
+	//SDL_Rect rect;
+	//Uint32 color;
+
+	/* Create a black background */
+	//color = SDL_MapRGB (screen->format, 0, 0, 0);
+	//SDL_FillRect (screen, NULL, color);
+
+	//rect.w = 1;
+	//rect.h = 1;
+	//rect.x = xTest;
+	//rect.y = yTest;
+	//color = SDL_MapRGB(screen->format, 255,255,255);
+	//SDL_FillRect (screen, &rect, color);
+	//now move point:
+	xTest+=xDir;
+	yTest+=yDir;
+	//if (xTest>=screen->w) xDir*=-1;
+	//else if (xTest<=0) xDir*=-1;
+	//if (yTest>=screen->h) yDir*=-1;
+	//else if (yTest<=0) yDir*=-1;
+
+
+	/* Make sure everything is displayed on screen */
+	SDL_Flip (screen);
+	/* Don't run too fast */
+	SDL_Delay (1);
+}
+
+int done=0;
+SDL_Event event;
+int main (int argc, char *argv[])
+{
+	GameInit();
+	//main event loop:
+	while (!done) {
+			DWORD startTime=SDL_GetTicks();//GetTickCount();
+		//Check for events
+		bEvent=false;
+		while (SDL_PollEvent (&event)) {
+				bEvent=true;
+			switch (event.type) {
+			case SDL_KEYDOWN:
+				if (event.key.keysym.sym==SDLK_a) {
+					DirKeyDown();
+					dwPressing|=GAMEKEY_LEFT;
+					xDir=-1;
+				}
+				else if (event.key.keysym.sym==SDLK_d) {
+					DirKeyDown();
+					dwPressing|=GAMEKEY_RIGHT;
+					xDir=1;
+				}
+				else if (event.key.keysym.sym==SDLK_w) {
+					DirKeyDown();
+					dwPressing|=GAMEKEY_UP;
+					yDir=-1;
+				}
+				else if (event.key.keysym.sym==SDLK_s) {
+					DirKeyDown();
+					dwPressing|=GAMEKEY_DOWN;
+					yDir=1;
+				}
+				else if (event.key.keysym.sym==SDLK_DELETE) {
+					//laser keydown
+					dwPressing|=GAMEKEY_FIRE;
+				}
+				else if (event.key.keysym.sym==SDLK_END) {
+					dwPressing|=GAMEKEY_JUMP;
+				}
+				else if (event.key.keysym.sym==SDLK_ESCAPE) {
+					dwPressing|=GAMEKEY_EXIT;
+				}
+				else if (event.key.keysym.sym==SDLK_2) {
+					dwPressing|=GAMEKEY_DOUBLESPEED;
+				}
+				else if (event.key.keysym.sym==SDLK_p) {
+					dwPressing|=GAMEKEY_PRECISIONAIM;
+				}
+				else if (event.key.keysym.sym==SDLK_r) {
+					dwPressing|=GAMEKEY_RAPIDFIRE;
+				}
+				break;
+			case SDL_KEYUP:
+				if (event.key.keysym.sym==SDLK_a) {
+					DirKeyUp();
+					dwPressing&=(GAMEKEY_LEFT^0xFFFFFFFF);
+					xDir=0;
+				}
+				else if (event.key.keysym.sym==SDLK_d) {
+					DirKeyUp();
+					dwPressing&=(GAMEKEY_RIGHT^0xFFFFFFFF);
+					xDir=0;
+				}
+				else if (event.key.keysym.sym==SDLK_w) {
+					DirKeyUp();
+					dwPressing&=(GAMEKEY_UP^0xFFFFFFFF);
+					yDir=0;
+				}
+				else if (event.key.keysym.sym==SDLK_s) {
+					DirKeyUp();
+					dwPressing&=(GAMEKEY_DOWN^0xFFFFFFFF);
+					yDir=0;
+				}
+				else if (event.key.keysym.sym==SDLK_DELETE) {
+					//iChanLaser = Mix_PlayChannel(2, mcLaser, 0);//chan, sound, #loops
+					dwPressing&=(GAMEKEY_FIRE^0xFFFFFFFF);
+				}
+				else if (event.key.keysym.sym==SDLK_END) {
+					dwPressing&=(GAMEKEY_JUMP^0xFFFFFFFF);
+				}
+				else if (event.key.keysym.sym==SDLK_ESCAPE) {
+					dwPressing&=(GAMEKEY_EXIT^0xFFFFFFFF);
+				}
+				else if (event.key.keysym.sym==SDLK_2) {
+					dwPressing&=GAMEKEY_DOUBLESPEED^0xFFFFFFFF;
+				}
+				else if (event.key.keysym.sym==SDLK_p) {
+					dwPressing&=GAMEKEY_PRECISIONAIM^0xFFFFFFFF;
+				}
+				else if (event.key.keysym.sym==SDLK_r) {
+					dwPressing&=GAMEKEY_RAPIDFIRE^0xFFFFFFFF;
+				}
+				break;
+			case SDL_QUIT:
+				if (!done) {
+					gameState=GAME_STATE_SHUTDOWN;//makes GameMain do nothing
+					done=1;
+					GameShutdown();
+				}
+				break;
+			default:
+				break;
+			}
+		}//end while checking keyboard event
+		
+		if (!done) {
+			while((SDL_GetTicks() - startTime) < 28); //lock to approx 30fps
+			GameMain();
+					//only do one at a time, so use else if
+			if (bPlayTrumpet) {
+				bPlayTrumpet=false;
+				iChanTrumpet = Mix_PlayChannel(PickChan(), mcTrumpet, 0); //chan, sound, #loops
+			}
+			else if (iPlayLaserAlien>-1) {
+				iChanLaserAlien=Mix_PlayChannel(PickChan(), mcLaserAlien, 0); //chan, sound, #loops
+				SetPan(iChanLaserAlien, iPlayLaserAlien);
+				iPlayLaserAlien=-1;
+			}
+			else if (iPlayLaser>-1) {
+				iChanLaser=Mix_PlayChannel(PickChan(), mcLaser, 0); //chan, sound, #loops
+				SetPan(iChanLaser, iPlayLaser);
+				iPlayLaser=-1;
+			}
+			else if (iPlayExplosion>-1) {
+				iChanExplosion=Mix_PlayChannel(PickChan(), mcExplosion, 0); //chan, sound, #loops
+				SetPan(iChanExplosion, iPlayExplosion);
+				iPlayExplosion=-1;
+			}
+			else if (iPlayOuchAlien>-1) {
+				iChanOuchAlien=Mix_PlayChannel(PickChan(), mcOuchAlien, 0); //chan, sound, #loops
+				SetPan(iChanOuchAlien, iPlayOuchAlien);
+				iPlayOuchAlien=-1;
+			}
+			else if (iPlayOuchZap>-1) {
+				iChanOuchZap=Mix_PlayChannel(PickChan(), mcOuchZap, 0); //chan, sound, #loops
+				SetPan(iChanOuchZap, iPlayOuchZap);
+				iPlayOuchZap=-1;
+			}
+			else if (iPlayShieldZap>-1) {
+				iChanShieldZap=Mix_PlayChannel(PickChan(), mcShieldZap, 0); //chan, sound, #loops
+				SetPan(iChanShieldZap, iPlayShieldZap);
+				iPlayShieldZap=-1;
+			}
+		}//end if not done do normal stuff
+	}//end while not done continue main event loop
+	try {
+		Mix_HaltMusic();
+		Mix_FreeMusic(music);
+		music=NULL;
+		Mix_CloseAudio();
+	}
+	catch (char* sExn) {
+		try {
+			error_txt<<"Exception closing audio device: "<<sExn;
+		}
+		catch (char* sExn) {
+		}
+	}
+	return 0;
+}
 // FUNCTIONS ////////////////////////////////////////////////
 int TargaStride(LPTARGA image) {
-    if (image==NULL) return 0;
-    return image->width*(image->byBitDepth/8);
+	if (image==NULL) return 0;
+	return image->width*(image->byBitDepth/8);
 }
 
 void TargaToScreen_AutoCrop(LPTARGA image) {
-		//assumes 32-bit screen?
-		//for (int iLine=0; iLine<SCREEN_WIDTH; iLine++) {
-        //}
-        //debug SLOW
-        SDL_Rect rect;
-        Uint32 color;
-    
-        
-        //color = SDL_MapRGB (screen->format, 0, 0, 0);
-        //SDL_FillRect (screen, NULL, color);// Create a black background 
-        rect.w=1;
-        rect.h=1;
-        rect.x=0;
-        rect.y=0;
-        BYTE *lpbyNow=image->buffer;
-        lpbyNow+=SCREEN_OFFSET_Y*lptargaScreen->width+SCREEN_OFFSET_X;
-        int iMarginsOffset=SCREEN_WIDTH*4;
-        for (int yPix=0; yPix<SCREEN_HEIGHT; yPix++, rect.y++, rect.x=0) {
-            for (int xPix=0; xPix<SCREEN_WIDTH; xPix++, rect.x++) {
-                //color=(Uint32)*lpbyNow;
-                color=SDL_MapRGB(screen->format,lpbyNow[2],lpbyNow[1],*lpbyNow);
-                SDL_FillRect (screen, &rect, color);
-                lpbyNow+=4;
-                //lptargaNew->buffer = (BYTE *)malloc(lptarga1->width * lptarga1->height * iByteDepth);
-            }
-            lpbyNow+=iMarginsOffset;
-        }
-        SDL_Flip (screen);
+	 BYTE *lpbyNow=image->buffer;
+	 static int iScreenCorner=SCREEN_OFFSET_Y*lptargaScreen->width*4+SCREEN_OFFSET_X*4;
+	 lpbyNow+=iScreenCorner;
+	 SDL_LockSurface(screen);
+	 int iStrideScreen=screen->pitch;
+	 static int iStrideMini=4*SCREEN_WIDTH;
+	 int iStrideBig=4*image->width;
+	 if (screen->format->BytesPerPixel==4) {
+		BYTE* buffer=(BYTE*)screen->pixels;
+		for (int iLine=0; iLine<SCREEN_HEIGHT; iLine++) {
+			memcpy(buffer,lpbyNow,iStrideMini);
+			lpbyNow+=iStrideBig;
+			buffer+=iStrideScreen;
+		}
+		SDL_UnlockSurface(screen);
+	 }
+	 else {
+		SDL_UnlockSurface(screen);
+		//debug SLOW
+		SDL_Rect rect;
+		Uint32 color;
+		rect.w=1;
+		rect.h=1;
+		rect.x=0;
+		rect.y=0;
+		BYTE *lpbyNow=image->buffer;
+		static int iScreenCorner=SCREEN_OFFSET_Y*lptargaScreen->width*4+SCREEN_OFFSET_X*4;
+		lpbyNow+=iScreenCorner;
+		int iMarginsOffset=SCREEN_WIDTH*4;
+		for (int yPix=0; yPix<SCREEN_HEIGHT; yPix++, rect.y++, rect.x=0) {
+			for (int xPix=0; xPix<SCREEN_WIDTH; xPix++, rect.x++) {
+				//color=(Uint32)*lpbyNow;
+				color=SDL_MapRGB(screen->format,lpbyNow[2],lpbyNow[1],*lpbyNow);
+				SDL_FillRect (screen, &rect, color);
+				lpbyNow+=4;
+				//lptargaNew->buffer = (BYTE *)malloc(lptarga1->width * lptarga1->height * iByteDepth);
+			}
+			lpbyNow+=iMarginsOffset;
+		}
+	 }
+	 SDL_Flip (screen);
 }
 
 ///////////////////////////////////////////////////////////	 
@@ -1054,42 +1514,43 @@ void TargaToScreen_AutoCrop(LPTARGA image) {
 void TargaToScreen(LPTARGA image) {
 		//assumes 32-bit screen?
 		//for (int iLine=0; iLine<SCREEN_WIDTH; iLine++) {
-        //}
-        //debug SLOW
-        SDL_Rect rect;
-        Uint32 color;
-    
-        //color = SDL_MapRGB (screen->format, 0, 0, 0);
-        //SDL_FillRect (screen, NULL, color);// Create a black background 
-        rect.w=1;
-        rect.h=1;
-        rect.x=0;
-        rect.y=0;
-        BYTE *lpbyNow=image->buffer;
-        lpbyNow+=SCREEN_OFFSET_Y*lptargaScreen->width+SCREEN_OFFSET_X;
-        for (int yPix=0; yPix<SCREEN_HEIGHT; yPix++, rect.y++, rect.x=0) {
-            for (int xPix=0; xPix<SCREEN_WIDTH; xPix++, rect.x++, lpbyNow+=4) {
-                //color=(Uint32)*lpbyNow;
-                color=SDL_MapRGB(screen->format,lpbyNow[2],lpbyNow[1],*lpbyNow);
-                SDL_FillRect (screen, &rect, color);
-                //lptargaNew->buffer = (BYTE *)malloc(lptarga1->width * lptarga1->height * iByteDepth);
-            }
-        }
-        SDL_Flip (screen);
+		//}
+		//debug SLOW
+		SDL_Rect rect;
+		Uint32 color;
+	
+		//color = SDL_MapRGB (screen->format, 0, 0, 0);
+		//SDL_FillRect (screen, NULL, color);// Create a black background 
+		rect.w=1;
+		rect.h=1;
+		rect.x=0;
+		rect.y=0;
+		BYTE *lpbyNow=image->buffer;
+		static int iScreenCorner=SCREEN_OFFSET_Y*lptargaScreen->width*4+SCREEN_OFFSET_X*4;
+
+		lpbyNow+=iScreenCorner;
+		for (int yPix=0; yPix<SCREEN_HEIGHT; yPix++, rect.y++, rect.x=0) {
+			for (int xPix=0; xPix<SCREEN_WIDTH; xPix++, rect.x++, lpbyNow+=4) {
+				//color=(Uint32)*lpbyNow;
+				color=SDL_MapRGB(screen->format,lpbyNow[2],lpbyNow[1],*lpbyNow);
+				SDL_FillRect (screen, &rect, color);
+				//lptargaNew->buffer = (BYTE *)malloc(lptarga1->width * lptarga1->height * iByteDepth);
+			}
+		}
+		SDL_Flip (screen);
 }
 
 ///////////////////////////////////////////////////////////	 
 
-int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)//, int opacityCap)
-{
+int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY) {
 	// copy the Targa image to the primary buffer line by line
 	//	direct draw surface description 
 	// set size of the structure
 
-	register DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
-    int iStride=TargaStride(lptargaThis1);
+	register DWORD *lpdwDest = (DWORD *)lptargaThis1->buffer;
+	int iStride=TargaStride(lptargaThis1);
 
-	register BYTE *dPtr = (BYTE*)&this_buffer[toX + (toY*iStride >> 2)]; //dest pointer
+	register BYTE *dPtr = (BYTE*)&lpdwDest[toX + (toY*iStride >> 2)]; //dest pointer
 	register BYTE *sPtr = image->buffer;														 //source pointer
 	
 	register BYTE alpha,blue,green,red;
@@ -1104,14 +1565,12 @@ int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)/
 	{
 		for (register int index_x = 0; index_x < image->width; index_x++)
 		{
-			/*
-			//Get BGR values and alpha
-			BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
-				green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
-				red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
-				alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
-			*/
 			
+			//Get BGR values and alpha
+			//BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
+			//	green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
+			//	red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
+			//	alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
 			
 			blue=*sPtr++;
 			green=*sPtr++;
@@ -1135,11 +1594,11 @@ int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)/
 				dPtr+=2; //increment past alpha
 				pixel = _RGB32BIT(256,red,green,blue);
 				//Manual clip and set pixel:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
+				//if (index_x+toX<SCREEN_WIDTH)
+				//	if (index_x+toX>=0)
+				//		if (index_y+toY>=0)
+				//			if (index_y+toY<SCREEN_HEIGHT)
+								lpdwDest[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 
 			}
 			else if (alpha==255)
@@ -1147,11 +1606,11 @@ int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)/
 				dPtr+=4;
 				pixel = _RGB32BIT(256,red,green,blue);
 				//Manual clip and set pixel:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
+				//if (index_x+toX<SCREEN_WIDTH)
+				//	if (index_x+toX>=0)
+				//		if (index_y+toY>=0)
+				//			if (index_y+toY<SCREEN_HEIGHT)
+								lpdwDest[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 			}
 			else
 			{
@@ -1166,11 +1625,11 @@ int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)/
 				pixel = _RGB32BIT(256,red,green,blue);
 				//DWORD alphaPix = _RGB32BIT(1,alpha/255,alpha/255,alpha/255);
 				//Manual clip and set pixel:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
-								this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
+				//if (index_x+toX<SCREEN_WIDTH)
+				//	if (index_x+toX>=0)
+				//		if (index_y+toY>=0)
+				//			if (index_y+toY<SCREEN_HEIGHT)
+								lpdwDest[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 			}
 
 		} // end for index_x
@@ -1181,39 +1640,95 @@ int TargaToTarga32_Alpha(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)/
 } // end TargaToTarga32_Alpha
 
 ///////////////////////////////////////////////////////////////
+int IRand() {
+	static int iFibbo=1;
+	static int iFibboPrev=0;
+	int iReturn=iFibbo;
+	int iFibboTemp=iFibbo;
+	iFibbo=iFibboTemp+iFibboPrev;
+	iFibboPrev=iFibboTemp;
+	return iReturn;
+}
 
-int TargaToTarga32_AlphaQuickEdge_FX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
+float FRand() {
+	static float fFibbo=1;
+	static float fFibboPrev=0;
+	float fReturn=fFibbo;
+	float fFibboTemp=fFibbo;
+	fFibbo=fFibboTemp+fFibboPrev;
+	fFibboPrev=fFibboTemp;
+	return fReturn;
+}
+
+float FRand(float fMin, float fMax) {
+	static float fFibbo=1;
+	static float fFibboPrev=0;
+	float fReturn=fFibbo;
+	float fFibboTemp=fFibbo;
+	if (fFibboTemp+fFibboPrev+1>=(65534.0f)) {//prevent overflow
+		fFibboTemp=1;
+		fFibbo=1;
+		fFibboPrev=0;
+	}
+	fFibbo=fFibboTemp+fFibboPrev;
+	fFibboPrev=fFibboTemp;
+	if (fMax<=fMin) fMax=fMin+1.0f;//prevent crashes
+	//srand(SDL_GetTicks());
+	float fRange=fMax-fMin;
+	//fReturn=(int)(fReturn)%(int)(fRange);
+	//while (fReturn>fRange) fReturn--;
+	//fReturn+=fMin;
+	return (float)((int)(fReturn)%(int)(fRange))+fMin;
+	
+	//return (rand()%1)?fMin:fMax;//debug re-implement this
+}
+///////////////////////////////////////////////////////////////
+bool bQuickEdge=false;
+int TargaToTarga32_FX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
 {
-	register DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
+	//if (explodedness>7) explodedness=7;
+	register DWORD *lpdwDest = (DWORD *)lptargaThis1->buffer;
 	int iStride=TargaStride(lptargaThis1);
-	register BYTE *dPtr = (BYTE*)&this_buffer[toX + (toY*iStride >> 2)];
+	register BYTE *dPtr = (BYTE*)&lpdwDest[toX + (toY*iStride >> 2)];
 	register BYTE *sPtr = image->buffer;
 	register BYTE blue,green,red,alpha;
 	register DWORD pixel;
-	register int tox1 = toX; //save original
+	register int xOffset;
+	register int yOffset;
 	register int explod1 = explodedness; //save original
 
-/*
-	if (explodedness)
-	{//this keeps the exploded object red but solid until after frame 3
-		if (explodedness<=3)
-			explodedness=0;
-		else
-			explodedness-=3;
-	}
-*/
-	if (explodedness) explodedness--; //start explosion just as a red dude, not blown up yet at 1
 
+	//if (explodedness)
+	//{//this keeps the exploded object red but solid until after frame 3
+	//	if (explodedness<=3)
+	//		explodedness=0;
+	//	else
+	//		explodedness-=3;
+	//}
+
+	if (explodedness) explodedness--; //start explosion just as a red object, not blown up yet at 1
+	 float fExplode=(float)explodedness/7.0f;
+	 if (fExplode>1.0f) fExplode=1.0f;
+	 register int iHalfHeight=image->height/2;
+	 register int iHalfWidth=image->height/2;
+	 register int yMaxEx,xMaxEx;
+	 float fRemains=1.0f-fExplode;
+	 float fExplodeLog=sqrt(fExplode);
+	 float fRemainsExp=fRemains*fRemains;
+	 float fRemainsLog=(fRemains*fRemains)/fRemains;
 	for (register int index_y = 0; index_y < image->height; index_y++)
 	{
-		if (index_y%2) //splits object into squares
-			toY+=explodedness;
-		toX=tox1; //reset offset before exploding next line of image
+		//if (index_y%2) //splits object into squares
+		//	toY+=explodedness;
+		yOffset = toY;
+		yMaxEx=(index_y<iHalfHeight)?iHalfHeight-index_y:index_y-iHalfHeight;
 
 		for (register int index_x = 0; index_x < image->width; index_x++)
 		{
-			if (index_x%2) //splits object into squares
-				toX+=explodedness;
+			xMaxEx=(index_x<iHalfWidth)?iHalfWidth-index_x:index_x-iHalfWidth;
+			//if (index_x%2) //splits object into squares
+			//	toX+=explodedness;
+			xOffset = toX;
 
 			blue=*sPtr++;
 			green=*sPtr++;
@@ -1224,162 +1739,196 @@ int TargaToTarga32_AlphaQuickEdge_FX(LPTARGA image, LPTARGA lptargaThis1, int to
 				green>>=1;
 				blue>>=2;
 			}
+			
+			if (explodedness) {
+								//uses -= for implosion
+				 if (index_x<iHalfWidth) xOffset-=(int)(FRand(-xMaxEx,0)*fExplodeLog);
+				 else xOffset-=(int)(FRand(0,xMaxEx)*fExplodeLog);
+				 if (index_y<iHalfHeight) yOffset=toY+(int)(FRand(-yMaxEx,0)*fExplodeLog);
+				 else yOffset=toY+(int)(FRand(0,yMaxEx)*fExplodeLog);
+				 green*=fRemainsExp;
+				 red*=fRemainsExp;
+				 green*=fRemainsExp;
+				 alpha*=fRemains;
+			}
+
 
 			if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-			
-			if (alpha<85)
-			{
-				dPtr+=4;
-			}
-			else if (alpha>171)
-			{	dPtr+=4;
-				
-				//register int scaledX = (scale==1) ? index_x : index_x*scale,
-				//			 scaledY = (scale==1) ? index_y : index_y*scale;
-				//Manual clip	and set pixel:
-				if (index_x + toX<SCREEN_WIDTH)
-					if (index_x + toX>=0)
-						if (index_y + toY>=0)
-							if (index_y + toY<SCREEN_HEIGHT)
-							{
-								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[index_x + toX + ((index_y + toY)*iStride >> 2)] = pixel;
-							}
-			}
-			else
-			{//blend
-				if (dwStat & STATUS_SHIELD)
-				{//blue outline
-					blue = 192;
-					green = 64;
+			if (bQuickEdge) {
+				if (alpha<85)
+				{
+					dPtr+=4;
+				}
+				else if (alpha>171)
+				{	dPtr+=4;
+					
+					//register int scaledX = (scale==1) ? index_x : index_x*scale,
+					//			 scaledY = (scale==1) ? index_y : index_y*scale;
+					//Manual clip	and set pixel:
+					//if (index_x + toX<SCREEN_WIDTH)
+					//	if (index_x + toX>=0)
+						//	if (index_y + toY>=0)
+								//if (index_y + toY<SCREEN_HEIGHT)
+								//{
+									pixel = _RGB32BIT(256,red,green,blue);
+									lpdwDest[index_x + xOffset + ((index_y + yOffset)*iStride >> 2)] = pixel;
+								//}
 				}
 				else
-				{//actual blend
-					blue = (*dPtr + blue)/2;
+				{//blend
+					if ((dwStat & STATUS_SHIELD)&&alpha<172)
+					{//blue outline
+						blue = 192;
+						green = 64;
+					}
+					blue = alphaLook[blue][*dPtr][alpha];
 					dPtr++;
-					green = (*dPtr + green)/2;
+					green = alphaLook[green][*dPtr][alpha];
 					dPtr++;
-					red = (*dPtr + red)/2;
+					red = alphaLook[red][*dPtr][alpha];
 					dPtr+=2;
-				}
-
-				//register int scaledX = (scale==1) ? index_x : index_x*scale,
-				//			 scaledY = (scale==1) ? index_y : index_y*scale;
-				//Manual clip and set pixel:
-				if (index_x + toX<SCREEN_WIDTH)
-					if (index_x + toX>=0)
-						if (index_y + toY>=0)
-							if (index_y + toY<SCREEN_HEIGHT)
-							{
-								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[index_x + toX + ((index_y + toY)*iStride >> 2)] = pixel;
-							}
-			}
+					
+	
+					//register int scaledX = (scale==1) ? index_x : index_x*scale,
+					//			 scaledY = (scale==1) ? index_y : index_y*scale;
+					//Manual clip and set pixel:
+					//if (index_x + toX<SCREEN_WIDTH)
+					//	if (index_x + toX>=0)
+						//	if (index_y + toY>=0)
+							//	if (index_y + toY<SCREEN_HEIGHT)
+								//{
+									pixel = _RGB32BIT(256,red,green,blue);
+									lpdwDest[index_x + xOffset + ((index_y + yOffset)*iStride >> 2)] = pixel;
+								//}
+				}//end else solid
+			}//end if quickedge
+			else {
+					if ((dwStat & STATUS_SHIELD)&&alpha<172)
+					{//blue outline
+						blue = 192;
+						green = 64;
+					}
+					blue = alphaLook[blue][*dPtr][alpha];
+					dPtr++;
+					green = alphaLook[green][*dPtr][alpha];
+					dPtr++;
+					red = alphaLook[red][*dPtr][alpha];
+					dPtr+=2;
+					pixel = _RGB32BIT(255,red,green,blue);
+					lpdwDest[index_x + xOffset + ((index_y + yOffset)*iStride >> 2)] = pixel;
+			}//end else not bQuickEdge
 		}
 		dPtr+=iStride-image->width*4;
 	}
 	return(1);
-} // end TargaToTarga32_AlphaQuickEdge_FX
+} // end TargaToTarga32_FX
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int TargaToTarga32_AlphaQuickEdge_FX_Scaled(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale)
-{
-	register DWORD *this_buffer = (DWORD *)lptargaThis1;
-	int iStride=TargaStride(lptargaThis1);
-	register BYTE *dPtr = (BYTE*)&this_buffer[toX + (toY*iStride >> 2)];
-	register BYTE *sPtr = image->buffer;
+int TargaToTarga32_FX_Scaled(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat, float scale) {
+	register DWORD* lpdwDest = (DWORD*)lptargaThis1->buffer;
+	register DWORD* lpdwSrc = (DWORD*)image->buffer;
+	register int iStride=TargaStride(lptargaThis1);
+	register int iDestW=lptargaThis1->width;
+	register BYTE* dPtr = (BYTE*)&lpdwDest[toX + (toY*iDestW)];
+	register BYTE* sPtr;// = image->buffer;
+	//memcpy(dPtr,lpdwDest,lptargaThis1->width*4);//debug only
 	register BYTE blue,green,red,alpha;
 	register DWORD pixel;
-	register int tox1 = toX; //save original
+	//register int tox1 = toX; //save original
+	register int xOffset;
+	register int yOffset;
 	register int explod1 = explodedness; //save original
-
+	register int iScale=(int)(scale+0.5f);
+	register int iDestNow=0;
 	if (explodedness) explodedness--; //start explosion just as a red dude, not blown up yet at frame 1
-
-	for (register int index_y = 0; index_y < image->height; index_y++)
-	{
-		if (index_y%2) //splits object into squares
-			toY+=explodedness;
-		toX=tox1; //reset offset before exploding next line of image
-
-		for (register int index_x = 0; index_x < image->width; index_x++)
-		{
-			if (index_x%2) //splits object into squares
-				toX+=explodedness;
-
+	register float fExplode=((float)explodedness/FMAX_EXPLODEDNESS);
+	if (fExplode>1.0f) fExplode=1.0f;
+	register float fExplodeExp=fExplode*fExplode;
+	register float fExplodeLog=sqrt(fExplode);
+	register float fRemains=(1.0f-fExplode);
+	register float fRemainsExp=fRemains*fRemains;
+	//exp example: .75 = 0.5625
+	//log example: .75 = 
+	register int iScaledW=(int)((float)image->width*scale);
+	register int iScaledH=(int)((float)image->height*scale);
+	register int iSrcStride=image->width*4;
+	//register float fRemainsExp=fRemains*fRemains;//exponential decay
+	//register int iSubStride=iStride-(iScale*4);//only for scale>1 subloop
+	register int yMaxEx, xMaxEx, iHalfHeight=iScaledH/2, iHalfWidth=iScaledW/2;//explosion vars
+	register float fY=0.0f, fX;
+	register float fSrcStride=(float)iSrcStride;
+	register int iLimiter=lptargaThis1->height-1;
+	if (scale<=0) scale=1;//prevent crash
+	register float fInverseScale=1.0f/scale;
+	for (register int index_y = 0; index_y < iScaledH; index_y++, fY+=1.0f) {
+		if (index_y>=iLimiter) break;
+		//if (index_y%2) //splits object into squares
+		//	toY+=explodedness;
+		//toX=tox1; //reset offset before exploding next line of image
+		yMaxEx=(index_y<iHalfHeight)?iHalfHeight-index_y:index_y-iHalfHeight;
+		yOffset=toY;
+		fX=0.0f;
+		for (register int index_x = 0; index_x < iScaledW; index_x++, fX+=1.0f) {
+			//if (index_x>lptargaThis1->width) break;
+			//if (index_x%2) //splits object into squares
+			//	toX+=explodedness;
+			xOffset=toX;
+			xMaxEx=(index_x<iHalfWidth)?iHalfWidth-index_x:index_x-iHalfWidth;
+			sPtr=(BYTE*)&lpdwSrc[(int)(fY*fInverseScale)*image->width + (int)(fX*fInverseScale)];
 			blue=*sPtr++;
 			green=*sPtr++;
 			red=*sPtr++;
-			alpha=*sPtr++;
-			if (explod1 || 255-opacityCap) //this use of opacity cap is unique to DXMan, makes it red when transparent
-			{
+			alpha=*sPtr; //++;
+			if (explod1 || 255-opacityCap) { //this use of opacity cap is unique to DXMan, makes it red when transparent
 				green>>=1;
 				blue>>=2;
 			}
 
 			if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
-			
-			if (alpha<85)
-			{//transparent
-				dPtr+=4;
-			}
-			else if (alpha>171)
-			{//opaque
-				dPtr+=4;
-				
-				register int scaledX = (scale==1) ? index_x : index_x*scale,
-							 scaledY = (scale==1) ? index_y : index_y*scale;
-				//Manual clip	and set pixel:
-				if (scaledX+toX<SCREEN_WIDTH)
-					if (scaledX+toX>=0)
-						if (scaledY+toY>=0)
-							if (scaledY+toY<SCREEN_HEIGHT)
-							{
-								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[toX + scaledX + ((scaledY+toY)*iStride >> 2)] = pixel;
-							}
-			}
-			else
-			{//blend
-				if (dwStat & STATUS_SHIELD)
-				{//blue outline
-					blue = 192;
-					green = 64;
-				}
-				else
-				{//actual blend
-					blue = (*dPtr + blue)/2;
-					dPtr++;
-					green = (*dPtr + green)/2;
-					dPtr++;
-					red = (*dPtr + red)/2;
-					dPtr+=2;
-				}
 
-				register int scaledX = (scale==1) ? index_x : index_x*scale,
-							 scaledY = (scale==1) ? index_y : index_y*scale;
-				//Manual clip and set pixel:
-				if (scaledX+toX<SCREEN_WIDTH)
-					if (scaledX+toX>=0)
-						if (scaledY+toY>=0)
-							if (scaledY+toY<SCREEN_HEIGHT)
-							{
-								pixel = _RGB32BIT(256,red,green,blue);
-								this_buffer[toX + scaledX + ((scaledY+toY)*iStride >> 2)] = pixel;
-							}
+			if (explodedness) {
+								//uses -= for implosion
+				 if (index_x<iHalfWidth) xOffset-=(int)(FRand(-xMaxEx,0)*fExplodeLog);
+				 else xOffset-=(int)(FRand(0,xMaxEx)*fExplodeLog);
+				 if (index_y<iHalfHeight) yOffset=toY+(int)(FRand(-yMaxEx,0)*fExplodeLog);
+				 else yOffset=toY+(int)(FRand(0,yMaxEx)*fExplodeLog);
+				 green*=fRemains;
+				 red*=fRemains;
+				 green*=fRemains;
+				 alpha*=fRemainsExp;
 			}
-		}
-		dPtr+=iStride-image->width*4;
-	}
+			
+			register int iDest1=xOffset + index_x + ((index_y+yOffset)*iDestW);
+			dPtr=(BYTE*)&lpdwDest[iDest1];
+					if ((dwStat & STATUS_SHIELD)&&alpha<172)
+					{//blue outline
+						blue = 192;
+						green = 64;
+					}
+					blue = alphaLook[blue][*dPtr][alpha];
+					dPtr++;
+					green = alphaLook[green][*dPtr][alpha];
+					dPtr++;
+					red = alphaLook[red][*dPtr][alpha];
+					//dPtr+=2;
+					pixel=_RGB32BIT(255,red,green,blue);
+					if (iDest1<SCREENBUFFER_SIZE) {
+						lpdwDest[iDest1] = pixel;
+					}
+		}//end for index_x
+		if (iDestNow>=SCREENBUFFER_SIZE) break;
+		//dPtr+=iStride-iScaledW*4;
+	}//end for index_y
 	return(1);
-} // end TargaToTarga32_AlphaQuickEdge_FX_Scaled
+} // end TargaToTarga32_FX_Scaled
 
 ///////////////////////////////////////////////////////////////////////////////
 
 int TargaToTarga32(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)
 {
-	DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
-    int iStride=TargaStride(lptargaThis1);
+	DWORD *lpdwDest = (DWORD *)lptargaThis1->buffer;
+	int iStride=TargaStride(lptargaThis1);
 	// process each line and copy it into the primary buffer
 	for (int index_y = 0; index_y < image->height; index_y++)
 	{
@@ -1395,7 +1944,7 @@ int TargaToTarga32(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)
 			DWORD pixel = _RGB32BIT(alpha,red,green,blue);
 
 			// write the pixel
-			this_buffer[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
+			lpdwDest[toX + index_x + ((index_y+toY)*iStride >> 2)] = pixel;
 
 		} // end for index_x
 
@@ -1408,9 +1957,9 @@ int TargaToTarga32(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY)
 
 int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, int opacityCap, int explodedness, DWORD dwStat)
 {//uses alpha lookup
-	//register DWORD *this_buffer = (DWORD *)lptargaThis1->buffer;
-    int iStride=TargaStride(lptargaThis1);
-	register BYTE *dPtr = lptargaThis1->buffer;//(BYTE*)&this_buffer[toX + (toY*iStride >> 2)]; //dest pointer
+	//register DWORD *lpdwDest = (DWORD *)lptargaThis1->buffer;
+	int iStride=TargaStride(lptargaThis1);
+	register BYTE *dPtr = lptargaThis1->buffer;//(BYTE*)&lpdwDest[toX + (toY*iStride >> 2)]; //dest pointer
 	register BYTE *sPtr = (BYTE *)image->buffer;														 //source pointer
 	register BYTE *sPtrAlpha = (BYTE *)image->buffer;
 	sPtrAlpha+=3; //move pointer to position of alpha byte
@@ -1432,20 +1981,16 @@ int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, i
 	dPtr+=toY*iStride;
 	int offset = iStride - image->width*REAL_BYTEDEPTH;
 
-	//int scalerAdder=5-scale*4 //ADD THIS TO indexES INSTEAD OF ++, AND MULTIPLY USES OF width BY scale
-	
-	for (register int index_y = 0; index_y < image->height; index_y++)
-	{
-		for (register int index_x = 0; index_x < image->width; index_x++)
-		{
+	for (register int index_y = 0; index_y < image->height; index_y++) {
+		for (register int index_x = 0; index_x < image->width; index_x++) {
 			draw=0;	//for clipping
-			/*
+			
 			//Get BGR values and alpha
-			BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
-				green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
-				red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
-				alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
-			*/
+			//BYTE blue	= (image->buffer[index_y*image->width*4 + index_x*4 + 0]),
+			//	green = (image->buffer[index_y*image->width*4 + index_x*4 + 1]),
+			//	red	 = (image->buffer[index_y*image->width*4 + index_x*4 + 2]),
+			//	alpha = (image->buffer[index_y*image->width*4 + index_x*4 + 3]);
+			
 
 			//if (alpha>opacityCap) alpha=opacityCap; //"Cap" opacity off at opacityCap to create transparency if not 255
 
@@ -1458,13 +2003,12 @@ int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, i
 			else if (*sPtrAlpha==255)
 			{//Solid
 				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
+				//if (index_x+toX<SCREEN_WIDTH)
+				//	if (index_x+toX>=0)
+				//		if (index_y+toY>=0)
+				//			if (index_y+toY<SCREEN_HEIGHT)
 								draw=1;
-				if (draw)
-				{
+				if (draw) {
 					*dPtr = *sPtr;
 					dPtr++;
 					sPtr++;
@@ -1490,23 +2034,22 @@ int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, i
 			else
 			{//Do Alpha Formula (use lookup instead of calculating)
 				//Manual clip:
-				if (index_x+toX<SCREEN_WIDTH)
-					if (index_x+toX>=0)
-						if (index_y+toY>=0)
-							if (index_y+toY<SCREEN_HEIGHT)
+				//if (index_x+toX<SCREEN_WIDTH)
+				//	if (index_x+toX>=0)
+				//		if (index_y+toY>=0)
+				//			if (index_y+toY<SCREEN_HEIGHT)
 								draw=1;
-				if (draw)
-				{
-				/*
+				if (draw) {
+				
 					//Calculate value by alpha
-					cookedAlpha = *sPtrAlpha/255.00;
-					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
-					dPtr++;	sPtr++;
-					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
-					dPtr++; sPtr++;
-					*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
-					dPtr++;	if (REAL_BYTEDEPTH==4) dPtr++; sPtr+=2;
-				*/
+					//cookedAlpha = *sPtrAlpha/255.00;
+					//*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
+					//dPtr++;	sPtr++;
+					//*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
+					//dPtr++; sPtr++;
+					//*dPtr = ((*sPtr - *dPtr) * cookedAlpha + *dPtr);
+					//dPtr++;	if (REAL_BYTEDEPTH==4) dPtr++; sPtr+=2;
+				
 				
 					//Lookup value by alpha
 					*dPtr = alphaLook[int(*sPtr)][int(*dPtr)][int(*sPtrAlpha)];
@@ -1532,92 +2075,43 @@ int TargaToTargaAlphaFX(LPTARGA image, LPTARGA lptargaThis1, int toX, int toY, i
 } // end TargaToTarga_Alpha
 
 ///////////////////////////////////////////////////////////////
+bool AddScreenItem(int iType, int zOrder, int iEntityIndex) {
+	bool bGood=false;
+	if (iScreenItems<MAX_SCREENITEMS) {
+		screenitemarr[iScreenItems].zOrder=zOrder;
+        screenitemarr[iScreenItems].index=iEntityIndex;
+		screenitemarr[iScreenItems].iType=iType;
+		iScreenItems++;
+		bGood=true;
+	}
+}
+///////////////////////////////////////////////////////////////
 
-LRESULT CALLBACK WindowProc(HWND hwnd, 
-								UINT msg, 
-														WPARAM wparam, 
-														LPARAM lparam)
+int GameMain()
 {
-	// this is the main message handler of the system
-	PAINTSTRUCT		ps;		// used in WM_PAINT
-	HDC				hdc;	// handle to a device context
-	char buffer[80];				// used to print strings
-
-	// what is the message 
-	switch(msg)
-	{	
-	case WM_CREATE: 
-				{
-		// do initialization stuff here
-				// return success
-		return(0);
-		} break;
-	 
-	case WM_PAINT: 
-		{
-		// simply validate the window 
-				 hdc = BeginPaint(hwnd,&ps);	 
-				
-				// end painting
-				EndPaint(hwnd,&ps);
-
-				// return success
-		return(0);
-			 } break;
-
-	case WM_DESTROY: 
-		{
-
-		// kill the application, this sends a WM_QUIT message 
-		PostQuitMessage(0);
-
-				// return success
-		return(0);
-		} break;
-
-	default:break;
-
-		} // end switch
-
-	// process any messages that we didn't take care of 
-	return (DefWindowProc(hwnd, msg, wparam, lparam));
-
-} // end WinProc
-
-///////////////////////////////////////////////////////////
-
-int GameMain(void *parms = NULL, int num_parms = 0)
-{
-	// this is the main loop of the game, do all your processing
-	// here
-	
-
-	// make sure this isn't executed again
-	if (window_closed)
-		return(0);
-
+	if (done) return(0);
 	// for now test if user is hitting ESC
-	if (KEYDOWN(VK_ESCAPE))
-	{//int answer = 0;
-			
+	if ((dwPressing&GAMEKEY_EXIT)&&(SDL_GetTicks()-iEscapeTime)>1000) {//int answer = 0;
+		iEscapeTime=SDL_GetTicks();
 			TargaToTarga32_Alpha(lptargaGameScreen[2], lptargaScreen,
-				SCREEN_WIDTH/2-lptargaGameScreen[2]->width/2,
-				SCREEN_HEIGHT/2-lptargaGameScreen[2]->height/2);
-            TargaToScreen_AutoCrop(lptargaScreen);
-			DWORD startTime=GetTickCount();
-			while((GetTickCount() - startTime) < 300);
+		SCREEN_WIDTH/2-lptargaGameScreen[2]->width/2+SCREEN_OFFSET_X,
+		SCREEN_HEIGHT/2-lptargaGameScreen[2]->height/2+SCREEN_OFFSET_Y);
+		TargaToScreen_AutoCrop(lptargaScreen);
+		iEscapeTime=SDL_GetTicks();
 
-		while (1)
-		{
-			if (KEYDOWN(0x59)) //HEX: 59 //LETTER:Y
-			{
-				gameState=GAME_STATE_EXIT;
-				break;
-			}
-			else if (KEYDOWN(0x4E)) //HEX: 4E //LETTER:N
-			{
-				gameState=GAME_STATE_RUN;
-				break;
+		while (1) {
+			if(SDL_PollEvent (&event)) {
+				if (event.key.keysym.sym==SDLK_DELETE) {
+					gameState=GAME_STATE_EXIT;
+					break;
+				}
+				else if (event.key.keysym.sym==SDLK_ESCAPE) {
+					if((SDL_GetTicks() - iEscapeTime) > 1000) {
+						dwPressing&=GAMEKEY_EXIT^0xFFFFFFFF;
+						gameState=GAME_STATE_RUN;
+						break;
+					}
+				}
 			}
 		}
 		
@@ -1625,15 +2119,24 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	}
 
 
-	if (gameState == GAME_STATE_INIT)
-	{
-		TargaToTarga32(lptargaIntro, lptargaScreen, SCREEN_WIDTH/2-lptargaIntro->width/2,0);
+	if (gameState == GAME_STATE_INIT) {
+		TargaToTarga32(lptargaIntro, lptargaScreen, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaIntro->width/2),SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
 		//PlaySound((const char*)SOUND_ID_INTRO/*"Orangejuice-DXMan-Intro.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
-		DWORD startTime=GetTickCount();
-			while((GetTickCount() - startTime) < 1000);
-		while (KEYUP(VK_RETURN))
-		{
+		DWORD startTime=SDL_GetTicks();
+			while((SDL_GetTicks() - startTime) < 1000);
+		bool bStart=false;
+		while (!bStart) {
+			if (SDL_PollEvent (&event)) {
+				switch (event.type) {
+				case SDL_KEYDOWN:
+					 if (event.key.keysym.sym==SDLK_DELETE) {
+						bStart=true;
+						break;
+					 }
+				default:break;
+			 	}
+			}
 		}
 
 		if (hero != NULL)
@@ -1672,16 +2175,16 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 				return (0);
 			}
 
-			/*
-			//32-bit backdrop surface
-			if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
-			{	
-				iErrorsSaved++;
-				error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 1";
-				return(0);
-			}
 			
-            */
+			//32-bit backdrop surface
+			//if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
+			//{	
+			//	iErrorsSaved++;
+			//	error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 1";
+			//	return(0);
+			//}
+			
+			
 			//errlog.AddPrecedent("About to call TargaUnload(lptargaBackdrop)","START_LEVEL 1");
 			//TargaUnload(lptargaBackdrop);
 			//errlog.Add(iLastErr, "unload lptargaBackdrop","START_LEVEL");
@@ -1699,20 +2202,20 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 				iErrorsSaved++;
 				return (0);
 			}
-/*
+
 			//32-bit backdrop surface
-			if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
-			{	
-				error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 2";
-				iErrorsSaved++;
-				return(0);
-			}
+			//if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
+			//{	
+			//	error_txt << "\nUnable to render Targa to 32-bit Backdrop in START_LEVEL 2";
+			//	iErrorsSaved++;
+			//	return(0);
+			//}
 			
 
-			//errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)","START_LEVEL 2");
-			TargaUnload(lptargaBackdrop);
-			errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 2");
-			*/
+			////errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)","START_LEVEL 2");
+			//TargaUnload(lptargaBackdrop);
+			//errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 2");
+			
 		}
 		else if (gameLevel==3)
 		{
@@ -1726,30 +2229,15 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 				iErrorsSaved++;
 				return (0);
 			}
-/*
-			if (REAL_BPP == 24)
-			{
-				if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))//ix)
-				{
-					error_txt << "\nUnable to render targaBack to 24-bit surface";
-					iErrorsSaved++;
-					return(0);
-				}
-			}
-			else
-			{
-				if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
-				{
-					error_txt << "\nUnable to render targaBack to 32-bit surface";
-					iErrorsSaved++;
-					return(0);
-				}
-			}
-
-			//errlog.AddPrecedent("Calling TargaUnload(lptargaBackdrop)", "START_LEVEL 3");
-			TargaUnload(lptargaBackdrop);
-			errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 3");
-			*/
+			
+			//if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0)) {
+			//	error_txt << "\nUnable to render targaBack to 32-bit surface";
+			//	iErrorsSaved++;
+			//	return(0);
+			//}
+			//TargaUnload(lptargaBackdrop);
+			//errlog.Add(iLastErr, "unload lptargaBackdrop", "START_LEVEL 3");
+			
 		}
 
 
@@ -1761,10 +2249,14 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	else if (gameState == GAME_STATE_START_STAGE)
 	{//START STAGE
 		bombed=0;
+		Mix_HaltMusic();
+		Mix_FreeMusic(music);
+		music = NULL;
+		music = Mix_LoadMUS("Orangejuice-DXMan-Invasion.ogg");
+		Mix_PlayMusic(music, -1); //0 for once, -1 for infinite
 		//PlaySound((const char*)SOUND_ID_INVASION/*"Orangejuice-DXMan-Invasion.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
-		for (index=0; index<MAXALIENS; index++)
-		{
-			aliens[index] = new Alien(SCREEN_WIDTH, index*(SCREEN_HEIGHT/8), index+1);
+		for (int index=0; index<MAXALIENS; index++) {
+			aliens[index] = new Alien(3, index-2, 4);
 			//aliens[index]->x = SCREEN_WIDTH;
 			//aliens[index]->y += index*(SCREEN_HEIGHT/64);
 			//aliens[index]->z = index+1;
@@ -1778,32 +2270,30 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 		gameState = GAME_STATE_RUN;
 	}
 
-	else if (gameState == GAME_STATE_RUN)
-	{
+	else if (gameState == GAME_STATE_RUN) {
 		//if KEYDOWN(65/* a */) hero->dwStatus |= STATUS_ANTIGRAVITY;
 		//if KEYUP(65) hero->dwStatus ^= STATUS_ANTIGRAVITY;
 
-		if KEYDOWN(68/* d */) hero->turn(1);//if KEYDOWN(VK_RIGHT) hero->turn(1);
-		if KEYDOWN(65/* a */) { hero->turn(-1);	doublecode=0;}//if KEYDOWN(VK_LEFT) hero->turn(-1);
-		if KEYDOWN(VK_HOME) { hero->jump();		doublecode=0;}
-		if KEYDOWN(87/* w */) { hero->move(-1);	doublecode=0;}//if KEYDOWN(VK_UP) hero->move(-1);
-		if KEYDOWN(83/* s */) { hero->move(1);	 doublecode=0;}//if KEYDOWN(VK_DOWN) hero->move(1);
-		if KEYUP(VK_INSERT) hero->shootDelay=0;
-		if KEYDOWN(VK_INSERT) hero->shoot();
-		if KEYDOWN(50/* 2 */)
-		{//pressing '2' 10 times activates STATUS_DOUBLESPEED
-			if (!keyDelay)
-			{keyDelay=1;
-				doublecode++;}
-		}
-		if KEYUP(50/* 2 */) keyDelay=0;
-		if KEYDOWN(80/* p */)
-		{//pressing 'p' 20 times activates STATUS_PRECISIONAIM
-			if (!keyDelay)
-			{keyDelay=1;
-				precisecode++;}
-		}
-		if KEYUP(80/* p */) keyDelay=0;
+		if (dwPressing&GAMEKEY_RIGHT) { hero->turn(1); hero->move(1,0);}
+		if (dwPressing&GAMEKEY_LEFT) { hero->turn(-1); hero->move(-1,0);}
+		if (dwPressing&GAMEKEY_JUMP) { hero->jump(); }
+		if (dwPressing&GAMEKEY_UP) { hero->aim(-1); }
+		if (dwPressing&GAMEKEY_DOWN) { hero->aim(1);	}
+		if (dwPressing&GAMEKEY_UP) { hero->move(0,1); }
+		if (dwPressing&GAMEKEY_DOWN) { hero->move(0,-1);	}
+		if (!(dwPressing&GAMEKEY_FIRE)) hero->shootDelay=0;
+		if (dwPressing&GAMEKEY_FIRE) hero->shoot();
+
+		if (dwPressing&GAMEKEY_DOUBLESPEED) doublecode++;//holding '2' activates STATUS_DOUBLESPEED
+		else doublecode=0;
+
+		if (dwPressing&GAMEKEY_PRECISIONAIM) precisecode++;
+		else precisecode=0;
+
+		if (dwPressing&GAMEKEY_RAPIDFIRE) rapidfirecode++; //holding 'r' activates STATUS_RAPIDFIRE
+		else rapidfirecode=0;
+
+		//if KEYUP(80/* p */) keyDelay=0;
 
 		/*
 		if KEYDOWN(65)
@@ -1824,66 +2314,89 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 		*/
 		
 
-		if (doublecode>=10 && hero->dwStatus ^ STATUS_DOUBLESPEED) hero->doublespeed();
-		if (precisecode>=20 && hero->dwStatus ^ STATUS_PRECISIONAIM) hero->precisionaim();
+		if (doublecode>=CODE_THRESHOLD && hero->dwStatus ^ STATUS_DOUBLESPEED) hero->doublespeed();
+		if (precisecode>=CODE_THRESHOLD && hero->dwStatus ^ STATUS_PRECISIONAIM) hero->precisionaim();
+		if (rapidfirecode>=CODE_THRESHOLD && hero->dwStatus ^ STATUS_RAPIDFIRE) hero->rapidfire();
 
 		TargaToTarga32(lptargaBackdrop, lptargaScreen, SCREEN_OFFSET_X, SCREEN_OFFSET_Y);
-        //DDrawDrawSurface(lptargaScreendrop, 0, 0, SCREEN_WIDTH+1, SCREEN_HEIGHT+1, lptargaScreen);
+		DrawRadarField();
 
 		//Update all the existing aliens, delete the rest
-		for (index=0; index < MAXALIENS; index++)
-		{//Prototype is (LPTARGA image, LPTARGA lptargaThis1, int toX, int toY_)
-			if (hero!=NULL && (index == hero->z-1))//(calculate layer to put hero in)
-				hero->refresh();
-			if (aliens[index] != NULL)
-			{
-				aliens[index]->refresh();
-				//hero->drawTarget(index);
-				if (aliens[index]->explodedBy>6)
-				{
-					if (aliens[index]->dwStatus & STATUS_BOSS)
-					{
-						for (int alienNow=0; alienNow < MAXALIENS; alienNow++)
-						{
-							if (aliens[alienNow]->dwStatus & STATUS_SHIELD)
-								aliens[alienNow]->dwStatus ^= STATUS_SHIELD;
+		if (hero!=NULL) {
+			hero->refresh();
+			AddScreenItem(SCREENITEM_HERO,ZORDER_FROMY(hero->y),0);
+			DrawRadarDot(hero->x, hero->y, hero->z, 0xFFFFFFFF);
+		}
+
+		for (int iAlien=0; iAlien < MAXALIENS; iAlien++) {
+			if (aliens[iAlien] != NULL) {
+				aliens[iAlien]->refresh();
+				AddScreenItem(SCREENITEM_ALIEN,ZORDER_FROMY(aliens[iAlien]->y),iAlien);
+				////hero->drawTarget(iAlien);
+				DrawRadarDot(aliens[iAlien]->x, aliens[iAlien]->y, aliens[iAlien]->z, 0x0000FFFF);
+				if (aliens[iAlien]->explodedBy>MAX_EXPLODEDNESS) {
+					if (aliens[iAlien]->dwStatus & STATUS_BOSS) {
+						for (int iAlienToDeShield=0; iAlienToDeShield < MAXALIENS; iAlienToDeShield++) {
+							if (aliens[iAlienToDeShield]->dwStatus & STATUS_SHIELD)
+								aliens[iAlienToDeShield]->dwStatus ^= STATUS_SHIELD;
 						}
 					}
 
-					delete aliens[index];
-					aliens[index] = NULL;
+					delete aliens[iAlien];
+					aliens[iAlien] = NULL;
 				}
 			}
 		}
 
-		if (hero->explodedBy>10)
-		{
+		if (hero->explodedBy>MAX_EXPLODEDNESS) {
 			delete hero;
 			hero=NULL;
 			gameState=GAME_STATE_YOU_LOSE;
 		}
-		
-
-		for (index=0; index<MAXSHOTS; index++)
-		{
-			if (shots[index] != NULL)
-			{
-				shots[index]->refresh();
-				if (shots[index]->dead)
-				{
-					delete shots[index];
-					shots[index] = NULL;
+		for (int iX=0; iX<MAXSHOTS; iX++) {
+			if (shots[iX] != NULL) {
+				shots[iX]->refresh();
+				AddScreenItem(SCREENITEM_SHOT,ZORDER_FROMY(shots[iX]->y),iX);
+				DrawRadarDot(shots[iX]->x, shots[iX]->y, shots[iX]->z, 0xFF8800FF);
+				if (shots[iX]->dead) {
+					delete shots[iX];
+					shots[iX] = NULL;
 				}
 			}
 		}
 
-
-		//DDrawDrawSurface(lptargaExplosion, 100,100,300,300,lptargaScreen);
-		
+		int zNow=MAX_SCREENITEMS-1;
+		int iScreenItemsNow=iScreenItems;
+        //Draw ScreenItems:
+/*
+		while (iScreenItems && zNow>=0) {
+			for (int iItem=0; iItem<iScreenItems; iItem++) {
+				if (screenitemarr[iItem].zOrder==zNow) {
+					switch (screenitemarr[iItem].iType) {
+						case SCREENITEM_ALIEN:
+							aliens[ screenitemarr[iItem].index ]->redraw();
+							iScreenItems--;
+							break;
+						case SCREENITEM_SHOT:
+							shots[ screenitemarr[iItem].index ]->redraw();
+							iScreenItems--;
+							break;
+						case SCREENITEM_HERO:
+							hero->redraw();
+							iScreenItems--;
+							break;
+						default:
+							break;
+					}
+				}
+			}
+			zNow--;
+		}
+		iScreenItems=0; //not needed?
+*/
 		/*
 		if(calculateExplosion(lptargaScreen, 100, 100, 20, 0, EXPLOSION_CHECK_COUNT) == 0)
 		{
-			//DDrawFillSurface(lptargaScreen,0);
 			explosionResult = calculateExplosion(lptargaScreen, 100, 100, 20, 30, EXPLOSION_START);
 		}
 		else
@@ -1901,13 +2414,18 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 	}
 	else if (gameState == GAME_STATE_WIN_STAGE)
 	{
+		Mix_HaltMusic();
+		Mix_FreeMusic(music);
+		music = NULL;
+		music = Mix_LoadMUS("trumpet.wav");
+		Mix_PlayMusic(music, 0); //0 for once, -1 for infinite
 		//PlaySound((const char*)SOUND_ID_TRUMPET/*"trumpet.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
-		for (index=0; index<MAXSHOTS; index++)
+		for (int iX=0; iX<MAXSHOTS; iX++)
 		{
-			if (shots[index]!=NULL)
+			if (shots[iX]!=NULL)
 			{
-				delete shots[index];
-				shots[index]=NULL;
+				delete shots[iX];
+				shots[iX]=NULL;
 			}
 		}
 		int screenNow=1;
@@ -1957,53 +2475,83 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 			//		SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
 			//
 			TargaToTarga32_Alpha(lptargaGameScreen[screenNow],lptargaScreen,
-					SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
-					SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
+					SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2+SCREEN_OFFSET_X,
+					SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2+SCREEN_OFFSET_Y);
 			TargaToScreen_AutoCrop(lptargaScreen);
-			DWORD startTime=GetTickCount();
-			while((GetTickCount() - startTime) < 3000);
+			DWORD startTime=SDL_GetTicks();
+			while((SDL_GetTicks() - startTime) < 3000);
 		}
 	}
 	else if (gameState == GAME_STATE_WIN_GAME)
 	{
 		int screenNow=1;
-		if (doublecode>=10)
+		if (doublecode>=CODE_THRESHOLD)
 		{
 			screenNow=7;
-			if (precisecode>=20) screenNow++;
+			if (rapidfirecode>=CODE_THRESHOLD) screenNow++;//if (precisecode>=20) screenNow++;
 		}
 
 		//	TargaToTarga32_Alpha(lptargaGameScreen[screenNow], lpddsPrimary,
 		//		SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
 		//		SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
 		TargaToTarga32_Alpha(lptargaGameScreen[screenNow], lptargaScreen,
-				SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2,
-				SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2);
+				SCREEN_WIDTH/2-lptargaGameScreen[screenNow]->width/2+SCREEN_OFFSET_X,
+				SCREEN_HEIGHT/2-lptargaGameScreen[screenNow]->height/2+SCREEN_OFFSET_Y);
 
+		Mix_HaltMusic();
+		Mix_FreeMusic(music);
+		music = NULL;
+		music = Mix_LoadMUS("Orangejuice-DXMan-Ending.ogg");
+		Mix_PlayMusic(music, -1); //0 for once, -1 for infinite
 		//PlaySound((const char*)SOUND_ID_ENDING/*"Orangejuice-DXMan-Ending.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC | SND_LOOP);
-		DWORD startTime=GetTickCount();
-		while((GetTickCount() - startTime) < 300);
-		while(KEYUP(VK_ESCAPE));
+		DWORD startTime=SDL_GetTicks();
+		while((SDL_GetTicks() - startTime) < 300);
+		bool bExit=false;
+			while(!bExit) {
+				if (SDL_PollEvent (&event)) {
+					switch (event.type) {
+					case SDL_KEYDOWN:
+					 if (event.key.keysym.sym==SDLK_ESCAPE) {
+						bExit=true;
+					 }
+					break;
+					default:break;
+					}
+				}
+			}
 		gameState = GAME_STATE_EXIT;
 	}
-	else if (gameState == GAME_STATE_YOU_LOSE)
-	{
+	else if (gameState == GAME_STATE_YOU_LOSE) {
+		Mix_HaltMusic();
+		Mix_FreeMusic(music);
+		music = NULL;
+		music = Mix_LoadMUS("Orangejuice-DXMan-Intro.ogg");
+		Mix_PlayMusic(music, -1); //0 for once, -1 for infinite
 		//PlaySound((const char*)SOUND_ID_THRUST/*"thrust.wav"*/, hinstance_app, SND_RESOURCE | SND_ASYNC);
 		TargaToTarga32_Alpha(lptargaGameScreen[0], lptargaScreen,
-			SCREEN_WIDTH/2-lptargaGameScreen[0]->width/2,
-			SCREEN_HEIGHT/2-lptargaGameScreen[0]->height/2);
+			SCREEN_WIDTH/2-lptargaGameScreen[0]->width/2+SCREEN_OFFSET_X,
+			SCREEN_HEIGHT/2-lptargaGameScreen[0]->height/2+SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
-		DWORD startTime=GetTickCount();
-		while((GetTickCount() - startTime) < 5000);
+		DWORD startTime=SDL_GetTicks();
+		while((SDL_GetTicks() - startTime) < 5000);
 		//PostMessage(hwndMain,WM_CLOSE,0,0);
 		//PostMessage(hwndMain,WM_QUIT,0,0);
 		//window_closed = 1;
 		gameState=GAME_STATE_INIT;
 	}
-	else if (gameState == GAME_STATE_EXIT)
-	{
-		PostMessage(hwndMain,WM_QUIT,0,0);
-		window_closed = 1;
+	else if (gameState == GAME_STATE_EXIT) {
+		if (!done) {
+			try {
+				SDL_Quit();
+			}
+			catch (char* sExn) {
+				try {
+					error_txt<<sExn;
+				}
+				catch (char* sExn) {
+				}
+			}
+		}
 	}
 
 	// return success or failure or your own return code here
@@ -2013,9 +2561,60 @@ int GameMain(void *parms = NULL, int num_parms = 0)
 
 ////////////////////////////////////////////////////////////
 
-int GameInit(void *parms = NULL, int num_parms = 0)
-{
-	errlog.SetMessageDest(hwndMain);
+int GameInit() {
+	//errlog.SetMessageDest(hwndMain);
+	char *msg;
+	/* Initialize SDL */
+	if (SDL_Init (SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+		sprintf (msg, "Couldn't initialize SDL: %s\n", SDL_GetError ());
+		//MessageBox (0, msg, "Error", MB_ICONHAND); //re-implement this w/o windows api
+		free (msg);
+		exit (1);
+	}
+	atexit(SDL_Quit);
+	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
+		//sprintf("Unable to open audio!\n");
+		exit(1);
+	}
+	Mix_QuerySpec(&audio_rate, &audio_format, &audio_channels);//what we got
+	
+	/* Set 640x480 32-bits video mode */
+	screen = SDL_SetVideoMode (SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF);
+	if (screen == NULL) {
+		sprintf (msg, "Couldn't set 640x480x32 video mode: %s\n",
+			SDL_GetError ());
+		//MessageBox (0, msg, "Error", MB_ICONHAND); //TODO: re-implement w/o windows api
+		free (msg);
+		exit (2);
+	}
+	SDL_WM_SetCaption ("SDL MultiMedia Application", NULL);
+
+	music = Mix_LoadMUS("Orangejuice-DXMan-Intro.ogg");
+
+//Mix_Chunk *mcBomb=NULL;
+//Mix_Chunk *mcLaserAlien=NULL;
+//Mix_Chunk *mcLaser=NULL;
+//Mix_Chunk *mcExplosion=NULL;
+//Mix_Chunk *mcOuchAlien=NULL;
+//Mix_Chunk *mcOuchZap=NULL;
+//Mix_Chunk *mcShieldZap=NULL;
+//Mix_Chunk *mcThruster=NULL;
+	mcBomb=Mix_LoadWAV("bomb.wav");
+	mcLaserAlien=Mix_LoadWAV("laser-alien.wav");
+	mcLaser=Mix_LoadWAV("laser.wav");
+	mcExplosion=Mix_LoadWAV("explosion.wav");
+	mcOuchAlien=Mix_LoadWAV("ouchalien.wav");
+	mcOuchZap=Mix_LoadWAV("ouchzap.wav");
+	mcShieldZap=Mix_LoadWAV("shieldzap.wav");
+	mcTrumpet=Mix_LoadWAV("trumpet.wav");
+
+	mcThruster = Mix_LoadWAV("thruster.wav");
+	Mix_VolumeChunk(mcThruster,40);
+	mcLaser = Mix_LoadWAV("laser.wav");
+	Mix_VolumeChunk(mcLaser,100);
+
+	Mix_PlayMusic(music, -1); //0 for once, -1 for infinite
+	//Mix_HookMusicFinished(MusicDone);
 	//errlog.AddTitle("Starting GameInit");
 
 	/*
@@ -2023,31 +2622,33 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	
 
 	//Load alpha lookup table from file
-	int file_handle;
-	OFSTRUCT file_data; //the file data information
+	//int file_handle;
+	ifstream ifData("alphalook.raw", ios::out | ios::in | ios::binary);//OFSTRUCT file_data; //the file data information
 	
-	if ((file_handle = OpenFile("alphalook.raw",&file_data,OF_READ))==-1) //open the file if it exists
-	{//If can't open file:
+	if (0==ifData.is_open()){// ((file_handle = OpenFile("alphalook.raw",&file_data,OF_READ))==-1) //open the file if it exists
+	//if can't open file:
 		error_txt << "\nERROR: Unable to open alpha lookup file!";
 		iErrorsSaved++;
 		return(0);	
 	}
-	_lread(file_handle, alphaLook,256*256*256);
-	_lclose(file_handle);
+	ifData.read((char*)alphaLook, 256*256*256); //_lread(file_handle, alphaLook,256*256*256);
+	ifData.close();//_lclose(file_handle);
 
 	if (iErrorsSaved)
 	{
 		//Generate alpha lookup table if needed
 		error_txt << "\nNeed to generate alpha lookup table..";
-		for (BYTE source=0; source<256; source++)
-		{
-		for (BYTE dest; dest<256; dest++)
-		{
-			for (BYTE alpha; alpha<256; alpha++)
-			{
-						alphaLook[source][dest][alpha]=((source-dest)*alpha/255+dest);
+		int iSource=0;
+		int iDest;
+		int iAlpha;//can't use bytes because the loop will never end (never >255!)
+		for (float source=0.0f; source<=255.0f; source+=1.0f, iSource++) {
+			iDest=0;
+			for (float dest=0.0f; dest<=255.0f; dest+=1.0f, iDest++) {
+				iAlpha=0;
+				for (float alpha=0.0f; alpha<=255.0f; alpha+=1.0f, iAlpha++) {
+							alphaLook[iSource][iDest][iAlpha]=(BYTE)((source-dest)*alpha/255.0f+dest);
+				}
 			}
-		}
 		}
 		error_txt << "Done";
 	}
@@ -2061,6 +2662,8 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	// before the main event loop is entered, do all your initialization
 	// here
 	lptargaScreen=TargaNew(SCREEN_WIDTH*2, SCREEN_HEIGHT*2,32,TGATYPE_UTC);
+	//lpspritearr=(LPSPRITE*)malloc(MAX_SPRITES*sizeof(LPSPRITE));
+	//memset(lpspritearr,0,MAX_SPRITES*sizeof(LPSPRITE));
 
 	//RECT explosionRect={0,0,200,200};
 	RECT screenRect= {0,0,SCREEN_WIDTH,SCREEN_HEIGHT};
@@ -2068,32 +2671,32 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	REAL_BPP=32;
 	REAL_BYTEDEPTH=4;
 
-    char *msg;
-    int done;
+	//char *msg;
+	//int done;
 
-    /* Initialize SDL */
-    if (SDL_Init (SDL_INIT_VIDEO) < 0)
-    {
-        sprintf (msg, "Couldn't initialize SDL: %s\n", SDL_GetError ());
-        MessageBox (0, msg, "Error", MB_ICONHAND); 
-        free (msg);
-        exit (1);
-    }
-    atexit (SDL_Quit);
-
-    /* Set 640x480 16-bits video mode */
-    screen = SDL_SetVideoMode (SCREEN_WIDTH, SCREEN_WIDTH, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF);
-    if (screen == NULL) {
-        sprintf (msg, "Couldn't set video mode: %s\n",
-          SDL_GetError ());
-        MessageBox (0, msg, "Error", MB_ICONHAND); 
-        free (msg);
-        exit (2);
-    }
-    SDL_WM_SetCaption ("DXMan", NULL);
-    
-   REAL_BPP=32;
-   REAL_BYTEDEPTH=4;
+	//if (SDL_Init (SDL_INIT_VIDEO) < 0)
+	//{
+	//	sprintf (msg, "Couldn't initialize SDL: %s\n", SDL_GetError ());
+	//	//MessageBox (0, msg, "Error", MB_ICONHAND); //TODO: re-implement this w/o windows api
+	//	free (msg);
+	//	exit (1);
+	//}
+	//atexit (SDL_Quit);
+	//show splash screen here
+	
+	/* Set 640x480 32-bits video mode */
+	// screen = SDL_SetVideoMode (SCREEN_WIDTH, SCREEN_WIDTH, SCREEN_BPP, SDL_SWSURFACE | SDL_DOUBLEBUF);
+	//if (screen == NULL) {
+	//	sprintf (msg, "Couldn't set video mode: %s\n",
+	//		SDL_GetError ());
+	//	MessageBox (0, msg, "Error", MB_ICONHAND); 
+	//	free (msg);
+	//	exit (2);
+	//}
+	//SDL_WM_SetCaption ("DXMan", NULL);
+	
+	REAL_BPP=32;
+	REAL_BYTEDEPTH=4;
 
 	if (lptargaBackdrop) TargaUnload(lptargaBackdrop);
 	errlog.Add(iLastErr, "unload lptargaBackdrop", "GameInit");
@@ -2104,7 +2707,6 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 		iErrorsSaved++;
 		return (0);
 	}
-	//lptargaScreendrop = DDrawCreateSurface(lptargaBackdrop->width,lptargaBackdrop->height,0);	
 	//	if (!TargaToTarga32(lptargaBackdrop, lptargaScreendrop, 0, 0))
 	//	{
 	//		error_txt <<"\nCould not load targaBack to 32-bit BackDrop in GameInit";
@@ -2115,13 +2717,7 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	errlog.Add(iLastErr, "unload lptargaBackdrop", "GameInit");
 
 
-	//lptargaExplosion = DDrawCreateSurface(300,300,0); //Not used yet
 	//DDrawFillSurface(lptargaExplosion,0);
-	int iFramesHero=21,
-		iFramesAlien=2,
-		iFramesAlienBoss=3,
-		iFramesShot=2,
-		iFramesGameScreen=9;
 	int iFramesFound;
 
 	iFramesFound=iFramesHero;
@@ -2134,12 +2730,12 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	errlog.Add(iLastErr, "alienf*.tga", "GameInit");
 	if (iFramesFound!=iFramesAlien) error_txt << "not all Alien frames loaded."<<endl;
 	iFramesFound=iFramesAlienBoss;
-	lptargaAlienBoss=TargaLoadSeq("alienBoss", &iFramesFound);
-	errlog.Add(iLastErr,"alienBoss*.tga", "GameInit");
+	lptargaAlienBoss=TargaLoadSeq("alienboss", &iFramesFound);
+	errlog.Add(iLastErr,"alienboss*.tga", "GameInit");
 	if (iFramesFound!=iFramesAlienBoss) error_txt << "not all AlienBoss frames loaded."<<endl;
 	iFramesFound=iFramesShot;
 	lptargaShot=TargaLoadSeq("shotAni", &iFramesFound);
-	errlog.Add(iLastErr,"shotAni*.tga", "GameInit");
+	errlog.Add(iLastErr,"shotani*.tga", "GameInit");
 	if (iFramesFound!=iFramesShot) error_txt << "not all Shot frames loaded."<<endl;
 	iFramesFound=iFramesGameScreen;
 	lptargaGameScreen=TargaLoadSeq("gamescreen",&iFramesFound);
@@ -2152,6 +2748,12 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 	{
 		iErrorsSaved++;
 	}
+	//if (lpspritearr) {
+	//	for (int iSpriteX=0; iSpriteX=MAX_SPRITES; iSpriteX++) {
+	//		SpriteUnload(lpspritearr[iSpriteX]);
+	//	}
+	//	free(lpspritearr);
+	//}
 
 
 	//Return success or failure or return code
@@ -2161,127 +2763,124 @@ int GameInit(void *parms = NULL, int num_parms = 0)
 
 /////////////////////////////////////////////////////////////
 
-int GameShutdown(void *parms = NULL, int num_parms = 0)
+int GameShutdown()
 {
 	//This is called after the game is exited and the main event
 	// loop while is exited, do all you cleanup and shutdown here
 
 		//Release palette if 8-bit was used
 	//if (lpddpal){lpddpal->Release(); lpddpal = NULL;} //
-	
-	//Unload Targas
-	TargaUnloadSeq(lptargaAlien, 2);
-	errlog.Add(iLastErr, "lptargaAlien", "GameShutDown");
-	TargaUnloadSeq(lptargaAlienBoss, 3);
-	errlog.Add(iLastErr, "lptargaAlienBoss", "GameShutDown");
-	TargaUnloadSeq(lptargaHero, 21);
-	errlog.Add(iLastErr, "lptargaHero", "GameShutDown");
-	TargaUnloadSeq(lptargaShot, 2);
-	errlog.Add(iLastErr, "lptargaShot", "GameShutDown");
-	TargaUnloadSeq(lptargaGameScreen, 9);
-	errlog.Add(iLastErr, "lptargaGameScreen", "GameShutDown");
-	TargaUnload(lptargaIntro);
-	errlog.Add(iLastErr, "lptargaIntro", "GameShutDown");
+	try {
+		//Unload Targas
+		TargaUnloadSeq(lptargaAlien, 2);
+		errlog.Add(iLastErr, "lptargaAlien", "GameShutDown");
+		TargaUnloadSeq(lptargaAlienBoss, 3);
+		errlog.Add(iLastErr, "lptargaAlienBoss", "GameShutDown");
+		TargaUnloadSeq(lptargaHero, 21);
+		errlog.Add(iLastErr, "lptargaHero", "GameShutDown");
+		TargaUnloadSeq(lptargaShot, 3);
+		errlog.Add(iLastErr, "lptargaShot", "GameShutDown");
+		TargaUnloadSeq(lptargaGameScreen, 9);
+		errlog.Add(iLastErr, "lptargaGameScreen", "GameShutDown");
+		TargaUnload(lptargaIntro);
+		errlog.Add(iLastErr, "lptargaIntro", "GameShutDown");
 
 
-    TargaUnload(lptargaScreen);
-	errlog.Add(iLastErr, "lptargaScreen", "GameShutDown");
-    TargaUnload(lptargaBackdrop);
-	errlog.Add(iLastErr, "lptargaBackdrop", "GameShutDown");
-	// return success or failure or your own return code here
+		TargaUnload(lptargaScreen);
+		errlog.Add(iLastErr, "lptargaScreen", "GameShutDown");
+		TargaUnload(lptargaBackdrop);
+		errlog.Add(iLastErr, "lptargaBackdrop", "GameShutDown");
+		// return success or failure or your own return code here
+	}
+    catch(char* sExn) {
+		try {
+			error_txt<<"Exception in GameShutdown: "<<sExn;
+		}
+		catch (char* sExn) {
+		}
+	}
 	return(1);
 
 } // end GameShutdown
 
-// WINMAIN ////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+#define FRADAR_ZOOM  5.0f
+void DrawRadarDot(float xPos, float yPos, float zPos, DWORD dwPixel) {
 
-int WINAPI WinMain(	HINSTANCE hinstance,
-					HINSTANCE hprevinstance,
-					LPSTR lpcmdline,
-					int ncmdshow)
-{
+	int xCenter=SCREEN_WIDTH-(int)((float)SCREEN_WIDTH*.1f);
+	xCenter+=xPos*FRADAR_ZOOM;
+	int yCenter=(int)((float)SCREEN_HEIGHT*.1f);
+	yCenter+=yPos*FRADAR_ZOOM;
+	int xOffset=(int)(zPos);
+	int yOffset=(int)(zPos);
+	int left=xCenter-xOffset, right=xCenter+xOffset, top=yCenter-yOffset, bottom=yCenter+yOffset;
 
-	WNDCLASSEX winclass; // this will hold the class we create
-	HWND		 hwnd;	 // generic window handle
-	MSG			 msg;		 // generic message
-	HDC				hdc;			// graphics device context
 
-	// first fill in the window class stucture
-	winclass.cbSize				 = sizeof(WNDCLASSEX);
-	winclass.style			= CS_DBLCLKS | CS_OWNDC | 
-													CS_HREDRAW | CS_VREDRAW;
-	winclass.lpfnWndProc	= WindowProc;
-	winclass.cbClsExtra		= 0;
-	winclass.cbWndExtra		= 0;
-	winclass.hInstance		= hinstance;
-	//winclass.hIcon			= LoadIcon(hinstance, MAKEINTRESOURCE(IDI_ICON1));
-	winclass.hCursor		= LoadCursor(hinstance, MAKEINTRESOURCE(IDC_CROSSHAIRS)); 
-	winclass.hbrBackground	= (HBRUSH)GetStockObject(BLACK_BRUSH);
-	winclass.lpszMenuName	= NULL;
-	winclass.lpszClassName	= WINDOW_CLASS_NAME;
-	winclass.hIconSm				= LoadIcon(NULL, IDI_APPLICATION);
-
-	// save hinstance in global
-	hinstance_app = hinstance;
-
-	// register the window class
-	if (!RegisterClassEx(&winclass))
-		return(0);
-
-	// create the window
-	if (!(hwnd = CreateWindowEx(NULL,									// extended style
-														WINDOW_CLASS_NAME,		 // class
-								"DXMan SE ([TGA] Skinned Edition)", // title
-								WS_POPUP | WS_VISIBLE,
-								 0,0,		// initial x,y
-								SCREEN_WIDTH,SCREEN_HEIGHT,	// initial width, height
-								NULL,		// handle to parent 
-								NULL,		// handle to menu
-								hinstance,// instance of this application
-								NULL)))	// extra creation parms
-		return(0);
-
-	//save main window handle
-	hwndMain = hwnd;
-	errlog.SetMessageDest(hwnd);
-
-	// initialize game here
-	GameInit();
-
-	
-	while(TRUE)
-	{//Main event Loop
-		DWORD startTime=GetTickCount();
-
-		// test if there is a message in queue, if so get it
-		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE))
-		{ 
-			// test if this is a quit
-			if (msg.message == WM_QUIT)
-				break;
-	
-			// translate any accelerator keys
-			TranslateMessage(&msg);
-
-			// send the message to the window proc
-			DispatchMessage(&msg);
+	DrawExclusiveRect(left, top, bottom+1, right+1, dwPixel, true);
+}
+void DrawRadarField() {
+	static DWORD dwPixel=0x004400FF;
+	static int xCenter=SCREEN_WIDTH-(int)((float)SCREEN_WIDTH*.1f);
+	static int yCenter=(int)((float)SCREEN_HEIGHT*.1f);
+	static int xOffset=(int)(FRADAR_ZOOM*6.0f);
+	static int yOffset=(int)(FRADAR_ZOOM*4.0f);
+	static int left=xCenter-xOffset, right=xCenter+xOffset, top=yCenter-yOffset, bottom=yCenter+yOffset;
+	DrawExclusiveRect(left, top, bottom, right, dwPixel, false);
+}
+void DrawExclusiveRect(int left, int top, int bottom, int right, DWORD dwPixel, bool bFilled) {
+	if (left<0||right>=BUFFER_WIDTH||top<0||bottom>=BUFFER_HEIGHT)//error checking
+		return;
+	left+=SCREEN_OFFSET_X;
+	right+=SCREEN_OFFSET_X;
+	top+=SCREEN_OFFSET_Y;
+	bottom+=SCREEN_OFFSET_Y;
+	bool bGood=true;
+	DWORD *lpdwDest=(DWORD*)lptargaScreen->buffer;
+	int iScreenW=lptargaScreen->width;
+	int iScreenH=lptargaScreen->height;
+	if (bottom<=top) {//if bad, draw vert line
+		bottom=top+6;
+		right=left+1;
+		DrawExclusiveRect(left,top,bottom,right,dwPixel,false);
+		if (right<=left) {//if bad, draw horz line too
+			top+=2;
+			bottom=top+1;
+			left-=2;
+			right=left+6;
+			DrawExclusiveRect(left,top,bottom,right,dwPixel,false);
 		}
-		//Main game processing goes here
-		GameMain();
+		bGood=false;
+	}
+	else if (right<=left) {//if bad, draw horz line
+		bottom=top+1;
+		right=left+6;
+        DrawExclusiveRect(left,top,bottom,right,dwPixel,false);
+		bGood=false;
+	}
+	int iStart=top*iScreenW+left;//no stride since using DWORD* to buffer
+	lpdwDest+=iStart;
+	int iSkipEdge=iScreenW-(right-left);
+	if (bGood) {
+		if (bFilled) {
+			for (int yNow=top; yNow<bottom; yNow++) {
+				for (int xNow=left; xNow<right; xNow++) {
+					*lpdwDest=dwPixel;
+					lpdwDest++;
+				}
+				lpdwDest+=iSkipEdge;
+			}
+		}//end if bFilled
+		else {//only draw outline
+			for (int yNow=top; yNow<bottom; yNow++) {
+				for (int xNow=left; xNow<right; xNow++) {
+					if (yNow==top||yNow==bottom-1||xNow==left||xNow==right-1)
+						*lpdwDest=dwPixel;
+					lpdwDest++;
+				}
+				lpdwDest+=iSkipEdge;
+			}
+		}
+	}//end if bGood
+}
 
-		//if ((GetTickCount() - startTime) >= 33){ iFramesDropped++; iErrorsSaved++;};
-		while((GetTickCount() - startTime) < 33); //lock to approx 30fps
-	} //Exit main event loop
-
-	// closedown game here
-	GameShutdown();
-
-	//error_txt << "\n(" << iFramesDropped << ") frames dropped";
-	
-	if (!iErrorsSaved) DeleteFile("!errors.txt");
-
-	// return to Windows like this
-	return(msg.wParam);
-
-} // end WinMain
-//}//end namespace
+////////////////////////////////////////////////////////////////////////////////
