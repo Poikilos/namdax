@@ -1,3 +1,7 @@
+Notes:
+-Linker Flags: -lSDL (i.e. Project Options, Configure Options)
+-Use kdevelop file is up-to-date, DevC++ dev file is not
+
 Settings that are unique per unit:
 iBoundaryHandling (BOUNDARY_BOUNCE, BOUNDARY_DIE, or BOUNDARY_STOP)
 bMoveByRotationAndMetricSpeed
@@ -9,11 +13,16 @@ Emlyn Addison and eola
 Photo Editing
 Jake Gustafson
 
-
 Always Check
 -Remove semicolons from macros if accidentally typed!
 
 ALPHA
+-Do not show Anim frame if null, and set gbFrame to null during load
+-distribute with DXMan and add link to sourcecode! (listed items)
+	'ogg.dll' (the format and decoder)
+	??'vorbis.dll' (the coding scheme)
+	??'vorbisenc.dll' (tools for encoding)
+	and 'vorbisfile.dll 
 -soft Quit ([Esc], 'y') does not work (process still runs invisibly)
 -fix aiming ellipse w/h ratio (less accurate as hero nears sides)
 -make STATUS_SHIELD do something visually (something better than now)
