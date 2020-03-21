@@ -1,10 +1,61 @@
-[Editor_0]
-CursorCol=1
-CursorRow=18
-TopLine=8
-LeftChar=1
-Open=1
-Top=0
-[Editors]
-Focused=-1
-Order=0,-1
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="default" />
+	<File name="..\..\..\base\anim32bgra.cpp" open="0" top="0" tabpos="5">
+		<Cursor position="40218" topLine="1064" />
+	</File>
+	<File name="..\..\..\base\anim32bgra.h" open="0" top="0" tabpos="4">
+		<Cursor position="971" topLine="22" />
+	</File>
+	<File name="..\..\..\base\base.cpp" open="0" top="0" tabpos="8">
+		<Cursor position="64613" topLine="2071" />
+	</File>
+	<File name="..\..\..\base\base.h" open="0" top="0" tabpos="6">
+		<Cursor position="12905" topLine="404" />
+	</File>
+	<File name="..\..\..\base\byter.cpp" open="0" top="0" tabpos="7">
+		<Cursor position="7992" topLine="261" />
+	</File>
+	<File name="..\..\..\base\byter.h" open="0" top="0" tabpos="12">
+		<Cursor position="193" topLine="0" />
+	</File>
+	<File name="..\..\..\base\frameworkdummy.cpp" open="0" top="0" tabpos="8">
+		<Cursor position="2787" topLine="45" />
+	</File>
+	<File name="..\..\..\base\gbuffer32bgra.cpp" open="0" top="0" tabpos="9">
+		<Cursor position="56789" topLine="1570" />
+	</File>
+	<File name="..\..\..\base\gfont32bgra.cpp" open="0" top="0" tabpos="7">
+		<Cursor position="3817" topLine="97" />
+	</File>
+	<File name="..\..\..\base\gfont32bgra.h" open="0" top="0" tabpos="8">
+		<Cursor position="1103" topLine="15" />
+	</File>
+	<File name="..\..\..\base\gradient32bgra.cpp" open="0" top="0" tabpos="10">
+		<Cursor position="11012" topLine="193" />
+	</File>
+	<File name="..\..\..\base\sprite.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="2324" topLine="41" />
+	</File>
+	<File name="..\..\..\base\targa.cpp" open="0" top="0" tabpos="11">
+		<Cursor position="7907" topLine="206" />
+	</File>
+	<File name="camera.cpp" open="0" top="0" tabpos="14">
+		<Cursor position="120" topLine="0" />
+	</File>
+	<File name="camera.h" open="0" top="0" tabpos="13">
+		<Cursor position="55" topLine="0" />
+	</File>
+	<File name="dxman.cpp" open="1" top="0" tabpos="2">
+		<Cursor position="388" topLine="9" />
+	</File>
+	<File name="dxman.h" open="1" top="0" tabpos="1">
+		<Cursor position="7081" topLine="170" />
+	</File>
+	<File name="entity.cpp" open="1" top="1" tabpos="3">
+		<Cursor position="58341" topLine="1533" />
+	</File>
+	<File name="entity.h" open="1" top="0" tabpos="4">
+		<Cursor position="143" topLine="9" />
+	</File>
+</CodeBlocks_layout_file>

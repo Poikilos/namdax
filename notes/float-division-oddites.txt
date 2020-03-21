@@ -1,0 +1,46 @@
+On 8/30/05, Kolja Kube <kolja.kube at gmail.com> wrote:
+> Joshua Oreman wrote:
+> > On 8/28/05, Kolja Kube <kolja.kube at gmail.com> wrote:
+> >
+> >>Hello,
+> >>I'm currently starting to get into SDL and OpenGL, and ran into a problem. I
+> >>wanted to use SDL_GetTicks() for frame rate independent movement, and I do it
+> >>similar to this:
+> >>
+> >>for (;;)
+> >>{
+> >>     unsigned ticks = SDL_GetTicks();
+> >>
+> >>     /* All the movement and drawing here */
+> >>
+> >>     unsigned gticks = SDL_GetTicks();
+> >>     // All movement should be multiplied with this:
+> >>     double factor = (gticks-ticks) / 1000.0;
+> >>}
+> >>
+> >>While debug-outputting this factor I noticed that the factor is very often
+> >>0.001 or 0.000, and then suddenly jumps to ~0.050 at irregular intervals. When
+> >>I increase the resolution from 640x480 to 1399x1009, the frame rate drops from
+> >>about 1050 FPS to about 200 FPS, but the effect stays the same, only with a
+> >>factor of 0.225 instead of 0.050.
+> >>
+> >>The system I'm running this on is a Pentium-M 1.73 GHz with Gentoo Linux Kernel
+> >>2.6.11-r11.
+> >>
+> >>Has anybody an idea why this happens or how I could get around it?
+> >
+> >
+> > Could it be C's float rules?
+> > Try
+> >     double factor = ((double)(gticks - ticks)) / 1000.0;
+> 
+> Don't think so. (gticks - ticks) is of type unsigned, but divided by 1000.0 (a
+> double, I checked that) everything should be allright. The program is written
+> in C++ and compiled as such, too, so that shouldn't be the matter.
+
+Sure enough, you're right.  I've learned to be suspicious of C(++)'s
+float rules, after having several hard-to-find bugs from them :-)
+
+No idea what else it could be.
+
+-- Josh

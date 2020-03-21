@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="DXMan" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="default">
+				<Option output="bin\DXMan" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin" />
+				<Option object_output="obj" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-g" />
+			<Add option="-Dmain=SDL_main" />
+			<Add directory="C:\Dev-Cpp\include\SDL" />
+			<Add directory="..\..\..\base" />
+		</Compiler>
+		<Linker>
+			<Add library="mingw32" />
+			<Add library="SDLmain" />
+			<Add library="SDL" />
+			<Add library="SDL_Mixer" />
+			<Add library="SDL_ttf" />
+		</Linker>
+		<Unit filename="..\..\..\base\anim32bgra.cpp" />
+		<Unit filename="..\..\..\base\anim32bgra.h" />
+		<Unit filename="..\..\..\base\base.cpp" />
+		<Unit filename="..\..\..\base\base.h" />
+		<Unit filename="..\..\..\base\byter.cpp" />
+		<Unit filename="..\..\..\base\byter.h" />
+		<Unit filename="..\..\..\base\frameworkdummy.cpp" />
+		<Unit filename="..\..\..\base\frameworkdummy.h" />
+		<Unit filename="..\..\..\base\gbuffer32bgra.cpp" />
+		<Unit filename="..\..\..\base\gbuffer32bgra.h" />
+		<Unit filename="..\..\..\base\gfont32bgra.cpp" />
+		<Unit filename="..\..\..\base\gfont32bgra.h" />
+		<Unit filename="..\..\..\base\gradient32bgra.cpp" />
+		<Unit filename="..\..\..\base\gradient32bgra.h" />
+		<Unit filename="..\..\..\base\sprite.cpp" />
+		<Unit filename="..\..\..\base\sprite.h" />
+		<Unit filename="..\..\..\base\targa.cpp" />
+		<Unit filename="..\..\..\base\targa.h" />
+		<Unit filename="..\..\..\base\world.cpp" />
+		<Unit filename="..\..\..\base\world.h" />
+		<Unit filename="camera.cpp" />
+		<Unit filename="camera.h" />
+		<Unit filename="dxman.cpp" />
+		<Unit filename="dxman.h" />
+		<Unit filename="entity.cpp" />
+		<Unit filename="entity.h" />
+		<Extensions>
+			<code_completion>
+				<search_path add="../base" />
+			</code_completion>
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

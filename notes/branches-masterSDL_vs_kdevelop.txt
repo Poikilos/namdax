@@ -1,0 +1,30 @@
+
+What happened after the FORK between DXManSDL and dxman-kdevelop:
+
+DXManSDL has: 
+2009-09-06
+-MultiThreading to work around SDL Mixer crashes
+
+2009-09-03
+-Scrolling of Text Intro
+  -TargaToTarga32_Alpha_Clipped function
+    -fixed crash
+    -redundant pointer multiplication of unsigned __int32* and redundant unsigned __int32 pixel variable replaced with *(unsigned __int32*)(lpbyDestNow-4)=_RGB32BIT(255,red,green,blue);
+    -removed unneccessary intermediate variables and unsigned __int32* pixel building macro in favor of direct value assignment and putting most convenient (even if inconsistent) value into destination alpha channel
+    -removed unneccessary pointer addition in favor of adding bytes-per-pixel except when pixel needs to be drawn with alpha
+-errant occurances of 256 in alpha formulas replaced with 255
+2008
+-multiple random burn marks (burn*.tga) instead of just one image
+-improved area backgrounds
+-intro-text-back.tga and intro-text.tga separate to allow for scrolling (fixed crash in 2009)
+
+TODO:
+-copy optimizations in TargaToTarga32_Alpha_Clipped (above) to ALL targa methods
+-fix random StopMusic hang
+-During "Escape" confirm (pause), aliens don't pause but hero gravity does
+
+dxman-kdevelop has:
+-All targa methods moves to targa class
+-all (or nearly all) functions encapsulated into classes
+-beginning to program environment class to control all object movement and hit detection
+
