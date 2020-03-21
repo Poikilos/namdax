@@ -1,115 +1,159 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_layout_file>
 	<ActiveTarget name="default" />
-	<File name="..\..\base\RAnim_bgra32.cpp" open="1" top="0" tabpos="14">
-		<Cursor position="31512" topLine="857" />
+	<File name="..\..\base\pmath.h" open="0" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RAnim_bgra32.h" open="0" top="0" tabpos="16">
-		<Cursor position="993" topLine="0" />
+	<File name="..\..\base\RFile.cpp" open="0" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RFile.cpp" open="0" top="0" tabpos="5">
-		<Cursor position="7573" topLine="268" />
+	<File name="..\..\base\RFile.h" open="0" top="0" tabpos="20" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RFile.h" open="0" top="0" tabpos="20">
-		<Cursor position="168" topLine="0" />
+	<File name="..\..\base\pmemory.h" open="0" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RFont_bgra32.cpp" open="1" top="0" tabpos="7">
-		<Cursor position="2045" topLine="37" />
+	<File name="..\..\base\RFont_bgra32.cpp" open="1" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RFont_bgra32.h" open="0" top="0" tabpos="4">
-		<Cursor position="1930" topLine="15" />
+	<File name="..\..\base\RFont_bgra32.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RGradient_bgra32.cpp" open="0" top="0" tabpos="14">
-		<Cursor position="11569" topLine="242" />
+	<File name="..\..\base\pointinfo.h" open="0" top="0" tabpos="18" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RGradient_bgra32.h" open="0" top="0" tabpos="0">
-		<Cursor position="544" topLine="1" />
+	<File name="..\..\base\RGradient_bgra32.cpp" open="0" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RImage_bgra32.cpp" open="1" top="0" tabpos="8">
-		<Cursor position="21808" topLine="614" />
+	<File name="..\..\base\preporting.cpp" open="0" top="0" tabpos="7" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RImage_bgra32.h" open="0" top="0" tabpos="15">
-		<Cursor position="3011" topLine="58" />
+	<File name="..\..\base\preporting.h" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RMath.cpp" open="1" top="0" tabpos="9">
-		<Cursor position="719" topLine="22" />
+	<File name="..\..\base\RImage_bgra32.cpp" open="1" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RMath.h" open="1" top="0" tabpos="10">
-		<Cursor position="823" topLine="0" />
+	<File name="dxman.cpp" open="1" top="1" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="128729" topLine="3135" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RSprite_bgra32.cpp" open="0" top="0" tabpos="6">
-		<Cursor position="2308" topLine="59" />
+	<File name="..\..\base\RImage_bgra32.h" open="0" top="0" tabpos="15" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RSprite_bgra32.h" open="0" top="0" tabpos="0">
-		<Cursor position="112" topLine="0" />
+	<File name="dxman.h" open="1" top="0" tabpos="13" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="105" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RTypes.cpp" open="0" top="0" tabpos="11">
-		<Cursor position="2575" topLine="109" />
+	<File name="..\..\base\RAnim_bgra32.h" open="0" top="0" tabpos="16" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RTypes.h" open="1" top="0" tabpos="1">
-		<Cursor position="1122" topLine="46" />
+	<File name="..\..\base\RMath.cpp" open="1" top="0" tabpos="9" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RWorld.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="673" topLine="10" />
+	<File name="entity.cpp" open="1" top="0" tabpos="12" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\RWorld.h" open="0" top="0" tabpos="0">
-		<Cursor position="139" topLine="0" />
+	<File name="..\..\base\RAnim_bgra32.cpp" open="0" top="0" tabpos="14" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\Targa.cpp" open="1" top="0" tabpos="3">
-		<Cursor position="35321" topLine="951" />
+	<File name="..\..\base\RMath.h" open="1" top="0" tabpos="10" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\Targa.h" open="1" top="0" tabpos="4">
-		<Cursor position="1446" topLine="12" />
+	<File name="entity.h" open="0" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\base.cpp" open="1" top="0" tabpos="15">
-		<Cursor position="30343" topLine="958" />
+	<File name="..\..\base\RSprite_bgra32.cpp" open="0" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\base.h" open="1" top="0" tabpos="11">
-		<Cursor position="695" topLine="14" />
+	<File name="..\..\base\RTypes.cpp" open="0" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\camera.cpp" open="1" top="0" tabpos="5">
-		<Cursor position="14475" topLine="286" />
+	<File name="..\..\base\RTypes.h" open="1" top="0" tabpos="1" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\camera.h" open="1" top="0" tabpos="6">
-		<Cursor position="528" topLine="5" />
+	<File name="..\..\base\Targa.cpp" open="1" top="0" tabpos="3" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\frameworkdummy.cpp" open="0" top="0" tabpos="2">
-		<Cursor position="2809" topLine="122" />
+	<File name="..\..\base\Targa.h" open="1" top="0" tabpos="4" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\frameworkdummy.h" open="0" top="0" tabpos="8">
-		<Cursor position="2830" topLine="109" />
+	<File name="..\..\base\base.cpp" open="0" top="0" tabpos="15" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\pmath.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="210" topLine="0" />
+	<File name="..\..\base\base.h" open="1" top="0" tabpos="11" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="248" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\pmath.h" open="0" top="0" tabpos="12">
-		<Cursor position="322" topLine="72" />
+	<File name="..\..\base\camera.cpp" open="1" top="0" tabpos="5" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\pmemory.cpp" open="0" top="0" tabpos="0">
-		<Cursor position="181" topLine="0" />
+	<File name="..\..\base\camera.h" open="1" top="0" tabpos="6" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\pmemory.h" open="0" top="0" tabpos="3">
-		<Cursor position="171" topLine="0" />
+	<File name="..\..\base\frameworkdummy.cpp" open="0" top="0" tabpos="2" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
-	<File name="..\..\base\pointinfo.h" open="0" top="0" tabpos="18">
-		<Cursor position="477" topLine="1" />
-	</File>
-	<File name="..\..\base\preporting.cpp" open="0" top="0" tabpos="7">
-		<Cursor position="1595" topLine="32" />
-	</File>
-	<File name="..\..\base\preporting.h" open="0" top="0" tabpos="6">
-		<Cursor position="740" topLine="0" />
-	</File>
-	<File name="dxman.cpp" open="1" top="1" tabpos="2">
-		<Cursor position="36258" topLine="850" />
-	</File>
-	<File name="dxman.h" open="1" top="0" tabpos="13">
-		<Cursor position="10211" topLine="245" />
-	</File>
-	<File name="entity.cpp" open="1" top="0" tabpos="12">
-		<Cursor position="42493" topLine="1080" />
-	</File>
-	<File name="entity.h" open="0" top="0" tabpos="4">
-		<Cursor position="2912" topLine="67" />
+	<File name="..\..\base\frameworkdummy.h" open="0" top="0" tabpos="8" split="0" active="1" splitpos="0" zoom_1="0" zoom_2="0">
+		<Cursor>
+			<Cursor1 position="0" topLine="0" />
+		</Cursor>
 	</File>
 </CodeBlocks_layout_file>

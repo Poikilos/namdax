@@ -1,0 +1,343 @@
+# depslib dependency file v1.0
+1251965264 source:e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\main.c
+	<SDL/SDL.h>
+	<SDL/SDL_mixer.h>
+	<SDL/SDL_TTF.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	"RSprite_bgra32.h"
+
+1221643019 e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\RSprite_bgra32.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"base.cpp"
+
+1170112010 e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\base.cpp
+	<sys\types.h>
+	<sys\stat.h>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"base.h"
+	<string>
+
+1170097371 e:\projects-cpp\dxman\DXMan-2007-01-29-win32-tested-3drenderedbackgrounds\base.h
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+
+1253089934 source:e:\projects-cpp\base\RAnim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+
+1252208449 e:\projects-cpp\base\RAnim_bgra32.h
+	<RImage_bgra32.h>
+
+1253080380 e:\projects-cpp\base\RImage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1253090609 e:\projects-cpp\base\base.h
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<FrameworkDummy.h>
+	<SDL/SDL.h>
+
+1253070071 e:\projects-cpp\base\FrameworkDummy.h
+	<SDL/SDL_types.h>
+	<cstdio>
+	<string>
+	<float.h>
+	<limits.h>
+
+1252095262 e:\projects-cpp\base\Targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1252095256 e:\projects-cpp\base\RFile.h
+	<cstdlib>
+	<base.h>
+
+1252216283 e:\projects-cpp\base\RGradient_bgra32.h
+	<base.h>
+
+1253090782 source:e:\projects-cpp\base\base.cpp
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<string>
+	<base.h>
+	<FrameworkDummy.h>
+	<float.h>
+	<limits.h>
+
+1325364961 source:d:\projects-cpp\base\frameworkdummy.cpp
+	"frameworkdummy.h"
+	<fstream>
+	<cstdlib>
+	<iostream>
+	<cmath>
+
+1328409967 d:\projects-cpp\base\frameworkdummy.h
+	<cstdio>
+	<string>
+	<sstream>
+	<cfloat>
+	<climits>
+
+1325374187 source:d:\projects-cpp\base\ranim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+	<RMath.h>
+
+1324638874 d:\projects-cpp\base\ranim_bgra32.h
+	<RImage_bgra32.h>
+
+1328433036 d:\projects-cpp\base\rimage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1402687859 d:\projects-cpp\base\base.h
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<frameworkdummy.h>
+	<SDL2/SDL.h>
+	"RTypes.h"
+
+1324640461 d:\projects-cpp\base\targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1324640530 d:\projects-cpp\base\rfile.h
+	<cstdlib>
+	<base.h>
+	<frameworkdummy.h>
+
+1324637001 d:\projects-cpp\base\rgradient_bgra32.h
+	<base.h>
+
+1324645253 source:d:\projects-cpp\base\rfile.cpp
+	<cstdlib>
+	<iostream>
+	<fstream>
+	<RFile.h>
+	<base.h>
+
+1328436266 source:d:\projects-cpp\base\rfont_bgra32.cpp
+	<RFont_bgra32.h>
+	<base.h>
+
+1324793345 d:\projects-cpp\base\rfont_bgra32.h
+	<RGradient_bgra32.h>
+	<RAnim_bgra32.h>
+
+1324661989 source:d:\projects-cpp\base\rgradient_bgra32.cpp
+	<RGradient_bgra32.h>
+	<RImage_bgra32.h>
+
+1328433036 source:d:\projects-cpp\base\rimage_bgra32.cpp
+	<RImage_bgra32.h>
+	<PMath.h>
+	<RMath.h>
+
+1325284439 d:\projects-cpp\base\pmath.h
+	<iostream>
+	<vector>
+	<string>
+	<climits>
+	"preporting.h"
+	"frameworkdummy.h"
+	"pointinfo.h"
+	"pixelinfo.h"
+	<base.h>
+
+1325337146 d:\projects-cpp\base\preporting.h
+	<cstdio>
+	<string>
+	<iostream>
+
+1277885222 d:\projects-cpp\base\pointinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1325284439 d:\projects-cpp\base\pmemory.h
+	<string>
+	"preporting.h"
+	"frameworkdummy.h"
+
+1277883196 d:\projects-cpp\base\pixelinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1324644688 source:d:\projects-cpp\base\rsprite_bgra32.cpp
+	<RSprite_bgra32.h>
+
+1324644216 d:\projects-cpp\base\rsprite_bgra32.h
+	<RAnim_bgra32.h>
+
+1324662046 source:d:\projects-cpp\base\rworld.cpp
+	<RWorld.h>
+
+1324644216 d:\projects-cpp\base\rworld.h
+	<RAnim_bgra32.h>
+	<RSprite_bgra32.h>
+
+1328410668 source:d:\projects-cpp\base\targa.cpp
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<Targa.h>
+
+1328440454 source:d:\projects-cpp\base\base.cpp
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<string>
+	<base.h>
+	<frameworkdummy.h>
+	<float.h>
+	<limits.h>
+	<RMath.h>
+
+1277874814 source:d:\projects-cpp\base\pixelinfo.cpp
+	"pixelinfo.h"
+
+1325284439 source:d:\projects-cpp\base\pmath.cpp
+	"pmath.h"
+	<cmath>
+	<cstdlib>
+	<cstring>
+
+1325284439 source:d:\projects-cpp\base\pmemory.cpp
+	"pmemory.h"
+	<cstdlib>
+
+1277874802 source:d:\projects-cpp\base\pointinfo.cpp
+	"pointinfo.h"
+
+1325337215 source:d:\projects-cpp\base\preporting.cpp
+	"preporting.h"
+
+1325200664 source:d:\projects-cpp\dxman\dxmansdl\camera.cpp
+	"camera.h"
+	"dxman.h"
+	<base.h>
+
+1325198549 d:\projects-cpp\dxman\dxmansdl\camera.h
+	<base.h>
+
+1328440568 d:\projects-cpp\dxman\dxmansdl\dxman.h
+	<base.h>
+	"camera.h"
+	"entity.h"
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+
+1325268681 d:\projects-cpp\dxman\dxmansdl\entity.h
+	<base.h>
+	<RAnim_bgra32.h>
+
+1402644796 source:d:\projects-cpp\dxman\dxmansdl\dxman.cpp
+	<SDL/SDL.h>
+	<SDL/SDL_mixer.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	"RSprite_bgra32.h"
+	<RImage_bgra32.h>
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	<RMath.h>
+	"dxman.h"
+	"entity.h"
+	"camera.h"
+
+1328433036 source:d:\projects-cpp\dxman\dxmansdl\entity.cpp
+	"entity.h"
+	<base.h>
+	"dxman.h"
+	<RImage_bgra32.h>
+	<RMath.h>
+
+1328492883 source:d:\projects-cpp\base\camera.cpp
+	"camera.h"
+	<base.h>
+	<RMath.h>
+
+1328433036 d:\projects-cpp\base\camera.h
+	<base.h>
+
+1325365465 d:\projects-cpp\base\rtypes.h
+	<base.h>
+	<frameworkdummy.h>
+	<string>
+
+1328492883 source:d:\projects-cpp\base\rmath.cpp
+	<frameworkdummy.h>
+	<RMath.h>
+	<preporting.h>
+
+1328492884 d:\projects-cpp\base\rmath.h
+	<frameworkdummy.h>
+	<RTypes.h>
+	<string>
+
+1325366052 source:d:\projects-cpp\base\rtypes.cpp
+	"RTypes.h"
+	"base.h"
+	"preporting.h"
+

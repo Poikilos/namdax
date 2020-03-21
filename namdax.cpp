@@ -1,9 +1,9 @@
 #ifndef DXMAN_CPP
 #define DXMAN_CPP
 
-#include <SDL/SDL.h> //remember to add mingw to path in compiler settings, put SDL includes and libs into mingw path, and add SDL libs to linker settings
-#include <SDL/SDL_mixer.h>
-//#include <SDL/SDL_TTF.h>
+#include <SDL2/SDL.h> //remember to add mingw to path in compiler settings, put SDL includes and libs into mingw path, and add SDL libs to linker settings
+#include <SDL2/SDL_mixer.h>
+//#include <SDL2/SDL_TTF.h>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -14,7 +14,7 @@
 #include <fstream>
 #include <cmath>
 #include "RSprite_bgra32.h"
-#include <RImage_bgra32.h> //DrawSubPixelArc etc
+#include <RImage_bgra32.h> //Dr	awSubPixelArc etc
 #include <RAnim_bgra32.h>
 #include <RFont_bgra32.h>
 #include <RMath.h>

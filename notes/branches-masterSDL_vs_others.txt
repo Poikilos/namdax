@@ -1,7 +1,162 @@
 
 What happened after the FORK between DXManSDL and dxman-kdevelop:
 
-DXManSDL has: 
+TODO:
+-base.cpp: fixed major bug where there were no return statements in ANY RConvert_THETAOFXY_DEG and RConvert_THETAOFXY_RAD overloads
+-RMath.cpp: "if (iInsertion!=string::npos) " doesn't seem to be correct in RemoveExpNotation
+-remove redundant ToString(IPoint) & other point overloads (both in RMath and RTypes)
+	-remove from C# too
+-run CppCheck plugin before every release
+-remove redundant code in base (now members of PMath):
+	#define LD180_DIV_PI						57.2957795130823208767981548141052L
+	#define D180_DIV_PI						 57.2957795130823208767981548141052
+	#define F180_DIV_PI				57.2957795130823208767981548141052f // 180/PI
+	#define THETAOFXY(X,Y) ( ((Y)!=0 || (X)!=0) ? (atan2((Y),(X))*F180_DIV_PI) : 0 ) //*F180_DIV_PI converts radians to degrees
+	#define DTHETAOFXY(X,Y) ( ((Y)!=0 || (X)!=0) ? (atan2((Y),(X))*D180_DIV_PI) : 0 ) //*F180_DIV_PI converts radians to degrees
+	#define LDTHETAOFXY(X,Y) ( ((Y)!=0 || (X)!=0) ? (atan2((Y),(X))*LD180_DIV_PI) : 0 ) //*F180_DIV_PI converts radians to degrees
+	#define XOFRTHETA(r,theta) ((r)*cos((theta)/D180_DIV_PI)) //divide since cos takes radians
+	#define YOFRTHETA(r,theta) ((r)*sin((theta)/D180_DIV_PI)) //divide since cos takes radians
+	#define FXOFRTHETA(r,theta) ((r)*cos((theta)/F180_DIV_PI)) //divide since cos takes radians
+	#define FYOFRTHETA(r,theta) ((r)*sin((theta)/F180_DIV_PI)) //divide since cos takes radians
+-move Dist(DPoint,DPoint) to pmath (which already has Dist(double,double,double,double) etc
+
+changes to base.h:
+2012-02-04
+-fixed MAJOR BUG
+	if (iLineRelationshipType==RMath::IntersectionYes||RMath::IntersectionBeyondSegment) {
+	which is not even really comparing anything on the right side of the "||", and changed it to:
+	if ((iLineRelationshipType==RMath::LineRelationshipIntersectionNotTouchingEndsOfLineB)||iLineRelationshipType==RMath::LineRelationshipIntersectionOutOfRange) {
+-Changed instances of FPOINT (struct) to FPoint (class)
+-Changed instances of ((isinf(val)&(val)<0)) to (isinf(val)&&((val)<0)) (big bug fix!)
+-removed bFlipYaw and bFlipPitch
+2011-12-31
+-cleaned up math macros to remove type ambiguity e.g.:
+	*XOFRTHETA change to *XOFRTHETA_DEG to match RetroEngine naming
+	*XOFRTHETA_RAD methods were created (by copying *XOFRTHETA_DEG & removing conversion since "cos" takes radians)
+	FXOFRTHETA_RAD was removed since XOFRTHETA_RAD does the overloading anyway when it calls "cos"
+	XOFRTHETA_DEG changed to DXOFRTHETA_DEG since uses D180_DIV_PI
+	?OFRTHETA_RAD changed to RConvert_?OFRTHETA_RAD
+2011-12-29
+-fixed shadows:
+	changed
+		m2dReturnShadow.rectRender.top=IROUNDF(yDownness*fScreenH-(float)m2dReturnShadow.rectOriginal.right/2.0f*m2dReturnShadow.fScale);
+	to
+		m2dReturnShadow.rectRender.top=IROUNDF(yDownness*fScreenH-(float)m2dReturnShadow.rectOriginal.top/2.0f*m2dReturnShadow.fScale);
+-moved dwTicksAcquiredOutsideOfGameState_Run to base
+-moved MetersToMove* to base (from both DXManSDL & dxman-crossplatform) 
+-Removed SetRotMaxSpeed since used mismatched variables by setting Position using Rotation method (major fix!)
+		void Mass3d::SetRotMaxSpeed(float xSpeed, float ySpeed, float zSpeed) {
+			xVel=xSpeed;
+			yVel=ySpeed;
+			zVel=zSpeed;
+		}
+2011-12-24
+-added MeasureTextByRef_TypeFast to RFont class & modified primary overload of TypeFast to deal with that
+-fixed SafeAddWrappedPositiveOnly in base.cpp to not return negative (see commented code for changes)
+
+DXManSDL has:
+TODO:
+x-added "(arrpentShot[iShotNow])->iIndex=iShotNow;" in Shoot(iDir) from dxman-crossplatform
+x-apply all fixes from dxman-crossplatform\camera.cpp (except keep SDL_mixer)
+	x-added PointIsInView method
+-apply all fixes from dxman-crossplatform\entity.cpp (except keep SDL_mixer)
+	-TurnIncrement & everything after (WinMerge)
+2011-12-24
+-(WinMerge) applied all fixes from dxman-crossplatform\dxman.cpp (except keep SDL_mixer)
+2011-12-23
+-fixed PlaySounds loop (only loop for SDL_mixer Mix_Chunk struct version)
+-showed help message at beginning using default raster RFont
+-made pmath initialize itself:
+	ProtoArmor namespace used to expect:
+		example lines from f_spatialforegroundremover.cpp:
+			PMathStatic* pmathstatic=NULL;
+			void SpatialForegroundRemoverFilter::Start() {
+				if (pmathstatic==NULL) pmathstatic=new PMathStatic();//PMathStatic pmathstatic;
+	so I changed behavior to:
+		-pmath.h:
+		extern PMathStatic pmathstatic;
+		-pmath.cpp:
+		PMathStatic pmathstatic;
+-fixed errors preventing compile (RetroEngine-like base classes AND protoarmor namespace [new open-source code and old code made open-source for SpatialForegroundRemover]):
+	changed prototype void Gradient::ShadeAlpha to ShadeAlpha
+	added 'R' prefix and other filename changes to include statements
+	changed instances of RConvert_ToString to RString_ToString
+	changed instances of ipoint*.x to ipoint*.X & same for y to Y
+	changed char* catch (only occurred in RFile, not DXManSDL, nor dxman-crossplatform, nor any other files in base)
+		like:
+			catch (char* szExn) {
+				bGood=false;
+				ShowAndDeleteException(szExn,"OpenWrite",sMsg);
+				bExn=true;
+		to:
+			catch (exception& exn) { bGood=false; ShowExn(exn,"Sprite::Load"); bExn=true;
+	changed PMath::ROfXY to ROfXY in pmath.h
+	Add:
+		#include <frameworkdummy.h> 
+		-to RFile.h (for uint etc)
+	Add:
+		using namespace ProtoArmor;
+		-for uint, "Console" fake static class, etc
+		-to base.h
+	Changed frameworkdummy calls
+		-to C++.NET-compatible syntax from ProtoArmor namespace:
+			Console.Error.Write to Console::Error.Write
+			Console.Error.Flush to Console::Error.Flush
+			File.Exists to File::Exists
+		-uses the new SpatialForegroundRemover [ProtoArmor open-source namespace] frameworkdummy
+	Changed ProtoArmor constants to not conflict with base defines:
+		F180_DIV_PI to f180_DIV_PI
+		D180_DIV_PI to d180_DIV_PI
+
+-fixed warnings (x or no '-' = done):
+	added return statement to:
+		bool Anim::GotoFrame(int iFrameX)
+		bool Anim::GotoNextFrame()
+		Anim::Dump()
+		Gradient::Init
+		Byter::Save()
+		Byter::SetMax(int iSizeTo)
+		Sprite::Load
+		Sprite::Save
+		-AND MANY MORE,
+			including:
+		ExistsAt, MirrorOnYLine
+		--which are big bugfixes!!!
+	instances of "statement has no effect":
+		changed "xDestRel; yDestRel=0;" etc to "xDestRel=0; yDestRel=0;" etc
+		--this could be a big load of bugfixes!
+	removed some unused variables
+	added Console::Error.WriteLine("NOT YET IMPLEMENTED [methodname]") where [methodname] is method name to sprite.h
+	"operation on iChannel may be undefined":
+		changed ++iChannel to iChannel and put iChannel++ on previous line
+	-change instances of:
+		<float.h> to <cfloat>
+		<limits.h> to <climits>
+	comparison between signed and unsigned types
+		e.g. changed instances of:
+			for (int i=0;
+		to one of the following:
+			for (size_t i=0;
+			for (Uint32 iNow=0;
+	added
+		#include <cstdlib> //malloc, free etc
+		#include <cstring> //memcpy etc (requires cstdlib)
+		using namespace std;
+		-to files that use malloc, free, memcpy
+	changed
+			PMath::pfDistCache[x][y]=NULL;
+		to:
+			PMath::pfDistCache[x][y]=0.0f;
+	changed
+		static void ResizePointInfoCache(int iRadius, bool bHorizontalMovement, bool bVerticalMovement);
+		to:
+		static void ResizePointInfoCache(unsigned int iRadius, bool bHorizontalMovement, bool bVerticalMovement);
+			& changed implementation which compares the int to an unsigned one anyway
+-fixed CppCheck issues
+	old casts (using Entity pointers that used to be void pointers) from:
+	"delete (Entity*)arrpentAlien[iAliensNow];" etc to "delete arrpentAlien[iAliensNow];" etc
+	changed faulty check in RImage_bgra32: "gbDest.iBytesTotal!=gbDest.iBytesTotal" to "gbSrc.iBytesTotal!=gbDest.iBytesTotal" !!!
+		-in EffectMoBlurSimModWidth, EffectSkewModWidth
 2009-09-06
 -MultiThreading to work around SDL Mixer crashes
 
@@ -26,5 +181,5 @@ TODO:
 dxman-kdevelop has:
 -All targa methods moves to targa class
 -all (or nearly all) functions encapsulated into classes
--beginning to program environment class to control all object movement and hit detection
+-program environment class that should eventually control all object movement and hit detection
 
