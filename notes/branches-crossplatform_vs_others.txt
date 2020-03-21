@@ -1,0 +1,64 @@
+dxman-crossplatform 
+
+-intended to be the ONLY MAINTAINED version -- it only needs multithreading (see DXManSDL notes)
+-is a continuation of the cross-platform dxman-kdevelop which was discontinued in favor of this fork.
+-has Sounder for sound management abstraction
+
+"dxman-crossplatform"-specific issues:
+-movement does not work correctly--all objects seem to speed away toward infinity & make bumping sound
+-sound is not enabled (goal is to use OpenAL)
+-some uint32's are UInt32 and some are Uint32
+-usage of zRotVelDegreesPerSec is:
+	zDegMove=zRotVelDegreesPerSec*rSecondsSinceLastCall
+	--this is done by RotateTowardDest(iMillisecondsSinceLastCall)
+		OR RotateTowardDest(rSecondsSinceLastCall) [float or double overload] in base.cpp!
+
+Beta:
+-check for weird stuff in file called "dat" & check behavior of loading that
+-bullets should go away after dying (?)
+-test compressed targa loading
+-new song for Title screen (before intro text)
+-make sound work better - make a queue so that overdue alien ouch doesn't wait to play until letting off mouse button from rapidfire
+	-such as global iSoundInstanceTimeToLiveTicks & local iTickGenerated variables
+-crashes on boss, reason unknown--about the time when the sound effect should stop, the game crashes (vanishes without windows issue resolution running)
+
+Final
+-test compressed targa saving
+-use Hermes: OSS pixel format conversion library
+
+2011-12-31
+-renamed DPOLAROFRECT and FPOLAROFRECT to RConvert_RectToPolar
+2011-12-29
+-(major fix!) changed "else {" to "if (bHitMinX||bHitMaxX||bHitMinY||bHitMaxY) {" for hit edge in case hit both edge AND bottom!
+-(major fix!) changed "if (rSecondsShootDelay<Base_r0)" to "if (rSecondsShootDelay<=Base_r0)"
+-changed
+		(Base_GetSeconds()-rSecLastRefresh)
+	to
+		Base_SecondsSince(rSecLastRefresh)
+2011-12-24
+-got fixed Point2dFrom3dWithScreenOffset with return--pasted from DXManSDL
+-changed "for (iNow=0; iNow<iSoundarrLen; iNow) {" to "for (iNow=0; iNow<iSoundarrLen; iNow++) {"
+-fixed PointIsInView (used to not do anything if >=)!
+-changed includes in "dxman-crossplatform"-specific sourcecode to use new file naming (already done in base [see DXManSDL programming notes])
+-made X,Y,Z member variables capitalized
+-fixed issues preventing compile
+-fixed c-style pointer cast warnings no longer need "(Entity*)" cast since all objects are entities.
+-added missing line:
+			LoadImage(gbIntroTextBack, "images/intro-text-back.tga");
+-made Base_SecondsSince have a return!
+2011-12-23 (see DXManSDL)
+2009-09 (see also: DXManSDL 2009-09-03)
+-improved font.tga (resized&moved letters to keep outlines from crossing divisions)
+-fixed infinite recursion in Mass3D::ToString (replaced ToString calls with ExpertMultimediaBase::ToString)
+-improved area0000.tga and area0001.tga
+-added "no checkpoint reached" to gamescreenarea0000.tga
+-refactored to comply with C++ standards (used extern in header instead of declaration except in base.h, and fixed other project layout issues)
+
+
+2008 (kdevelop version)
+-features the ability to load RLE-compressed targa files (resources have been compressed)
+-uses objects instead of structs and functions for nearly everything
+-added RLE compress/decompress for targa (not tested)
+-added font renderer ported from C# RetroEngine (not tested)
+
+

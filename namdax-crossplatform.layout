@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_layout_file>
+	<ActiveTarget name="Debug" />
+	<File name="..\..\base\Base_private.h" open="0" top="0" tabpos="9">
+		<Cursor position="493" topLine="0" />
+	</File>
+	<File name="..\..\base\RAnim_bgra32.cpp" open="0" top="0" tabpos="1">
+		<Cursor position="23127" topLine="627" />
+	</File>
+	<File name="..\..\base\RAnim_bgra32.h" open="0" top="0" tabpos="10">
+		<Cursor position="197" topLine="0" />
+	</File>
+	<File name="..\..\base\RFile.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="3124" topLine="99" />
+	</File>
+	<File name="..\..\base\RFile.h" open="0" top="0" tabpos="0">
+		<Cursor position="102" topLine="0" />
+	</File>
+	<File name="..\..\base\RFont_bgra32.cpp" open="0" top="0" tabpos="2">
+		<Cursor position="11697" topLine="303" />
+	</File>
+	<File name="..\..\base\RFont_bgra32.h" open="0" top="0" tabpos="3">
+		<Cursor position="937" topLine="8" />
+	</File>
+	<File name="..\..\base\RGradient_bgra32.cpp" open="0" top="0" tabpos="7">
+		<Cursor position="42" topLine="0" />
+	</File>
+	<File name="..\..\base\RGradient_bgra32.h" open="0" top="0" tabpos="0">
+		<Cursor position="635" topLine="0" />
+	</File>
+	<File name="..\..\base\RImage_bgra32.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="31072" topLine="871" />
+	</File>
+	<File name="..\..\base\RImage_bgra32.h" open="0" top="0" tabpos="6">
+		<Cursor position="3574" topLine="7" />
+	</File>
+	<File name="..\..\base\RSprite_bgra32.cpp" open="0" top="0" tabpos="0">
+		<Cursor position="90" topLine="0" />
+	</File>
+	<File name="..\..\base\RSprite_bgra32.h" open="0" top="0" tabpos="0">
+		<Cursor position="139" topLine="0" />
+	</File>
+	<File name="..\..\base\RWorld.cpp" open="0" top="0" tabpos="3">
+		<Cursor position="605" topLine="0" />
+	</File>
+	<File name="..\..\base\RWorld.h" open="0" top="0" tabpos="4">
+		<Cursor position="109" topLine="0" />
+	</File>
+	<File name="..\..\base\Targa.cpp" open="1" top="0" tabpos="5">
+		<Cursor position="17328" topLine="458" />
+	</File>
+	<File name="..\..\base\Targa.h" open="1" top="0" tabpos="4">
+		<Cursor position="223" topLine="0" />
+	</File>
+	<File name="..\..\base\base.cpp" open="1" top="0" tabpos="3">
+		<Cursor position="1713" topLine="31" />
+	</File>
+	<File name="..\..\base\base.h" open="0" top="0" tabpos="10">
+		<Cursor position="19487" topLine="532" />
+	</File>
+	<File name="..\..\base\frameworkdummy.h" open="1" top="0" tabpos="6">
+		<Cursor position="1342" topLine="63" />
+	</File>
+	<File name="cb.bmp" open="0" top="0" tabpos="0">
+		<Cursor position="5" topLine="0" />
+	</File>
+	<File name="dxman.cpp" open="1" top="0" tabpos="1">
+		<Cursor position="117803" topLine="2914" />
+	</File>
+	<File name="dxman.h" open="1" top="1" tabpos="7">
+		<Cursor position="680" topLine="10" />
+	</File>
+	<File name="entity.cpp" open="1" top="0" tabpos="2">
+		<Cursor position="36729" topLine="957" />
+	</File>
+	<File name="entity.h" open="0" top="0" tabpos="3">
+		<Cursor position="2741" topLine="80" />
+	</File>
+</CodeBlocks_layout_file>

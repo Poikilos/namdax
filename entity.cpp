@@ -2,15 +2,14 @@
 #define ENTITY_CPP
 
 #include "entity.h"
-#include "base.h"
+#include <base.h>
 #include "dxman.h"
-#include "gbuffer32bgra.h" //DrawSubPixelArc etc
+#include <RImage_bgra32.h> //DrawSubPixelArc etc
 
 using namespace std;
 
 namespace ExpertMultimediaBase {
 	void Entity::InitNull() {
-		iFrameBurn=0;//iFrameBurnNow=this->animBurn.IFrames()-1;
 		lpanimMain=NULL;
 		lpanimShadow=NULL;
 		fShield=0.0f;
@@ -18,7 +17,7 @@ namespace ExpertMultimediaBase {
 		bCycleFrames=false;
 		bGravity=false;
 		iBoundaryAction=BOUNDARY_BOUNCE;
-		rSecLastHitGroundSound=Base_GetSeconds();
+		rSecLastHitGroundSound=Base_GetSeconds_Relative();
 		bExploding=false;
 		fExplodedness=0.0f;
 		bAlien=false;
@@ -29,9 +28,9 @@ namespace ExpertMultimediaBase {
 		fExplodedness=0;
 		//fFloatHeight=0.0f;
 		fLaserSusceptibility=.05;
-		rSecLastRefresh=Base_GetSeconds();
-		rSecLastMetricMove=Base_GetSeconds();
-		bFirstRun=true;
+		rSecLastRefresh=Base_GetSeconds_Relative();
+		rSecLastMetricMove=Base_GetSeconds_Relative();
+		bFirstRunOfThisEntity=true;
 		bAimBomb=false;
 		bDraw=true;
 		fHealthMax=1.0f;//only used by hero as of 2007
@@ -43,18 +42,24 @@ namespace ExpertMultimediaBase {
 		m2dEnt.Init(100,100,81.0f);
 		bRotationTakesPrecedence=false;
 		bMustMove=false;
-		m3dEnt.SetRotMaxSpeed(180,180,180);
+		//TODO: m3dEnt.SetRotMaxSpeed(180,180,180);
 		m3dEnt.zMin=0.0f;
 		rFortitude=1.0f;
 		fSpeedMultiplier=1.0f;
 		rSecondsLife=0.0f;
-		rSecStart=Base_GetSeconds();
+		rSecThisEntityCreated=Base_GetSeconds_Relative();
 
-	}//end Init()
+		iIndex=-1;
+		iDir=-1;
+		zRotSpeed=0.0f;
+		fShootMetersPerSec=1.0f;
+		fHealth=1.0f;
+		fPower=1.0f;
+	}//end InitNull()
 	Entity::Entity(int iTypeX) {
 		InitNull();
 		iType=iTypeX;
-		bool bGood=true;
+		//bool bGood=true;
 		try {
 			if (iType==ENTITY_TYPE_HERO) {
 				try {
@@ -93,18 +98,18 @@ namespace ExpertMultimediaBase {
 					dat.GetOrCreate(m3dEnt.yMin, "hero.bounds.ymin");
 					dat.GetOrCreate(m3dEnt.yMax, "hero.bounds.ymax");
 					dat.GetOrCreate(m3dEnt.zMax, "hero.bounds.zmax");
-					m3dEnt.x=0;//(SCREEN_WIDTH/2 - m2dEnt.rectOriginal.right/2)-21;
-					m3dEnt.y=m3dEnt.yMin;//(SCREEN_HEIGHT*.75 -height/2)-90;//m3dEnt.y=SCREEN_HEIGHT*.75 - height/2;
-					m3dEnt.z=4; //starts falling from air
-					dat.GetOrCreate(m3dEnt.x, "hero.start.x");
-					dat.GetOrCreate(m3dEnt.y, "hero.start.y");
-					dat.GetOrCreate(m3dEnt.z, "hero.start.z");
+					m3dEnt.X=0;//(SCREEN_WIDTH/2 - m2dEnt.rectOriginal.right/2)-21;
+					m3dEnt.Y=m3dEnt.yMin;//(SCREEN_HEIGHT*.75 -height/2)-90;//m3dEnt.Y=SCREEN_HEIGHT*.75 - height/2;
+					m3dEnt.Z=4; //starts falling from air
+					dat.GetOrCreate(m3dEnt.X, "hero.start.X");
+					dat.GetOrCreate(m3dEnt.Y, "hero.start.Y");
+					dat.GetOrCreate(m3dEnt.Z, "hero.start.Z");
 					m3dEnt.xSize=.4f;
 					m3dEnt.ySize=.4f;
 					m3dEnt.zSize=1.8f;//1.6f;
-					dat.GetOrCreate(m3dEnt.xSize, "hero.size.x");
-					dat.GetOrCreate(m3dEnt.ySize, "hero.size.y");
-					dat.GetOrCreate(m3dEnt.zSize, "hero.size.z");
+					dat.GetOrCreate(m3dEnt.xSize, "hero.size.X");
+					dat.GetOrCreate(m3dEnt.ySize, "hero.size.Y");
+					dat.GetOrCreate(m3dEnt.zSize, "hero.size.Z");
 					u32Status=STATUS_ALIVE;// | STATUS_ANTIGRAVITY;
 					fHealth=fHealthMax;
 					m3dEnt.zRotDest=m3dEnt.zRot;
@@ -135,10 +140,10 @@ namespace ExpertMultimediaBase {
 				}
 			}//end if ENTITY_TYPE_HERO
 			else if (iType==ENTITY_TYPE_SHOT) {
-				Console.Error.WriteLine("Created a useless shot using no constructor parameters.");
+				Console::Error.WriteLine("Created a useless shot using no constructor parameters.");
 			}//end if ENTITY_TYPE_SHOT
 			else if (iType==ENTITY_TYPE_ALIEN) {
-				Console.Error.WriteLine("Created a useless alien using no constructor parameters.");
+				Console::Error.WriteLine("Created a useless alien using no constructor parameters.");
 			}//end if ENTITY_TYPE_ALIEN
 		}
 		catch (exception& exn) {
@@ -152,12 +157,12 @@ namespace ExpertMultimediaBase {
 	}//END CONSTRUCTOR BY iTypeX
 	Entity::Entity(int iTypeX, Mass3d m3dDirectionAndLocation, float fMetersPerSec, bool IsAlien, bool IsBomb) {
 		InitNull();
-		bool bGood=true;
+		//bool bGood=true;
 		iType=iTypeX;
 		bUsePitchYaw=true;
 		fMetersPerSecond=fMetersPerSec;
 		fMetersPerSecondMax=fMetersPerSecond;
-		m3dEnt.HardLocation(m3dDirectionAndLocation.x,m3dDirectionAndLocation.y,m3dDirectionAndLocation.z);
+		m3dEnt.HardLocation(m3dDirectionAndLocation.X,m3dDirectionAndLocation.Y,m3dDirectionAndLocation.Z);
 		m3dEnt.HardRotation(m3dDirectionAndLocation.xRot,m3dDirectionAndLocation.yRot,m3dDirectionAndLocation.zRot);
 		if (iType==ENTITY_TYPE_SHOT) {
 			bCycleFrames=true;
@@ -165,21 +170,20 @@ namespace ExpertMultimediaBase {
 			try {
 				u32Status=STATUS_ALIVE;
 				fShadowOpacity=.25;
-				m3dEnt.xMin=-10;
-				m3dEnt.xMax=10;
-				m3dEnt.yMin=-12;
-				m3dEnt.yMax=30;
+				m3dEnt.xMin=-10.0f;
+				m3dEnt.xMax=10.0f;
+				m3dEnt.yMin=-12.0f;
+				m3dEnt.yMax=30.0f;
 				m3dEnt.zMax=40.0f;
 				rSecondsLife=7.0f;
-
-				m3dEnt.xSize=.25;
-				m3dEnt.zSize=.25;
-				m3dEnt.ySize=.25;
+				m3dEnt.xSize=.25f;
+				m3dEnt.zSize=.25f;
+				m3dEnt.ySize=.25f;
 
 				lpanimMain=&animShot;
 	 			m2dEnt.Init(lpanimMain->Width(),lpanimMain->Height(),400.0f);
 				settings.GetOrCreate(m2dEnt.fPixelsPerMeter,"shot.size.pixelspermeter");
-				//m2dEnt.SetHitRect(19,11,58,252);
+				m2dEnt.SetHitRect(19,11,58,252);//TODO: comment this again??
 				//m2dEnt.fScale=1.0f;
 				//m2dEnt.SetPixCenter(104,(int)m2dEnt.FCenterYRelScaled());
 
@@ -205,7 +209,7 @@ namespace ExpertMultimediaBase {
 	Entity::Entity(int iTypeX, float x2, float y2, float z2, float xVel2, float yVel2, float zVel2, bool IsAlien, bool IsBomb) {
 		InitNull();
 		iType=iTypeX;
-		bool bGood=true;
+		//bool bGood=true;
 		if (iType==ENTITY_TYPE_SHOT) {
 			bCycleFrames=true;
 			iBoundaryAction=BOUNDARY_DIE;
@@ -233,9 +237,9 @@ namespace ExpertMultimediaBase {
 	 			m2dShadow.Init(lpanimShadow->Width(),lpanimShadow->Height(),m2dEnt.fPixelsPerMeter);
 
 				if (lpanimMain!=null) lpanimMain->GotoFrame(IRandPositive()%lpanimMain->IFrames());
-				m3dEnt.x=x2;
-				m3dEnt.y=y2;
-				m3dEnt.z=z2;
+				m3dEnt.X=x2;
+				m3dEnt.Y=y2;
+				m3dEnt.Z=z2;
 				m3dEnt.xVel=xVel2;
 				m3dEnt.yVel=yVel2;
 				m3dEnt.zVel=zVel2;
@@ -256,13 +260,13 @@ namespace ExpertMultimediaBase {
 	Entity::Entity(int iTypeX, float x2, float y2, float z2) {
 		InitNull();
 		iType=iTypeX;
-		bool bGood=true;
+		//bool bGood=true;
 		if (iType==ENTITY_TYPE_ALIEN) {
 			try {
 				fHealthMax=.118;
 				dat.GetOrCreate(fHealthMax, "flyer.L1Health");
 				fHealthMax*=(float)iEncounter;
-			   bAimBomb=false;
+				bAimBomb=false;
 				fShootMetersPerSec=1;
 				bAlien=true;
 				fShadowOpacity=.39f;
@@ -276,16 +280,16 @@ namespace ExpertMultimediaBase {
 				u32Status=STATUS_ALIVE;
 				fHealth=fHealthMax;
 				dat.GetOrCreate(fShootMetersPerSec, "flyer.shot.meterspersec");
-				m3dEnt.x=x2;
-				m3dEnt.y=y2;
-				m3dEnt.z=z2;
-	   			m3dEnt.LocationToLimits();
+				m3dEnt.X=x2;
+				m3dEnt.Y=y2;
+				m3dEnt.Z=z2;
+				m3dEnt.LocationToLimits();
 				m3dEnt.xSize=2.0f;
 				m3dEnt.ySize=1.0f;
 				m3dEnt.zSize=.25f;
-				dat.GetOrCreate(m3dEnt.xSize, "flyer.size.x");
-				dat.GetOrCreate(m3dEnt.ySize, "flyer.size.y");
-				dat.GetOrCreate(m3dEnt.zSize, "flyer.size.z");
+				dat.GetOrCreate(m3dEnt.xSize, "flyer.size.X");
+				dat.GetOrCreate(m3dEnt.ySize, "flyer.size.Y");
+				dat.GetOrCreate(m3dEnt.zSize, "flyer.size.Z");
 				//m3dEnt.xVel=(float)(iEncounter+1)*(float)(IRand()%3+1)/30.0f;
 				//m3dEnt.yVel=-(float)(IRand()%4)*.01;
 				//m3dEnt.zVel=-(float)(IRand()%4)*.01;
@@ -301,7 +305,7 @@ namespace ExpertMultimediaBase {
 				m3dEnt.zRot=(float)IRand(0,360);
 				m3dEnt.zRotDest=m3dEnt.zRot;
 				bUsePitchYaw=true;
-				rSecondsShootDelay=.66;
+				rSecondsShootDelay=.6667;
 				lpanimMain=&animFlyer;
 	 			m2dEnt.Init(lpanimMain->Width(),lpanimMain->Height(),150.0f);
 				settings.GetOrCreate(m2dEnt.fPixelsPerMeter,"flyer.size.pixelspermeter");
@@ -334,7 +338,7 @@ namespace ExpertMultimediaBase {
 		if (iType==ENTITY_TYPE_BOSS) {
 			static bool bShown=false;
 			if (!bShown) {
-				if (ShowError()) Console.Error.WriteLine("Error in SetAsBoss--type is already boss.");
+				if (ShowError()) Console::Error.WriteLine("Error in SetAsBoss--type is already boss.");
 				bShown=true;
 			}
 			return;
@@ -344,9 +348,9 @@ namespace ExpertMultimediaBase {
 		m3dEnt.xSize=4.7f;
 		m3dEnt.ySize=4.7f;
 		m3dEnt.zSize=2.0f;//1.2f;
-		dat.GetOrCreate(m3dEnt.xSize, "boss.size.x");
-		dat.GetOrCreate(m3dEnt.zSize, "boss.size.z");
-		dat.GetOrCreate(m3dEnt.ySize, "boss.size.y");
+		dat.GetOrCreate(m3dEnt.xSize, "boss.size.X");
+		dat.GetOrCreate(m3dEnt.zSize, "boss.size.Z");
+		dat.GetOrCreate(m3dEnt.ySize, "boss.size.Y");
 		try {
 			try {
 				try {
@@ -370,18 +374,18 @@ namespace ExpertMultimediaBase {
 					m3dEnt.yMin=-8.0f;
 					m3dEnt.yMax=12.0f;
 					m3dEnt.zMax=7.0f;
-					m3dEnt.x=0;m3dEnt.y=0;m3dEnt.z=m3dEnt.zMax;
-					dat.GetOrCreate(m3dEnt.x, "boss.start.x");
-					dat.GetOrCreate(m3dEnt.y, "boss.start.y");
-					dat.GetOrCreate(m3dEnt.z, "boss.start.z");
+					m3dEnt.X=0;m3dEnt.Y=0;m3dEnt.Z=m3dEnt.zMax;
+					dat.GetOrCreate(m3dEnt.X, "boss.start.X");
+					dat.GetOrCreate(m3dEnt.Y, "boss.start.Y");
+					dat.GetOrCreate(m3dEnt.Z, "boss.start.Z");
 					m3dEnt.xVel=.1f;
 					m3dEnt.yVel=.04f;
 					m3dEnt.zVel=-.0333f;
 					fMetersPerSecond=4.0;
 					bUsePitchYaw=false;//TODO: change vars and this
-					dat.GetOrCreate(m3dEnt.xVel, "boss.start.velocity.x");
-					dat.GetOrCreate(m3dEnt.yVel, "boss.start.velocity.y");
-					dat.GetOrCreate(m3dEnt.zVel, "boss.start.velocity.z");
+					dat.GetOrCreate(m3dEnt.xVel, "boss.start.velocity.X");
+					dat.GetOrCreate(m3dEnt.yVel, "boss.start.velocity.Y");
+					dat.GetOrCreate(m3dEnt.zVel, "boss.start.velocity.Z");
 					fShootMetersPerSec=6.6f;
 					dat.GetOrCreate(fShootMetersPerSec,"boss.shot.meterspersec");
 					fHealth=fHealthMax;
@@ -445,31 +449,31 @@ namespace ExpertMultimediaBase {
 		else iFrameTest=(int)APPROACH(45,60,(fDeg-270.0f)/90.0f);
 		if (iFrameTest<0) iFrameTest=0;
 		else if (lpanimMain==null || iFrameTest>=lpanimMain->IFrames()) {
-			if (ShowErr()) Console.Error.WriteLine("Warning: FrameFromRot(fDeg:"+RString_ToString(fDeg)+") (was zRot:"+RString_ToString(m3dEnt.zRot)+") is frame "+RString_ToString(iFrameTest));
+			if (ShowErr()) Console::Error.WriteLine("Warning: FrameFromRot(fDeg:"+RString_ToString(fDeg)+") (was zRot:"+RString_ToString(m3dEnt.zRot)+") is frame "+RString_ToString(iFrameTest));
 			iFrameTest=0;
 		}
-		//static REAL rSecondsSinceLastShow=Base_GetSeconds();
-		//if (Base_SecondsSince(rSecondsSinceLastShow)>=1) {
-		//	rSecondsSinceLastShow=Base_GetSeconds();
-		//	Console.Error.WriteLine("FrameFromRot() "+m3dEnt.zRot+" is "+iFrameTest);
+		//static REAL rSecondsSinceLastShow=Base_GetSeconds_Relative();
+		//if (Base_SecondsSince_Relative(rSecondsSinceLastShow)>=1) {
+		//	rSecondsSinceLastShow=Base_GetSeconds_Relative();
+		//	Console::Error.WriteLine("FrameFromRot() "+m3dEnt.zRot+" is "+iFrameTest);
 		//}
 		//static int iTest=0;
 		//if (iTest<1000 && iType==ENTITY_TYPE_ALIEN) {
-		//	Console.Error.WriteLine("FrameFromRot "+m3dEnt.zRot+" (cropped to "+fDeg+") is "+iFrameTest+".");
+		//	Console::Error.WriteLine("FrameFromRot "+m3dEnt.zRot+" (cropped to "+fDeg+") is "+iFrameTest+".");
 		//	iTest++;
 		//}
 		return iFrameTest;
 	}
 	void Entity::TurnIncrement(bool bPositiveAngle) {
-		if (bPositiveAngle) m3dEnt.zRotDest=m3dEnt.zRot+m3dEnt.zRotVel*(Base_SecondsSince(rSecLastRefresh));
-		else m3dEnt.zRotDest=m3dEnt.zRot-m3dEnt.zRotVel*(Base_SecondsSince(rSecLastRefresh));
+		if (bPositiveAngle) m3dEnt.zRotDest=m3dEnt.zRot+m3dEnt.zRotVelDegreesPerSec*Base_SecondsSince_Relative(rSecLastRefresh);
+		else m3dEnt.zRotDest=m3dEnt.zRot-m3dEnt.zRotVelDegreesPerSec*(Base_SecondsSince_Relative(rSecLastRefresh));
 	}
 	void Entity::Turn(float fDeg) {
 		m3dEnt.zRotDest=SafeAngle360(fDeg);
 	}
 	void Entity::TurnPitchIncrement(bool bUp) {
-		if (bUp) m3dEnt.yRotDest=m3dEnt.yRot+(m3dEnt.yRotVel*(Base_GetSeconds()-rSecLastRefresh));
-		else m3dEnt.yRotDest=m3dEnt.yRot-(m3dEnt.yRotVel*(Base_GetSeconds()-rSecLastRefresh));
+		if (bUp) m3dEnt.yRotDest=m3dEnt.yRot+(m3dEnt.yRotVelDegreesPerSec*(Base_GetSeconds_Relative()-rSecLastRefresh));
+		else m3dEnt.yRotDest=m3dEnt.yRot-(m3dEnt.yRotVelDegreesPerSec*(Base_GetSeconds_Relative()-rSecLastRefresh));
 	}
 	void Entity::TurnPitch(float fDeg) {
 		m3dEnt.yRotDest=SafeAngle360(fDeg);
@@ -478,9 +482,9 @@ namespace ExpertMultimediaBase {
 	}
 	void Entity::Jump() {
 		if (rSecondsMoveDelay<=Base_r0) {
-			if ((m3dEnt.z<=m3dEnt.zMin) || (u32Status & STATUS_ANTIGRAVITY)) {//don't unless not jumping or if ANTIGRAVITY status
+			if ((m3dEnt.Z<=m3dEnt.zMin) || (u32Status & STATUS_ANTIGRAVITY)) {//don't unless not jumping or if ANTIGRAVITY status
 				m3dEnt.zVel=(u32Status & STATUS_ANTIGRAVITY) ? .07f :.42f;//m3dEnt.zVel=40.0f;//debug this
-				m3dEnt.z+=m3dEnt.zVel;//push us out of the way of ground detection
+				m3dEnt.Z+=m3dEnt.zVel;//push us out of the way of ground detection
 				if (u32Status & STATUS_DOUBLESPEED) m3dEnt.zVel *= 2.0f;
 				if (!(u32Status & STATUS_ANTIGRAVITY)) {//if no antigravity, delay movement in air
 					rSecondsMoveDelay= (u32Status & STATUS_DOUBLESPEED) ? .5 : 1.0;
@@ -493,27 +497,27 @@ namespace ExpertMultimediaBase {
 		static float fDist=.2f;
 		if (rSecondsMoveDelay<=Base_r0) {
 			if (u32Status&STATUS_DOUBLESPEED) fDist=.4f;
-			if (yDir>0) {//Move up (back, +m3dEnt.y)
-				if (m3dEnt.y<m3dEnt.yMax) {
-					m3dEnt.y+=fDist;
+			if (yDir>0) {//Move up (back, +m3dEnt.Y)
+				if (m3dEnt.Y<m3dEnt.yMax) {
+					m3dEnt.Y+=fDist;
 					m3dEnt.yVel=fDist*yDir;
 				}
 			}
-			else if (yDir<0) {//Move down (forward, -m3dEnt.y)
-				if (m3dEnt.y>m3dEnt.yMin) {
-					m3dEnt.y-=fDist;
+			else if (yDir<0) {//Move down (forward, -m3dEnt.Y)
+				if (m3dEnt.Y>m3dEnt.yMin) {
+					m3dEnt.Y-=fDist;
 					m3dEnt.yVel=fDist*yDir;
 				}
 			}
-			if (xDir<0) {//Move left, -m3dEnt.x
-				if (m3dEnt.x>m3dEnt.xMin) {
-					m3dEnt.x-=fDist;
+			if (xDir<0) {//Move left, -m3dEnt.X
+				if (m3dEnt.X>m3dEnt.xMin) {
+					m3dEnt.X-=fDist;
 					m3dEnt.xVel=fDist*xDir;
 				}
 			}
-			else if (xDir>0) {//Move right +m3dEnt.x
-				if (m3dEnt.x<m3dEnt.xMax) {
-					m3dEnt.x+=fDist;
+			else if (xDir>0) {//Move right +m3dEnt.X
+				if (m3dEnt.X<m3dEnt.xMax) {
+					m3dEnt.X+=fDist;
 					m3dEnt.xVel=fDist*xDir;
 				}
 			}
@@ -555,15 +559,15 @@ namespace ExpertMultimediaBase {
 				//if (fDownness<0.0f) fDownness=-fDownness;//okay since fDownness isn't used for m3dEnt.zVel
 				//else if (fDownness>1.0f) fDownness=1.0f;
 				static Mass3d m3dWeapon;
-				m3dWeapon.x=EyeX();
-				m3dWeapon.y=EyeY();
-				m3dWeapon.z=EyeZ();
+				m3dWeapon.X=EyeX();
+				m3dWeapon.Y=EyeY();
+				m3dWeapon.Z=EyeZ();
 				m3dWeapon.zRot=m3dEnt.zRot;
 				m3dWeapon.yRot=m3dEnt.yRot;
 				for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
 					if (arrpentShot[iShotNow] == NULL) {//create a shot at the first available shot pointer
 						arrpentShot[iShotNow]=new Entity(ENTITY_TYPE_SHOT, m3dWeapon, fShootMetersPerSec, false, false);
-						((Entity*)arrpentShot[iShotNow])->iIndex=iShotNow;
+						(arrpentShot[iShotNow])->iIndex=iShotNow;
 						PlaySound("h.laser"+RString_ToString(iShotNow),"laser",m3dWeapon);
 						break;
 					}
@@ -574,16 +578,16 @@ namespace ExpertMultimediaBase {
 			if (rSecondsShootDelay<=Base_r0) {
 				rSecondsShootDelay=((REAL)(IRandPositive()%30+10))/(REAL)30.0;
 				static Mass3d m3dWeapon;
-				m3dWeapon.x=m3dEnt.x-m3dEnt.xSize/2.0f;
-				m3dWeapon.y=m3dEnt.y;
-				m3dWeapon.z=m3dEnt.z;
+				m3dWeapon.X=m3dEnt.X-m3dEnt.xSize/2.0f;
+				m3dWeapon.Y=m3dEnt.Y;
+				m3dWeapon.Z=m3dEnt.Z;
 				m3dWeapon.zRot=(iDir==-1)?180.0f:0;
 				m3dWeapon.yRot=0;
 				for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
 					if (arrpentShot[iShotNow] == NULL) {
 						PlaySound("a.laser"+RString_ToString(iShotNow),"laser-alien",m3dEnt);
 						arrpentShot[iShotNow]=new Entity(ENTITY_TYPE_SHOT, m3dWeapon, fShootMetersPerSec, bAlien, false);
-						((Entity*)arrpentShot[iShotNow])->iIndex=iShotNow;
+						(arrpentShot[iShotNow])->iIndex=iShotNow;
 						break;
 					}
 				}
@@ -612,26 +616,26 @@ namespace ExpertMultimediaBase {
 				//static float xVel,yVel,zVel,fDistTarget;
 				//fDistTarget=DIST3D(m3dEnt,m3dDest);
 				//static Mass3d pointAsVelocity;
-				//pointAsVelocity.x=m3dEnt.x;
-				//pointAsVelocity.y=m3dEnt.y;
-				//pointAsVelocity.z=m3dEnt.z;
+				//pointAsVelocity.X=m3dEnt.X;
+				//pointAsVelocity.Y=m3dEnt.Y;
+				//pointAsVelocity.Z=m3dEnt.Z;
 				//Travel3d(pointAsVelocity,m3dDest,fShootMetersPerSec/fDistTarget);
-				//pointAsVelocity.x-=m3dEnt.x;
-				//pointAsVelocity.y-=m3dEnt.y;
-				//pointAsVelocity.z-=m3dEnt.z;
-				//xNess=fShotSpeed*(FANGLEDIFFPOSITIVE(180,zRotDir)/180.0f*2.0f - 1.0f);
-				//yNess=fShotSpeed*(FANGLEDIFFPOSITIVE(90,zRotDir)/1800.0f*2.0f - 1.0f);
+				//pointAsVelocity.X-=m3dEnt.X;
+				//pointAsVelocity.Y-=m3dEnt.Y;
+				//pointAsVelocity.Z-=m3dEnt.Z;
+				//xNess=fShotSpeed*(ANGLEDIFFPOSITIVE(180,zRotDir)/180.0f*2.0f - 1.0f);
+				//yNess=fShotSpeed*(ANGLEDIFFPOSITIVE(90,zRotDir)/1800.0f*2.0f - 1.0f);
 				//if (zRotDir>=90.0f&&zRotDir<=270.0f) xNess*=-1.0f;
 				static Mass3d m3dWeapon;
-				m3dWeapon.x=EyeX();
-				m3dWeapon.y=EyeY();
-				m3dWeapon.z=EyeZ();
+				m3dWeapon.X=EyeX();
+				m3dWeapon.Y=EyeY();
+				m3dWeapon.Z=EyeZ();
 				m3dWeapon.yRot=fPitch;
 				m3dWeapon.zRot=fYaw;
 				for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
 					if (arrpentShot[iShotNow] == NULL) {//create a shot at the first available shot pointer
 						arrpentShot[iShotNow]=new Entity(ENTITY_TYPE_SHOT, m3dWeapon, fShootMetersPerSec, false, false);
-						((Entity*)arrpentShot[iShotNow])->iIndex=iShotNow;
+						(arrpentShot[iShotNow])->iIndex=iShotNow;
 						PlaySound("h.laser","laser",m3dEnt);
 						break;
 					}
@@ -645,27 +649,25 @@ namespace ExpertMultimediaBase {
 			//3. HITDETECT&CHECK LIFE// -this way it is using the m2dEnt.rectRender for hit detection
 			//1. SET RECT//
 			//2. DRAW//
-
-			//TODO: need to account for pausing in rSecLastRefresh
 		if (narrGameStateCount[iGameState]==0) {//if (GAMESTATE_RUN_bFirstRun) {
-			Console.Error.Write("Base_GetSeconds...");
-			Console.Error.Out.Flush();
+			Console::Error.Write("Base_GetSeconds_Relative...");
+			Console::Error.Out.Flush();
 		}
-		REAL rNow=Base_GetSeconds();
-		REAL rSecondsSinceLastRefresh=rNow-rSecLastRefresh;
+		REAL rSecRelNow=Base_GetSeconds_Relative();
+		REAL rSecondsSinceLastRefresh=rSecRelNow-rSecLastRefresh;
 
-		if (true) { //!bFirstRun) {
+		if (true) {//!bFirstRunOfThisEntity) {
 			// PHYSICS //
 			if (narrGameStateCount[GAMESTATE_RUN]==0) {//GAMESTATE_RUN_bFirstRun
-				Console.Error.Write("Physics...");
-				Console.Error.Out.Flush();
+				Console::Error.Write("Physics...");
+				Console::Error.Out.Flush();
 			}
-			if (bGravity) m3dEnt.zVel-=(float)(rSecondsSinceLastRefresh*(REAL).8); //only .8m/s/s gravitational acceleration for high jumping //earth gravitational acceleration is 1.8 m/s/s
+			if (bGravity) m3dEnt.zVel-=(float)(rSecondsSinceLastRefresh*(REAL).8); //only .8m/s/s gravitational acceleration, for high jumping //earth gravitational acceleration is 1.8 m/s/s
 			if (narrGameStateCount[GAMESTATE_RUN]==0) {//GAMESTATE_RUN_bFirstRun
-				Console.Error.Write("RotateTowardDest...");
-				Console.Error.Out.Flush();
+				Console::Error.Write("RotateTowardDest...");
+				Console::Error.Out.Flush();
 			}
-			//if ((rSecondsSinceLastRefresh)>.3f) //increases granularity to improve division accuracy
+			//if ((rSecondsSinceLastRefresh)>.015f) //increases granularity to improve division accuracy
 				m3dEnt.RotateTowardDest(rSecondsSinceLastRefresh);
 			//m3dEnt.zRot=m3dEnt.zRotDest;
 			//if (m3dEnt.yRot!=m3dEnt.yRotDest) m3dEnt.yRot=m3dEnt.yRotDest;
@@ -679,26 +681,26 @@ namespace ExpertMultimediaBase {
 
 			if (bUsePitchYaw) {
 				if (narrGameStateCount[iGameState]==0) {//(GAMESTATE_RUN_bFirstRun) {
-					Console.Error.Write("{bUsePitchYaw:true}...");
-					Console.Error.Out.Flush();
+					Console::Error.Write("{bUsePitchYaw:true}...");
+					Console::Error.Out.Flush();
 				}
-				if ( (bMustMove)||((rNow-rSecLastMetricMove)>.01f) ) {//minimum difference helps division accuracy on high frame rates
-					int iTest=0;
+				if ( (bMustMove)||((rSecRelNow-rSecLastMetricMove)>.03) ) {//minimum difference helps division accuracy on high frame rates
+					//int iTest=0;
 					float fDist;
-					fDist=fMetersPerSecond*(rNow-rSecLastMetricMove);
+					fDist=MetersToMoveThisManyS(fMetersPerSecond,(float)(rSecRelNow-rSecLastMetricMove));
 					Travel3d(m3dEnt, m3dEnt.yRot, m3dEnt.zRot, fDist*fSpeedMultNow);
-					rSecLastMetricMove=rNow;
+					rSecLastMetricMove=rSecRelNow;
 					bMustMove=false;
 				}//end if move (if enough time passed since last time to allow division accuracy)
 			}
 			else {
 				if (narrGameStateCount[iGameState]==0) { //if (GAMESTATE_RUN_bFirstRun) {
-					Console.Error.Write("{bUsePitchYaw:false}...");
-					Console.Error.Out.Flush();
+					Console::Error.Write("{bUsePitchYaw:false}...");
+					Console::Error.Out.Flush();
 				}
-				m3dEnt.x+=m3dEnt.xVel*fSpeedMultNow;
-				m3dEnt.y+=m3dEnt.yVel*fSpeedMultNow;
-				m3dEnt.z+=m3dEnt.zVel*fSpeedMultNow;
+				m3dEnt.X+=m3dEnt.xVel*fSpeedMultNow;
+				m3dEnt.Y+=m3dEnt.yVel*fSpeedMultNow;
+				m3dEnt.Z+=m3dEnt.zVel*fSpeedMultNow;
 			}
 
 
@@ -706,17 +708,17 @@ namespace ExpertMultimediaBase {
 
 			bool bHitEdge=false,bHitMinX=false,bHitMinY=false,bHitMinZ=false,bHitMaxX=false,bHitMaxY=false,bHitMaxZ=false;
 			if (narrGameStateCount[iGameState]==0) { //if (GAMESTATE_RUN_bFirstRun) {
-				Console.Error.Write("{bHitEdge:"+RString_ToString(bHitEdge)+"}...");
-				Console.Error.Out.Flush();
+				Console::Error.Write("{bHitEdge:"+RString_ToString(bHitEdge)+"}...");
+				Console::Error.Out.Flush();
 			}
 
-			if	  (m3dEnt.x<m3dEnt.xMin) { bHitMinX=true; bHitEdge=true; }
-			else if (m3dEnt.x>m3dEnt.xMax) { bHitMaxX=true; bHitEdge=true; }
-			if	  (m3dEnt.y<m3dEnt.yMin) { bHitMinY=true; bHitEdge=true; }
-			else if (m3dEnt.y>m3dEnt.yMax) { bHitMaxY=true; bHitEdge=true; }
-			if	  (m3dEnt.z<m3dEnt.zMin) { bHitMinZ=true; bHitEdge=true; }
-			else if (m3dEnt.z>m3dEnt.zMax) { bHitMaxZ=true; bHitEdge=true; }
-	 		m3dEnt.LocationToLimits();
+			if	  (m3dEnt.X<m3dEnt.xMin) { bHitMinX=true; bHitEdge=true; }
+			else if (m3dEnt.X>m3dEnt.xMax) { bHitMaxX=true; bHitEdge=true; }
+			if	  (m3dEnt.Y<m3dEnt.yMin) { bHitMinY=true; bHitEdge=true; }
+			else if (m3dEnt.Y>m3dEnt.yMax) { bHitMaxY=true; bHitEdge=true; }
+			if	  (m3dEnt.Z<m3dEnt.zMin) { bHitMinZ=true; bHitEdge=true; }
+			else if (m3dEnt.Z>m3dEnt.zMax) { bHitMaxZ=true; bHitEdge=true; }
+			m3dEnt.LocationToLimits();
 
 			if (bHitEdge) {
 				bMustMove=true;
@@ -727,12 +729,12 @@ namespace ExpertMultimediaBase {
 					case BOUNDARY_STOP:
 						if (bHitMinZ) {
 							if (!bHitSoundWasPlayed) {
-								if ((rNow-rSecLastHitGroundSound)>.3f) {
+								if ((rSecRelNow-rSecLastHitGroundSound)>.3f) {
 									PlaySound("hitdirt"+RString_ToString(iIndex),"hitdirt",m3dEnt);
 									bHitSoundWasPlayed=true;
-									rSecLastHitGroundSound=rNow;
+									rSecLastHitGroundSound=rSecRelNow;
 								}
-								m3dEnt.z+=(fabs(m3dEnt.z-m3dEnt.zMin)/1.5f);
+								m3dEnt.Z+=(fabs(m3dEnt.Z-m3dEnt.zMin)/1.5f);
 							}
 							m3dEnt.xVel*=.5;
 							m3dEnt.yVel*=.5;
@@ -741,7 +743,7 @@ namespace ExpertMultimediaBase {
 						else {
 							bHitSoundWasPlayed=false;
 							if (bHitMaxZ) m3dEnt.zVel=0;
-						} //TODO: m3dEnt.zVel+=zThrust;
+						} //TODO: m3dEnt.zVel+=zThrust; //zThrust=GRAVITY_METERS_PERSEC_PERFRAME
 						if (bHitMinX) m3dEnt.xVel=0;
 						else if (bHitMaxX) m3dEnt.xVel=0;
 						if (bHitMinY) m3dEnt.yVel=0;
@@ -758,27 +760,34 @@ namespace ExpertMultimediaBase {
 						}
 						*/
 						if (bUsePitchYaw) {
-							float fDistFlatToHero=FPDIST(p3dHero.x,p3dHero.y,m3dEnt.x,m3dEnt.y);
-							float fHeightDiff=p3dHero.z-m3dEnt.z;
+							float fDistFlatToHero=FPDIST(p3dHero.X,p3dHero.Y,m3dEnt.X,m3dEnt.Y);
+							float fHeightDiff=p3dHero.Z-m3dEnt.Z;
 							float fPitchToHero=THETAOFXY(fDistFlatToHero,fHeightDiff);
+							if (fPitchToHero<-90) {
+								Console::Error.Write("Programmer Error: fPitchToHero<-90 even though fDistFlatToHero is always positive...");
+								fPitchToHero=180+fPitchToHero;//+ is ok since negative
+								Console::Error.WriteLine("Adusted fPitchToHero to "+RString_ToString(fPitchToHero));
+							}
+							//float fYawToHero=THETAOFXY(m3dEnt.X-p3dHero.X,m3dEnt.Y-p3dHero.Y);
 							if (bHitMinZ) {
 								//m3dEnt.yRot*=-1;
 								m3dEnt.yRotDest=IRand(40,55);
+								m3dEnt.yRot=m3dEnt.yRotDest;//bounce off ground immediately
 								static int hitbottomerror_iLimitedOutput=0;
 								if (m3dEnt.yRotDest<40 || m3dEnt.yRotDest>55) {
-									if (hitbottomerror_iLimitedOutput<100) Console.Error.WriteLine("Hit bottom but new yRot is "+RString_ToString(m3dEnt.yRot)); //debug only
+									if (hitbottomerror_iLimitedOutput<100) Console::Error.WriteLine("Hit bottom but new yRot is "+RString_ToString(m3dEnt.yRot)); //debug only
 									hitbottomerror_iLimitedOutput++;
 								}
-								//m3dEnt.z=m3dEnt.zMin+.02;//debug only --shouldn't be needed//fMetersPerSecond*rSecondsSinceLastRefresh);
+								//m3dEnt.Z=m3dEnt.zMin+.02;//debug only --shouldn't be needed//fMetersPerSecond*rSecondsSinceLastRefresh);
 								//if (m3dEnt.yRot<0.0f)m3dEnt.yRot+=360.0f;
 								//if (m3dEnt.yRot>180.0f) m3dEnt.yRot=360.0f-m3dEnt.yRot;
 							}
 							else if (bHitMaxZ) {
 								m3dEnt.yRotDest=fPitchToHero;
 							}
-							else {
+							if (bHitMinX||bHitMaxX||bHitMinY||bHitMaxY) {
 								m3dEnt.yRotDest=fPitchToHero;
-								m3dEnt.zRotDest=AngleToward(p3dHero.x, p3dHero.y, m3dEnt.x, m3dEnt.y);
+								m3dEnt.zRotDest=AngleToward(p3dHero.X, p3dHero.Y, m3dEnt.X, m3dEnt.Y);
 								//TODO: fix this--the following lines should not be needed
 								if (bHitMinY && m3dEnt.zRotDest>180) {m3dEnt.zRotDest=360.0f-m3dEnt.zRotDest; SafeAngle360ByRef(m3dEnt.zRotDest);}
 								if (bHitMaxY && m3dEnt.zRotDest<180) {m3dEnt.zRotDest=360.0f-m3dEnt.zRotDest; SafeAngle360ByRef(m3dEnt.zRotDest);}
@@ -810,7 +819,7 @@ namespace ExpertMultimediaBase {
 							else if (bHitMaxX) m3dEnt.xVel=-m3dEnt.xVel;
 							if (bHitMinY) m3dEnt.yVel=-m3dEnt.yVel;
 							else if (bHitMaxY) m3dEnt.yVel=-m3dEnt.yVel;
-						}
+						}//end else NOT bUsePitchYaw
 						/*
 						if (bUsePitchYaw) {
 							m3dEnt.zRot=THETAOFXY(m3dEnt.xVel,m3dEnt.yVel);
@@ -834,6 +843,7 @@ namespace ExpertMultimediaBase {
 						break;
 				}//end switch
 			}//end if bHitEdge
+			//bCycleFrames=true;//debug only
 			if (bCycleFrames) {
 				if (lpanimMain!=null) {
 					if (lpanimMain->LastFrame()) lpanimMain->GotoFrame(0);
@@ -841,16 +851,15 @@ namespace ExpertMultimediaBase {
 				}
 			}
 			else CheckFrames(); //DOES set iFrame using FrameFromRot else cycles frames
-		}//end if not firstrun
-		else bFirstRun=false;
+		}//end (true) [used to run only if bFirstRunOfThisEntity]
+		else bFirstRunOfThisEntity=false;
 		if (fMetersPerSecond<fMetersPerSecondMax) fMetersPerSecond=APPROACH(fMetersPerSecond,fMetersPerSecondMax,.5);
-
 
 		//entity-type-specific statements
 
 		if (narrGameStateCount[iGameState]==0) { //if (GAMESTATE_RUN_bFirstRun) {
-			Console.Error.Write("Entity-specific actions...");
-			Console.Error.Out.Flush();
+			Console::Error.Write("Entity-specific actions...");
+			Console::Error.Out.Flush();
 		}
 		if (iType==ENTITY_TYPE_HERO) {
 			// UPDATE //
@@ -861,15 +870,14 @@ namespace ExpertMultimediaBase {
 			if (rSecondsAimDelay<0) rSecondsAimDelay=0;
 			if (rSecondsShootDelay) rSecondsShootDelay-=rSecondsSinceLastRefresh;
 			if (rSecondsShootDelay<0) rSecondsShootDelay=0;
-			if (rFortitude<1.0f) rFortitude+=1.0*rSecondsSinceLastRefresh;
+			if (rFortitude<1.0f) rFortitude+=3.0*rSecondsSinceLastRefresh;
 			if (rFortitude>1.0f) rFortitude=1.0f;
-			if (fSpeedMultiplier<1.0f) fSpeedMultiplier+=1.0*rSecondsSinceLastRefresh;
+			if (fSpeedMultiplier<1.0f) fSpeedMultiplier+=3.0*rSecondsSinceLastRefresh;
 			if (fSpeedMultiplier>1.0f) fSpeedMultiplier=1.0f;
 
 			//re-charge gun
 			float fPowerMaxNow=fPowerMax;
-
-			float fChargeAddNow=.3333*rSecondsSinceLastRefresh;//=.0011*rSecondsSinceLastRefresh;
+			float fChargeAddNow=.99*rSecondsSinceLastRefresh;
 			if (u32Status & STATUS_DOUBLESPEED) {
 				fPowerMaxNow*=2.0f;
 				fChargeAddNow*=2.0f;
@@ -878,7 +886,7 @@ namespace ExpertMultimediaBase {
 			if (fPower>fPowerMaxNow) fPower=fPowerMaxNow;
 
 			// HITDETECT //
-			if (rFortitude>=1.0f) DamageDetect();
+			if (rFortitude>=1.0) DamageDetect();
 			// CHECK LIFE //
 			if (iType==ENTITY_TYPE_HERO && fHealth<=0) u32Status=0; //died, stop other special abilities too
 			if (!(u32Status & STATUS_ALIVE)) {
@@ -892,9 +900,9 @@ namespace ExpertMultimediaBase {
 		}//end if ENTITY_TYPE_HERO
 		else if (iType==ENTITY_TYPE_ALIEN||iType==ENTITY_TYPE_BOSS) {
 			// HITDETECT //
-			if (rFortitude<1.0f) rFortitude+=.859*rSecondsSinceLastRefresh;
+			if (rFortitude<1.0f) rFortitude+=.9*rSecondsSinceLastRefresh;
 			if (rFortitude>1.0f) rFortitude=1.0f;
-			if (fSpeedMultiplier<1.0f) fSpeedMultiplier+=.001*rSecondsSinceLastRefresh;
+			if (fSpeedMultiplier<1.0f) fSpeedMultiplier+=.9*rSecondsSinceLastRefresh;
 			if (fSpeedMultiplier>1.0f) fSpeedMultiplier=1.0f;
 			if (rSecondsShootDelay>Base_r0) rSecondsShootDelay-=rSecondsSinceLastRefresh;
 			if (rSecondsShootDelay<Base_r0) rSecondsShootDelay=Base_r0;
@@ -924,62 +932,69 @@ namespace ExpertMultimediaBase {
 					}
 					bExploding=true;
 				}
-				else fExplodedness+=.3333*rSecondsSinceLastRefresh;
+				else fExplodedness+=3.0*rSecondsSinceLastRefresh;
 				if (fExplodedness>1.0f) fExplodedness=1.0f;
 			}
-		}//end if ENTITY_TYPE_ALIEN
+		}//end if ENTITY_TYPE_ALIEN || ENTITY_TYPE_BOSS
 		//else if (iType==ENTITY_TYPE_SHOT) {//TODO: ok to remove iType check since rSecondsLife compared to zero below
 		if (narrGameStateCount[iGameState]==0) {//if (GAMESTATE_RUN_bFirstRun) {
-			Console.Error.Write("check life...");
-			Console.Error.Out.Flush();
+			Console::Error.Write("check life...");
+			Console::Error.Out.Flush();
 		}
-		if ((rSecondsLife>0.0)&&(rNow-rSecStart>rSecondsLife)) {
+		if ((rSecondsLife>0.0)&&(rSecRelNow-rSecThisEntityCreated>rSecondsLife)) {
 			RemoveAttrib(STATUS_ALIVE);
 		}
 		//} //end if ENTITY_TYPE_SHOT
 		if (narrGameStateCount[iGameState]==0) {//if (GAMESTATE_RUN_bFirstRun) {
-			Console.Error.Write("Translate3D...");
-			Console.Error.Out.Flush();
+			Console::Error.Write("Translate3D...");
+			Console::Error.Out.Flush();
 		}
 		Translate3D();
-		rSecLastRefresh=rNow;
+		rSecLastRefresh=rSecRelNow;
 		IPoint ipDest;
-		ipDest.x=m2dEnt.rectRender.left+SCREEN_OFFSET_X;
-		ipDest.y=m2dEnt.rectRender.top+SCREEN_OFFSET_Y;
+		ipDest.X=m2dEnt.rectRender.left+SCREEN_OFFSET_X;
+		ipDest.Y=m2dEnt.rectRender.top+SCREEN_OFFSET_Y;
 		if (iType==ENTITY_TYPE_HERO) {
 			if (narrGameStateCount[iGameState]==0) {//if (GAMESTATE_RUN_bFirstRun) {
-				Console.Error.Write("ENTITY_TYPE_HERO post-translate-actions...");
-				Console.Error.Out.Flush();
+				Console::Error.Write("ENTITY_TYPE_HERO post-translate-actions...");
+				Console::Error.Out.Flush();
 			}
-			p3dHero.x=m3dEnt.x;
-			p3dHero.y=m3dEnt.y;
-			p3dHero.z=m3dEnt.z;
+			p3dHero.X=m3dEnt.X;
+			p3dHero.Y=m3dEnt.Y;
+			p3dHero.Z=m3dEnt.Z;
 			if (narrGameStateCount[iGameState]==0) {//if (GAMESTATE_RUN_bFirstRun) {
-				Console.Error.Write("TypeFast...");
-				Console.Error.Out.Flush();
-				Console.Error.Write("gbScreen:"+gbScreen.Description()+"...");
-				Console.Error.Out.Flush();
-				Console.Error.Write("ipDest:"+ipDest.ToString()+"...");
-				Console.Error.Out.Flush();
-				Console.Error.Write("m3dEnt.z:"+RString_ToString(m3dEnt.z)+"...");
-				Console.Error.Out.Flush();
-				Console.Error.Write("m3dEnt.ToString(false):"+m3dEnt.ToString(false)+"...");
-				Console.Error.Out.Flush();
+				Console::Error.Write("TypeFast...");
+				Console::Error.Out.Flush();
+				Console::Error.Write("gbScreen:"+gbScreen.Description()+"...");
+				Console::Error.Out.Flush();
+				Console::Error.Write("ipDest:"+ipDest.ToString()+"...");
+				Console::Error.Out.Flush();
+				Console::Error.Write("m3dEnt.Z:"+RString_ToString(m3dEnt.Z)+"...");
+				Console::Error.Out.Flush();
+				Console::Error.Write("m3dEnt.ToString(false):"+m3dEnt.ToString(false)+"...");
+				Console::Error.Out.Flush();
 			}
-			gfontDefault.TypeFast(gbScreen, ipDest, "hero:"+m3dEnt.ToString(),0,DrawModeBlendAlpha);
 		}
-		else if (iType==ENTITY_TYPE_ALIEN) {
-			gfontDefault.TypeFast(gbScreen, ipDest, "alien:"+m3dEnt.ToString(),0,DrawModeBlendAlpha);
-		}
-		else if (iType==ENTITY_TYPE_BOSS) {
-			gfontDefault.TypeFast(gbScreen, ipDest, "boss:"+m3dEnt.ToString(),0,DrawModeBlendAlpha);
-		}
-		else if (iType==ENTITY_TYPE_SHOT) {
-			gfontDefault.TypeFast(gbScreen, ipDest, "shot:"+m3dEnt.ToString(),0,DrawModeBlendAlpha);
-		}
+		if (bDebug) {
+			if (iType==ENTITY_TYPE_HERO) {
+				gfontDefault.TypeFast(gbScreen, ipDest, "hero:"+m3dEnt.ToString(true),0,DrawModeBlendAlpha);
+			}
+			else if (iType==ENTITY_TYPE_ALIEN) {
+				gfontDefault.TypeFast(gbScreen, ipDest, "alien:"+m3dEnt.ToString(true),0,DrawModeBlendAlpha);
+			}
+			else if (iType==ENTITY_TYPE_BOSS) {
+				gfontDefault.TypeFast(gbScreen, ipDest, "boss:"+m3dEnt.ToString(true),0,DrawModeBlendAlpha);
+			}
+			else if (iType==ENTITY_TYPE_SHOT) {
+				gfontDefault.TypeFast(gbScreen, ipDest, "shot:"+m3dEnt.ToString(),0,DrawModeBlendAlpha);
+			}
+			else {
+				gfontDefault.TypeFast(gbScreen, ipDest, "unknown-entity-type:"+m3dEnt.ToString(),0,DrawModeBlendAlpha);
+			}
+		}//end if bDebug show locations of objects
 		if (narrGameStateCount[iGameState]==0) {//if (GAMESTATE_RUN_bFirstRun) {
-			Console.Error.Write("done Entity::Refresh...");
-			Console.Error.Out.Flush();
+			Console::Error.Write("done Entity::Refresh...");
+			Console::Error.Out.Flush();
 		}
 	}//end Refresh
 	void Entity::Draw() {
@@ -1015,7 +1030,7 @@ namespace ExpertMultimediaBase {
 			}
 			else if (iType==ENTITY_TYPE_ALIEN||iType==ENTITY_TYPE_BOSS) {
 				float fShadowOpacityNow;
-				fShadowOpacityNow=(float)fShadowOpacity*(1.2f-(m3dEnt.z/m3dEnt.zMax));
+				fShadowOpacityNow=(float)fShadowOpacity*(1.2f-(m3dEnt.Z/m3dEnt.zMax));
 				if (fShadowOpacityNow>fShadowOpacity) fShadowOpacityNow=fShadowOpacity;
 				else if (fShadowOpacityNow<0.0f) fShadowOpacityNow=0.0f;
 				if (bShadow) {
@@ -1031,7 +1046,7 @@ namespace ExpertMultimediaBase {
 			}//end if iType==ENTITY_TYPE_ALIEN||iType==ENTITY_TYPE_BOSS
 			else if (iType==ENTITY_TYPE_HERO) {
 				float fShadowOpacityNow;
-				fShadowOpacityNow=(float)fShadowOpacity*(1.2f-(m3dEnt.z/m3dEnt.zMax));
+				fShadowOpacityNow=(float)fShadowOpacity*(1.2f-(m3dEnt.Z/m3dEnt.zMax));
 				if (fShadowOpacityNow>fShadowOpacity) fShadowOpacityNow=fShadowOpacity;
 				else if (fShadowOpacityNow<0.0f) fShadowOpacityNow=0.0f;
 				if (bShadow) {
@@ -1071,8 +1086,8 @@ namespace ExpertMultimediaBase {
 	}//end Draw
 	float Entity::EyeX() {
 		//float fFrontEccentricityPixels=11;
-	   	SafeAngle360ByRef(m3dEnt.zRot);//commented for debug only ////m3dEnt.zRot-=FFLOOR(m3dEnt.zRot/360.0f)*360.0f;
-		float fApparentDegFromOrthagonalY=FANGLEDIFFPOSITIVE(90.0f,m3dEnt.zRot);
+		SafeAngle360ByRef(m3dEnt.zRot);//commented for debug only ////m3dEnt.zRot-=FFLOOR(m3dEnt.zRot/360.0f)*360.0f;
+		float fApparentDegFromOrthagonalY=ANGLEDIFFPOSITIVE(90.0f,m3dEnt.zRot);
 		float fOutness;
 		if (fApparentDegFromOrthagonalY>90.0f) fApparentDegFromOrthagonalY=180.0f-fApparentDegFromOrthagonalY;
 		fOutness=fApparentDegFromOrthagonalY;
@@ -1099,7 +1114,7 @@ namespace ExpertMultimediaBase {
 			pixelNow.b=0;
 			gbScreen.DrawSubpixelArc(FSCREEN_WIDTH/2+64+SCREEN_OFFSET_X, FSCREEN_HEIGHT/2-64+FSCREEN_OFFSET_Y,
 					20, 1, 0,
-					0, FANGLEDIFFPOSITIVE(m3dEnt.zRot,90.0f),
+					0, ANGLEDIFFPOSITIVE(m3dEnt.zRot,90.0f),
 					pixelNow,
 					3,0);
 			pixelNow.g=0;
@@ -1118,11 +1133,11 @@ namespace ExpertMultimediaBase {
 			//TODO: finish this--fix location when pointing "away" from screen
 		}
 		float fHeadRange=PixelsToMetersAtMyLocation(72.0f);//=m2dEnt.fScale*m3dEnt.xSize*1.0;
-		float fEye=m3dEnt.x+(fHeadRange/2.0f)*fOutness+xQuads1And2Modifier;//=m3dEnt.x+fHeadRange*fOutness-.1;
-		//fEye=FANGLEDIFFPOSITIVE(90.0f,m3dEnt.zRot)/90.0f;//debug only
+		float fEye=m3dEnt.X+(fHeadRange/2.0f)*fOutness+xQuads1And2Modifier;//=m3dEnt.X+fHeadRange*fOutness-.1;
+		//fEye=ANGLEDIFFPOSITIVE(90.0f,m3dEnt.zRot)/90.0f;//debug only
 		//static int iTest=0; //debug only
 		//if (iTest<100) {
-		//	Console.Error.WriteLine("{"
+		//	Console::Error.WriteLine("{"
 		//	+"fApparentDegFromOrthagonalY:"+fApparentDegFromOrthagonalY+"; "
 		//	+"fOutness:"+fOutness+"; "
 		//	+"fHeadRange:"+fHeadRange+"; "
@@ -1130,26 +1145,28 @@ namespace ExpertMultimediaBase {
 		//	+"}");
 		//   iTest++;
 		//}
-		//fEye=m3dEnt.x+xHeadRange*fOutness;
-		//fEye=m3dEnt.x;
+		//fEye=m3dEnt.X+xHeadRange*fOutness;
+		//fEye=m3dEnt.X;
 		return fEye;
 	}//end EyeX
 	float Entity::EyeY() {
 		float fEye;
-		fEye=m3dEnt.y;
+		fEye=m3dEnt.Y;
 		return fEye;
 	}//end EyeY
 	float Entity::EyeZ() {
-		return (m3dEnt.z+m3dEnt.zSize/2.0f-PixelsToMetersAtMyLocation(10.0f))+PixelsToMetersAtMyLocation(54.0f);
+		return (m3dEnt.Z+m3dEnt.zSize/2.0f-PixelsToMetersAtMyLocation(10.0f))+PixelsToMetersAtMyLocation(54.0f);
 	}//end EyeZ
 	void Entity::Translate3D() {
 		camera.Mass2dFrom3d(m2dEnt, m2dShadow, m3dEnt);
 	}
 	void Entity::DrawMeters() {
 		bool bGood=false;
+		//register UInt32* lpu32Dest=(UInt32*)gbScreen.arrbyData;
 		//TODO: improve this, don't use low-level writing
-		register UInt32* lpu32Dest=(UInt32*)gbScreen.arrbyData;
-		int iScreenStride=gbScreen.iStride;
+		//register byte *byteBuffer=gbScreen.arrbyData;
+		//byteBuffer+=SCREEN_OFFSET_Y*lptargaScreen->width*4+SCREEN_OFFSET_X*4;
+		//int iScreenStride=gbScreen.iStride;
 		register int xFlat=32+SCREEN_OFFSET_X, yFlat=SCREEN_HEIGHT-3+SCREEN_OFFSET_Y;
 		register int iNotch;
 		float fRatio;
@@ -1213,10 +1230,10 @@ namespace ExpertMultimediaBase {
 		try {
 			if (iBoss>=0) {
 				yStart=yFlat-gbSymbolBossHealth.iHeight;
-				float fPixMin=xFlat+32;
-				float fPixMax=FSCREEN_WIDTH-fPixMin;
-				float yMax=FSCREEN_HEIGHT-10;
-				float yMin=FSCREEN_HEIGHT-20;
+				//float fPixMin=xFlat+32;
+				//float fPixMax=FSCREEN_WIDTH-fPixMin;
+				//float yMax=FSCREEN_HEIGHT-10;
+				//float yMin=FSCREEN_HEIGHT-20;
 				fRatio=fBoss/fBossMax;
 				//TODO: make a non-scaled function for next line
 				//GBuffer_FX(gbScreen, gbSymbolBossHealth, xFlat, yStart, ( (fShield<1.0f) ? ((fRatio>0.0f)?fRatio:0.0f) : 1.0f ), 0.0f, 0, 1.0f );
@@ -1282,13 +1299,13 @@ namespace ExpertMultimediaBase {
 			//TODO: remove or fix calling function for new aiming
 			int iX=alienNum;
 			if (arrpentAlien[iX]==NULL) return;
-			Entity* lpAlienNow=(Entity*)arrpentAlien[iX];
+			Entity* lpAlienNow=arrpentAlien[iX];
 			float zOurRange=m3dEnt.zSize/2+lpAlienNow->m3dEnt.zSize/2;
 			//I switched the right and left edges on purpose to be more inclusive
 			//since screen offset prevents bad writes
-			if (lpAlienNow->m3dEnt.z-m3dEnt.z<zOurRange && lpAlienNow->m2dEnt.rectRender.right>0 && lpAlienNow->m2dEnt.rectRender.left<SCREEN_WIDTH ) {
-				//register UInt32 *lpu32Dest =
-				register BYTE *byteBuffer=gbScreen.arrbyData;//TODO: avoid low-level operations
+			if (lpAlienNow->m3dEnt.Z-m3dEnt.Z<zOurRange && lpAlienNow->m2dEnt.rectRender.right>0 && lpAlienNow->m2dEnt.rectRender.left<SCREEN_WIDTH ) {
+				//register UInt32* lpu32Dest =
+				register byte *byteBuffer=gbScreen.arrbyData;//TODO: avoid low-level operations
 				static int iScreenStride=gbScreen.iStride;
 				//register UInt32 pixel;//=_RGB32BIT(255,255,255,255); //remember this MACRO is ARGB unlike actual screen
 				register int xFlat=lpAlienNow->m2dEnt.rectRender.left, yFlat=lpAlienNow->m2dEnt.rectRender.top;
@@ -1302,8 +1319,8 @@ namespace ExpertMultimediaBase {
 					}
 				}
 
-	/*			xFlat=lpAlienNow->m3dEnt.x;
-				yFlat=lpAlienNow->m3dEnt.y-2;
+	/*			xFlat=lpAlienNow->m3dEnt.X;
+				yFlat=lpAlienNow->m3dEnt.Y-2;
 				for (iX=0; iX<5; iX++)
 				{
 
@@ -1323,7 +1340,7 @@ namespace ExpertMultimediaBase {
 				if (HasAttrib(STATUS_BOSS)) RemoveAttrib(STATUS_SHIELD); //only Boss loses shield, other shields are removed when boss dies
 				rFortitude=.1;
 				//fHealth+=0.03f;
-				delete (Entity*)arrpentShot[iShotIndex];
+				delete arrpentShot[iShotIndex];
 				arrpentShot[iShotIndex]=NULL;
 				if (!bExploding) {
 					PlaySound("shieldzap"+RString_ToString(iIndex),"shieldzap",m3dEnt);
@@ -1332,7 +1349,7 @@ namespace ExpertMultimediaBase {
 			else {
 				rFortitude=.1;
 				fHealth-=fLaserSusceptibility;
-				delete (Entity*)arrpentShot[iShotIndex];
+				delete arrpentShot[iShotIndex];
 				arrpentShot[iShotIndex]=NULL;
 				if (!bExploding) {
 					PlaySound("ouchalien"+RString_ToString(iIndex),"ouchalien",m3dEnt);
@@ -1355,14 +1372,14 @@ namespace ExpertMultimediaBase {
 				Entity* lpAlienNow=NULL;
 				for (int iAlien=0; iAlien<iMaxAliensNow; iAlien++) {
 					if (arrpentAlien[iAlien] != NULL) {
-						lpAlienNow=(Entity*)arrpentAlien[iAlien];
+						lpAlienNow=arrpentAlien[iAlien];
 						float xOurRange=lpAlienNow->m3dEnt.xSize/2+xMyRange;
 						float yOurRange=lpAlienNow->m3dEnt.ySize/2+yMyRange;
 						float zOurRange=lpAlienNow->m3dEnt.zSize/2+zMyRange;
 					//CENTERPOINT DISTANCE-BASED
-						if ( abs(lpAlienNow->m3dEnt.x-m3dEnt.x) < xOurRange) {
-							if ( abs(lpAlienNow->m3dEnt.y-m3dEnt.y) < yOurRange) {
-								if (abs(lpAlienNow->m3dEnt.z-m3dEnt.z) < zOurRange) {
+						if ( abs(lpAlienNow->m3dEnt.X-m3dEnt.X) < xOurRange) {
+							if ( abs(lpAlienNow->m3dEnt.Y-m3dEnt.Y) < yOurRange) {
+								if (abs(lpAlienNow->m3dEnt.Z-m3dEnt.Z) < zOurRange) {
 									if (HasAttrib(STATUS_SHIELD)) {
 										RemoveAttrib(STATUS_SHIELD);//fHealth+=fLaserSusceptibility*3.0f;//.196;
 										//make alien blurrp as well as us zap
@@ -1393,19 +1410,19 @@ namespace ExpertMultimediaBase {
 				//HIT BULLET: edit the shot::DamageDetect to do this instead maybe
 				Entity* lpShotNow=NULL;
 				for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
-					if (arrpentShot[iShotNow] != NULL) {//DISTANCE FORMULA: uses centerpoint (m3dEnt.x,m3dEnt.y,m3dEnt.z)
-						lpShotNow=(Entity*)arrpentShot[iShotNow];
+					if (arrpentShot[iShotNow] != NULL) {//DISTANCE FORMULA: uses centerpoint (m3dEnt.X,m3dEnt.Y,m3dEnt.Z)
+						lpShotNow=arrpentShot[iShotNow];
 						float xOurRange=lpShotNow->m3dEnt.xSize/2.0f+xMyRange;
 						float yOurRange=lpShotNow->m3dEnt.ySize/2.0f+yMyRange;
 						float zOurRange=lpShotNow->m3dEnt.zSize/2.0f+zMyRange;
-						if (abs(lpShotNow->m3dEnt.x-m3dEnt.x) < xOurRange) {
-							if (abs(lpShotNow->m3dEnt.y-m3dEnt.y) < yOurRange) {
-								if (abs(lpShotNow->m3dEnt.z-m3dEnt.z) < zOurRange && (lpShotNow->bAlien)) {
+						if (abs(lpShotNow->m3dEnt.X-m3dEnt.X) < xOurRange) {
+							if (abs(lpShotNow->m3dEnt.Y-m3dEnt.Y) < yOurRange) {
+								if (abs(lpShotNow->m3dEnt.Z-m3dEnt.Z) < zOurRange && (lpShotNow->bAlien)) {
 									if (HasAttrib(STATUS_SHIELD)) {
 										RemoveAttrib(STATUS_SHIELD);
 										rFortitude=.1f; //prevents multiple hits
 										//fHealth+=fLaserSusceptibility;//.059;
-										delete (Entity*)arrpentShot[iShotNow];
+										delete arrpentShot[iShotNow];
 										arrpentShot[iShotNow]=NULL;
 										PlaySound("shieldzap"+RString_ToString(iIndex),"shieldzap",m3dEnt);
 									}
@@ -1413,14 +1430,14 @@ namespace ExpertMultimediaBase {
 										rFortitude=.1f; //prevents multiple hits
 										fShield-=fLaserSusceptibility*3.0f;//.196//fHealth+=fLaserSusceptibility;//.059;
 										if (fShield<=0.0f) RemoveAttrib(STATUS_VARIABLESHIELD);
-										delete (Entity*)arrpentShot[iShotNow];
+										delete arrpentShot[iShotNow];
 										arrpentShot[iShotNow]=NULL;
 										PlaySound("shieldzap"+RString_ToString(iIndex),"shieldzap",m3dEnt);
 									}
 									else {
 										rFortitude=.1f;
 										fHealth-=fLaserSusceptibility;//.059;
-										delete (Entity*)arrpentShot[iShotNow];
+										delete arrpentShot[iShotNow];
 										arrpentShot[iShotNow]=NULL;
 										PlaySound("ouchzap"+RString_ToString(iIndex),"ouchzap",m3dEnt);
 									}
@@ -1436,14 +1453,14 @@ namespace ExpertMultimediaBase {
 					zMyRange=m3dEnt.zSize/2;
 				Entity* lpShotNow=NULL;
 				for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
-					if (arrpentShot[iShotNow]!=NULL) {//DISTANCE FORMULA: uses centerpoint (m3dEnt.x,m3dEnt.y,m3dEnt.z)
-						lpShotNow=(Entity*)arrpentShot[iShotNow];
+					if (arrpentShot[iShotNow]!=NULL) {//DISTANCE FORMULA: uses centerpoint (m3dEnt.X,m3dEnt.Y,m3dEnt.Z)
+						lpShotNow=arrpentShot[iShotNow];
 						float xOurRange=lpShotNow->m3dEnt.xSize/2.0f+xMyRange;
 						float yOurRange=lpShotNow->m3dEnt.ySize/2.0f+yMyRange;
 						float zOurRange=lpShotNow->m3dEnt.zSize/2.0f+zMyRange;
-						if (abs(lpShotNow->m3dEnt.y-m3dEnt.y) < yOurRange) {
-							if (abs(lpShotNow->m3dEnt.x-m3dEnt.x) < xOurRange) {
-								if ( (abs(lpShotNow->m3dEnt.z-m3dEnt.z) < zOurRange) && (!lpShotNow->bAlien)) {
+						if (abs(lpShotNow->m3dEnt.Y-m3dEnt.Y) < yOurRange) {
+							if (abs(lpShotNow->m3dEnt.X-m3dEnt.X) < xOurRange) {
+								if ( (abs(lpShotNow->m3dEnt.Z-m3dEnt.Z) < zOurRange) && (!lpShotNow->bAlien)) {
 									GetHit(iShotNow);
 								}
 							}
@@ -1466,8 +1483,8 @@ namespace ExpertMultimediaBase {
 		if (0==(u32Status & STATUS_DOUBLESPEED)) {
 			u32Status |= STATUS_DOUBLESPEED;
 			bPlayTrumpet=true;
-			m3dEnt.zRotVel*=2.0f;
-			m3dEnt.yRotVel*=2.0f;
+			m3dEnt.zRotVelDegreesPerSec*=2.0f;
+			m3dEnt.yRotVelDegreesPerSec*=2.0f;
 			fShootMetersPerSec*=2.0f;
 		}
 	}
@@ -1482,30 +1499,30 @@ namespace ExpertMultimediaBase {
 		if (rSecondsShootDelay<=Base_r0) {
 			if (u32Status&STATUS_BOSS) rSecondsShootDelay=(REAL)IRand(5,15)/(REAL)30.0;
 	  		else rSecondsShootDelay=(REAL)IRand(10,20)/(REAL)30.0;
-			float xEye=m3dEnt.x-m3dEnt.xSize/2.0f;
+			float xEye=m3dEnt.X-m3dEnt.xSize/2.0f;
 			if (fShootMetersPerSec<6.0f) fShootMetersPerSec=6.0f;
 			float xSpeed,ySpeed,zSpeed;
 			float fArrivalFrames=60.0f;
 			if (u32Status&STATUS_BOSS) fArrivalFrames=(float)(IRand(30,60));
-			xSpeed=(xFlat-m3dEnt.x)/fArrivalFrames;
-			ySpeed=(yFlat-m3dEnt.y)/fArrivalFrames;
-			zSpeed=(zDest-m3dEnt.z)/fArrivalFrames;
+			xSpeed=(xFlat-m3dEnt.X)/fArrivalFrames;
+			ySpeed=(yFlat-m3dEnt.Y)/fArrivalFrames;
+			zSpeed=(zDest-m3dEnt.Z)/fArrivalFrames;
 			for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
 				if (arrpentShot[iShotNow] == NULL) {
 				//create a shot at the first available shot pointer
 					PlaySound("bomb"+RString_ToString(iIndex),"bomb",m3dEnt);
-					arrpentShot[iShotNow]=new Entity(ENTITY_TYPE_SHOT, xEye, m3dEnt.y, m3dEnt.z, xSpeed, ySpeed, zSpeed, bAlien, false);
-					((Entity*)arrpentShot[iShotNow])->iIndex=iShotNow;
+					arrpentShot[iShotNow]=new Entity(ENTITY_TYPE_SHOT, xEye, m3dEnt.Y, m3dEnt.Z, xSpeed, ySpeed, zSpeed, bAlien, false);
+					(arrpentShot[iShotNow])->iIndex=iShotNow;
 					break;
 				}
 			}
 		}
 	}
 	void Entity::Bomb(){
-		if (rSecondsShootDelay<Base_r0) {
+		if (rSecondsShootDelay<=Base_r0) {
 			if (u32Status&STATUS_BOSS) rSecondsShootDelay=(REAL)IRand(5,15)/(REAL)30;
 	  		else rSecondsShootDelay=(REAL)IRand(10,20)/(REAL)30;
-			float xEye=m3dEnt.x-m3dEnt.xSize/2.0f;
+			//float xEye=m3dEnt.X-m3dEnt.xSize/2.0f;
 			for (int iShotNow=0; iShotNow<MAXSHOTS; iShotNow++) {
 				if (arrpentShot[iShotNow] == NULL) {
 				//create a shot at the first available shot pointer
@@ -1514,13 +1531,13 @@ namespace ExpertMultimediaBase {
 					//Prototype: Shot(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, int isRed2)
 					fShootMetersPerSec=2.0f*(float)(IRand(1,4));
 					Mass3d m3dWeapon;
-					m3dWeapon.x=m3dEnt.x;
-					m3dWeapon.y=m3dEnt.y;
-					m3dWeapon.z=m3dEnt.z;
+					m3dWeapon.X=m3dEnt.X;
+					m3dWeapon.Y=m3dEnt.Y;
+					m3dWeapon.Z=m3dEnt.Z;
 					m3dWeapon.zRotDest=(float)(IRand(0,360));
 					m3dWeapon.yRotDest=-(float)(IRand(0,45));
 					arrpentShot[iShotNow]=new Entity(ENTITY_TYPE_SHOT, m3dWeapon, fShootMetersPerSec, bAlien, false);
-					((Entity*)arrpentShot[iShotNow])->iIndex=iShotNow;
+					(arrpentShot[iShotNow])->iIndex=iShotNow;
 					break;
 				}
 			}
@@ -1547,13 +1564,13 @@ namespace ExpertMultimediaBase {
 				if (lpanimShadow->gbFrame.arrbyData==NULL) bDraw=false;
 				if (bDraw) {//formerly used animBurn
 					if (iType==ENTITY_TYPE_SHOT) {
-						iFrameBurn++;
-						if ((lpanimShadow->lFrame+1)<lpanimShadow->IFrames()) lpanimShadow->GotoFrame(lpanimShadow->lFrame+1);//if (iFrameBurn>=lpanimShadow->IFrames()) iFrameBurn=0;
-						else lpanimShadow->GotoFrame(0);//else if (iFrameBurn<0) iFrameBurn=0;
+						//iFrameBurnNow++;
+						if (lpanimShadow->LastFrame()) lpanimShadow->GotoFrame(0);//else if (iFrameBurnNow<0) iFrameBurnNow=0;
+						else lpanimShadow->GotoNextFrame();//if (iFrameBurnNow>=lpanimShadow->IFrames()) iFrameBurnNow=0;
 						float fPixelHeight=(float)(m2dEnt.rectRender.bottom-m2dEnt.rectRender.top);
 						if ( (lpanimShadow->Height()>0) && (fPixelHeight>5.5f) ) {
-							//done above: lpanimShadow->GotoFrame(iFrameBurn);//done below: TargaToTarga32(lpanimShadow->gbFrame, lptargaBackdropNow, m2dEnt.rectRender.left, m2dEnt.rectRender.top);
-							float fPixelHeightSource=(float)lpanimShadow->Height();
+							//done above: lpanimShadow->GotoFrame(iFrameBurnNow);//done below: TargaToTarga32(lpanimShadow->gbFrame, lptargaBackdropNow, m2dEnt.rectRender.left, m2dEnt.rectRender.top);
+							//float fPixelHeightSource=(float)lpanimShadow->Height();
 							SayWhatIDrewIfFalse( GBuffer_FX_Scaled(   animBackdrop.gbFrame, lpanimShadow->gbFrame,
 								m2dEnt.rectRender.left, m2dEnt.rectRender.top,
 								0.9f/*opacity*/, 0/*explodedness*/, 0/*attributes*/, m2dEnt.fScale),//2.0f*(fPixelHeight/fPixelHeightSource)),
@@ -1580,9 +1597,9 @@ namespace ExpertMultimediaBase {
 		}
 	}//end DeformTerrain
 	void Entity::SetVars(int x2, int y2, int z2, int xVel2, int yVel2, int zVel2, bool IsAlien, bool IsBomb){
-		m3dEnt.x=x2;
-		m3dEnt.y=y2;
-		m3dEnt.z=z2;
+		m3dEnt.X=x2;
+		m3dEnt.Y=y2;
+		m3dEnt.Z=z2;
 		m3dEnt.xVel=xVel2;
 		m3dEnt.yVel=yVel2;
 		m3dEnt.zVel=zVel2;
@@ -1596,27 +1613,46 @@ namespace ExpertMultimediaBase {
 		DrawCube(m3dEnt, pixelNear, pixelFar);
 
 		Mass3d m3dDest;
-		m3dDest.x=m3dEnt.x;
-		m3dDest.y=m3dEnt.y;
-		m3dDest.z=m3dEnt.z;
+		m3dDest.X=m3dEnt.X;
+		m3dDest.Y=m3dEnt.Y;
+		m3dDest.Z=m3dEnt.Z;
+
 		if (bUsePitchYaw) {
 			Travel3d(m3dDest, m3dEnt.yRot, m3dEnt.zRot, fMetersPerSecond);
-			pixelNear.Set(255,0,0,0);
-			pixelFar.Set(255,0,0,255);
+			float fOpacityOfFar=ANGLEDIFFPOSITIVE(m3dEnt.yRot,0);//always near RELATIVE to m3d, not necessarily to camera (see below for swap when not)
+			if (fOpacityOfFar>180) {
+				Console::Error.WriteLine("Math usage error: ANGLEDIFFPOSITIVE returned greater than 180 {ANGLEDIFFPOSITIVE("+RString_ToString(m3dEnt.yRot)+",0):"+RString_ToString(fOpacityOfFar)+"}");
+				//fOpacityOfFar=fOpacityOfFar-180;
+			}
+			if (fOpacityOfFar>90) {
+				fOpacityOfFar=180-fOpacityOfFar;
+			}
+			//if (fOpacityOfFar<0) fOpacityOfFar=180+fOpacityOfFar;
+			fOpacityOfFar=0.0f;//(fOpacityOfFar)/90.0f;//the closer it is to zero (angled toward horizon) the less opaque far pixel will be (unless flipped when point far from object is closer to camera)
+			byte byFirstAlpha=255;//=0;
+			byte byLastAlpha=SafeByRoundF((fOpacityOfFar)*255.0f);
+			if (DIST3D(camera.m3dCam,m3dDest)<DIST3D(camera.m3dCam,m3dEnt)) {
+				byte bySwap=byFirstAlpha;
+				byFirstAlpha=byLastAlpha;
+				byLastAlpha=bySwap;
+			}
+			pixelNear.Set(255,255,255,byFirstAlpha);
+			pixelFar.Set(255,255,255,byLastAlpha);
 		}
 		else {
 			pixelNear.Set(255,255,0,0);
 			pixelFar.Set(255,255,0,255);
-			m3dDest.x+=m3dEnt.xVel;
-			m3dDest.y+=m3dEnt.yVel;
-			m3dDest.z+=m3dEnt.zVel;
+			m3dDest.X+=m3dEnt.xVel;
+			m3dDest.Y+=m3dEnt.yVel;
+			m3dDest.Z+=m3dEnt.zVel;
 		}
 		FPOINT pointSrc, pointDest;
 		camera.Point2dFrom3dWithScreenOffset(pointSrc,m3dEnt);
 		camera.Point2dFrom3dWithScreenOffset(pointDest,m3dDest);
-		gbScreen.DrawSubpixelLine( pointSrc, pointDest,
-			pixelNear, &pixelFar, 1);
-	}
+		gbScreen.DrawSubpixelLine( pointSrc, pointDest, pixelNear, &pixelFar, 1);
+		//gbScreen.DrawAlphaPix(pointSrc.X,pointSrc.Y,pixelNear.r,pixelNear.g,pixelNear.b,255);//start cap
+		//gbScreen.DrawAlphaPix(pointDest.X,pointDest.Y,pixelFar.r,pixelFar.g,pixelFar.b,255);//end cap
+	}//end ShowDebugInfo
 	float Entity::PixelsToMetersAtMyLocation(float fPixels) {//formerly MetersFromPixels (MetersFromPixelsAtThisLocation? MetersFromPixelsHere?)
 		return fPixels/(m2dEnt.fPixelsPerMeter/m2dEnt.fScale);
 	}

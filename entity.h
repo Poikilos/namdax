@@ -3,7 +3,7 @@
 
 #include "base.h"
 //#include "targastruct.h"
-#include <anim32bgra.h>
+#include <RAnim_bgra32.h>
 
 using namespace std;
 
@@ -34,7 +34,6 @@ namespace ExpertMultimediaBase {
 		bool bDraw;
 		int iType;
 		float fShadowOpacity;
-		//float fFloatHeight;
 		float zRotSpeed;
 		float fShootMetersPerSec;
 		Anim* lpanimMain; // animation cycle (pointer to any global anim)
@@ -92,13 +91,13 @@ namespace ExpertMultimediaBase {
 		void AddVariableShield(float fSetShieldTo);
 	private:
 		//shot vars:
-		REAL rSecStart;
+		REAL rSecThisEntityCreated;
 		REAL rSecondsLife;
-		bool bFirstRun;
+		bool bFirstRunOfThisEntity;
 		int iDir;
 		REAL rSecLastRefresh;
 		REAL rSecLastMetricMove; //only used for metric movement as of 2007
-		int iFrameBurn;
+		//int iFrameBurn;
 
 		void DrawMeters();
 		int FrameFromRot();

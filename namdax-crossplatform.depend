@@ -1,0 +1,575 @@
+# depslib dependency file v1.0
+1193991314 source:e:\projects-cpp\dxman-crossplatform\main.cpp
+	<cstdlib>
+	<stdlib.h>
+	<SDL/SDL.h>
+	<SDL.h>
+
+1199055973 d:\mingw\include\sdl\sdl.h
+	"SDL_main.h"
+	"SDL_stdinc.h"
+	"SDL_audio.h"
+	"SDL_cdrom.h"
+	"SDL_cpuinfo.h"
+	"SDL_endian.h"
+	"SDL_error.h"
+	"SDL_events.h"
+	"SDL_loadso.h"
+	"SDL_mutex.h"
+	"SDL_rwops.h"
+	"SDL_thread.h"
+	"SDL_timer.h"
+	"SDL_video.h"
+	"SDL_version.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_main.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_stdinc.h
+	"SDL_config.h"
+	<sys/types.h>
+	<stdio.h>
+	<stdlib.h>
+	<stddef.h>
+	<stdarg.h>
+	<stdlib.h>
+	<malloc.h>
+	<stddef.h>
+	<stdarg.h>
+	<memory.h>
+	<string.h>
+	<strings.h>
+	<inttypes.h>
+	<stdint.h>
+	<ctype.h>
+	<iconv.h>
+	"begin_code.h"
+	<alloca.h>
+	<malloc.h>
+	<malloc.h>
+	<malloc.h>
+	<stdlib.h>
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_config.h
+	"SDL_platform.h"
+	<stdarg.h>
+
+1199055973 d:\mingw\include\sdl\sdl_platform.h
+
+1199055973 d:\mingw\include\sdl\begin_code.h
+
+1199055973 d:\mingw\include\sdl\close_code.h
+
+1199055973 d:\mingw\include\sdl\sdl_audio.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_endian.h"
+	"SDL_mutex.h"
+	"SDL_thread.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_error.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_endian.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_mutex.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_thread.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_mutex.h"
+	"begin_code.h"
+	<process.h>
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_rwops.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_cdrom.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_cpuinfo.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_events.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_active.h"
+	"SDL_keyboard.h"
+	"SDL_mouse.h"
+	"SDL_joystick.h"
+	"SDL_quit.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_active.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_keyboard.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_keysym.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_keysym.h
+
+1199055973 d:\mingw\include\sdl\sdl_mouse.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_video.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_video.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"SDL_rwops.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_joystick.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_quit.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+
+1199055973 d:\mingw\include\sdl\sdl_loadso.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_timer.h
+	"SDL_stdinc.h"
+	"SDL_error.h"
+	"begin_code.h"
+	"close_code.h"
+
+1199055973 d:\mingw\include\sdl\sdl_version.h
+	"SDL_stdinc.h"
+	"begin_code.h"
+	"close_code.h"
+
+1253305104 source:e:\projects-cpp\base\RAnim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+
+1252208450 e:\projects-cpp\base\RAnim_bgra32.h
+	<RImage_bgra32.h>
+
+1253080382 e:\projects-cpp\base\RImage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1253305252 e:\projects-cpp\base\base.h
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<FrameworkDummy.h>
+	<SDL/SDL.h>
+
+1253070072 e:\projects-cpp\base\FrameworkDummy.h
+	<SDL/SDL_types.h>
+	<cstdio>
+	<string>
+	<float.h>
+	<limits.h>
+
+1252095264 e:\projects-cpp\base\Targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1252095258 e:\projects-cpp\base\RFile.h
+	<cstdlib>
+	<base.h>
+
+1252216284 e:\projects-cpp\base\RGradient_bgra32.h
+	<base.h>
+
+1253381770 source:e:\projects-cpp\base\base.cpp
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<string>
+	<base.h>
+	<FrameworkDummy.h>
+	<float.h>
+	<limits.h>
+
+1253127406 source:e:\projects-cpp\base\RFile.cpp
+	<cstdlib>
+	<iostream>
+	<fstream>
+	<RFile.h>
+	<base.h>
+
+1253305106 source:e:\projects-cpp\base\FrameworkDummy.cpp
+	<FrameworkDummy.h>
+	<fstream>
+	<iostream>
+
+1253145096 source:e:\projects-cpp\base\RFont_bgra32.cpp
+	<RFont_bgra32.h>
+	<base.h>
+
+1253133654 e:\projects-cpp\base\RFont_bgra32.h
+	<RGradient_bgra32.h>
+	<RAnim_bgra32.h>
+
+1253138990 source:e:\projects-cpp\base\RGradient_bgra32.cpp
+	<RGradient_bgra32.h>
+	<RImage_bgra32.h>
+
+1253305106 source:e:\projects-cpp\base\RSprite_bgra32.cpp
+	<RSprite_bgra32.h>
+
+1252243752 e:\projects-cpp\base\RSprite_bgra32.h
+	<RAnim_bgra32.h>
+
+1253305106 source:e:\projects-cpp\base\Targa.cpp
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<Targa.h>
+
+1252095264 source:e:\projects-cpp\base\RWorld.cpp
+	<RWorld.h>
+
+1252095250 e:\projects-cpp\base\RWorld.h
+	<RAnim_bgra32.h>
+	<RSprite_bgra32.h>
+
+1253305104 source:e:\projects-cpp\base\RImage_bgra32.cpp
+	<RImage_bgra32.h>
+
+1264185253 source:e:\projects-cpp\dxman-crossplatform\camera.cpp
+	"camera.h"
+	"dxman.h"
+	"base.h"
+
+1253088258 e:\projects-cpp\dxman-crossplatform\camera.h
+	"base.h"
+
+1253088838 e:\projects-cpp\dxman-crossplatform\dxman.h
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	"entity.h"
+	"camera.h"
+
+1252296233 source:e:\projects-cpp\dxman-crossplatform\dxman.cpp
+	<config.h>
+	<base.h>
+	<RFont_bgra32.h>
+	<RAnim_bgra32.h>
+	"entity.h"
+	"camera.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<math.h>
+	<SDL/SDL.h>
+	<al/al.h>
+	<al/alc.h>
+	<al/alu.h>
+	<al/alut.h>
+	<ogg/ogg.h>
+	<vorbis/codec.h>
+	<vorbis/vorbisenc.h>
+	<vorbis/vorbisfile.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	<SDL/SDL.h>
+	<AL/al.h>
+	<AL/alc.h>
+	<AL/alut.h>
+	"dxman.h"
+
+1264185285 e:\projects-cpp\dxman-crossplatform\entity.h
+	"base.h"
+	<RAnim_bgra32.h>
+
+1324780992 source:d:\projects-cpp\base\ranim_bgra32.cpp
+	<RAnim_bgra32.h>
+	<base.h>
+
+1324635274 d:\projects-cpp\base\ranim_bgra32.h
+	<RImage_bgra32.h>
+
+1324635275 d:\projects-cpp\base\rimage_bgra32.h
+	<base.h>
+	<Targa.h>
+	<RGradient_bgra32.h>
+
+1325234345 d:\projects-cpp\base\base.h
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<memory>
+	<cmath>
+	<fstream>
+	<string>
+	<exception>
+	<frameworkdummy.h>
+	<SDL/SDL.h>
+
+1324787402 d:\projects-cpp\base\frameworkdummy.h
+	<cstdio>
+	<string>
+	<sstream>
+	<cfloat>
+	<climits>
+
+1324636861 d:\projects-cpp\base\targa.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<RFile.h>
+
+1324636930 d:\projects-cpp\base\rfile.h
+	<cstdlib>
+	<base.h>
+	<frameworkdummy.h>
+
+1324633401 d:\projects-cpp\base\rgradient_bgra32.h
+	<base.h>
+
+1324641653 source:d:\projects-cpp\base\rfile.cpp
+	<cstdlib>
+	<iostream>
+	<fstream>
+	<RFile.h>
+	<base.h>
+
+1325226185 source:d:\projects-cpp\base\rfont_bgra32.cpp
+	<RFont_bgra32.h>
+	<base.h>
+
+1324789745 d:\projects-cpp\base\rfont_bgra32.h
+	<RGradient_bgra32.h>
+	<RAnim_bgra32.h>
+
+1324658389 source:d:\projects-cpp\base\rgradient_bgra32.cpp
+	<RGradient_bgra32.h>
+	<RImage_bgra32.h>
+
+1324663319 source:d:\projects-cpp\base\rimage_bgra32.cpp
+	<RImage_bgra32.h>
+	<PMath.h>
+
+1324643723 d:\projects-cpp\base\pmath.h
+	<iostream>
+	<vector>
+	<string>
+	<climits>
+	"preporting.h"
+	"frameworkdummy.h"
+	"pointinfo.h"
+	"pixelinfo.h"
+
+1277883746 d:\projects-cpp\base\preporting.h
+	<cstdio>
+	<string>
+	<iostream>
+
+1277881622 d:\projects-cpp\base\pointinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1266580772 d:\projects-cpp\base\pmemory.h
+	<string>
+	"preporting.h"
+	"frameworkdummy.h"
+
+1277879596 d:\projects-cpp\base\pixelinfo.h
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	"frameworkdummy.h"
+	"pmemory.h"
+	"preporting.h"
+
+1324641088 source:d:\projects-cpp\base\rsprite_bgra32.cpp
+	<RSprite_bgra32.h>
+
+1324640616 d:\projects-cpp\base\rsprite_bgra32.h
+	<RAnim_bgra32.h>
+
+1324658446 source:d:\projects-cpp\base\rworld.cpp
+	<RWorld.h>
+
+1324640616 d:\projects-cpp\base\rworld.h
+	<RAnim_bgra32.h>
+	<RSprite_bgra32.h>
+
+1324659228 source:d:\projects-cpp\base\targa.cpp
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<Targa.h>
+
+1325234354 source:d:\projects-cpp\base\base.cpp
+	<cstdlib>
+	<iostream>
+	<iomanip>
+	<fstream>
+	<memory>
+	<string>
+	<base.h>
+	<frameworkdummy.h>
+	<float.h>
+	<limits.h>
+
+1324662900 source:d:\projects-cpp\base\frameworkdummy.cpp
+	"frameworkdummy.h"
+	<fstream>
+	<cstdlib>
+	<iostream>
+
+1277871214 source:d:\projects-cpp\base\pixelinfo.cpp
+	"pixelinfo.h"
+
+1324658283 source:d:\projects-cpp\base\pmath.cpp
+	"pmath.h"
+	<cmath>
+	<cstdlib>
+	<cstring>
+
+1324643431 source:d:\projects-cpp\base\pmemory.cpp
+	"pmemory.h"
+	<cstdlib>
+
+1277871202 source:d:\projects-cpp\base\pointinfo.cpp
+	"pointinfo.h"
+
+1277883746 source:d:\projects-cpp\base\preporting.cpp
+	"preporting.h"
+
+1325240649 source:d:\projects-cpp\dxman\dxman-crossplatform\camera.cpp
+	"camera.h"
+	"dxman.h"
+	<base.h>
+
+1325198549 d:\projects-cpp\dxman\dxman-crossplatform\camera.h
+	<base.h>
+
+1325220268 d:\projects-cpp\dxman\dxman-crossplatform\dxman.h
+	<RAnim_bgra32.h>
+	<RFont_bgra32.h>
+	"entity.h"
+	"camera.h"
+
+1325222601 d:\projects-cpp\dxman\dxman-crossplatform\entity.h
+	"base.h"
+	<RAnim_bgra32.h>
+
+1325240572 source:d:\projects-cpp\dxman\dxman-crossplatform\dxman.cpp
+	<config.h>
+	<base.h>
+	<RFont_bgra32.h>
+	<RAnim_bgra32.h>
+	"entity.h"
+	"camera.h"
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<math.h>
+	<SDL/SDL.h>
+	<al/al.h>
+	<al/alc.h>
+	<al/alu.h>
+	<al/alut.h>
+	<ogg/ogg.h>
+	<vorbis/codec.h>
+	<vorbis/vorbisenc.h>
+	<vorbis/vorbisfile.h>
+	<cstdio>
+	<cstdlib>
+	<cstring>
+	<string>
+	<iostream>
+	<iomanip>
+	<sstream>
+	<fstream>
+	<cmath>
+	<SDL/SDL.h>
+	<AL/al.h>
+	<AL/alc.h>
+	<AL/alut.h>
+	"dxman.h"
+
+1325240572 source:d:\projects-cpp\dxman\dxman-crossplatform\entity.cpp
+	"entity.h"
+	<base.h>
+	"dxman.h"
+	<RImage_bgra32.h>
+

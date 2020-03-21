@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="dxman-crossplatform" />
+		<Option execution_dir="bin" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin\dxman" prefix_auto="1" extension_auto="1" />
+				<Option working_dir=".\bin" />
+				<Option object_output="obj\Debug\" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin\dxman" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj\Release\" />
+				<Option type="0" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="$(#sdl.include)" />
+			<Add directory="..\..\base" />
+		</Compiler>
+		<Linker>
+			<Add library="mingw32" />
+			<Add library="SDLmain" />
+			<Add library="SDL.dll" />
+			<Add library="user32" />
+			<Add library="gdi32" />
+			<Add library="winmm" />
+			<Add library="dxguid" />
+			<Add directory="$(#sdl.lib)" />
+		</Linker>
+		<Unit filename="..\..\base\Base_private.h" />
+		<Unit filename="..\..\base\RAnim_bgra32.cpp" />
+		<Unit filename="..\..\base\RAnim_bgra32.h" />
+		<Unit filename="..\..\base\RFile.cpp" />
+		<Unit filename="..\..\base\RFile.h" />
+		<Unit filename="..\..\base\RFont_bgra32.cpp" />
+		<Unit filename="..\..\base\RFont_bgra32.h" />
+		<Unit filename="..\..\base\RGradient_bgra32.cpp" />
+		<Unit filename="..\..\base\RGradient_bgra32.h" />
+		<Unit filename="..\..\base\RImage_bgra32.cpp" />
+		<Unit filename="..\..\base\RImage_bgra32.h" />
+		<Unit filename="..\..\base\RSprite_bgra32.cpp" />
+		<Unit filename="..\..\base\RSprite_bgra32.h" />
+		<Unit filename="..\..\base\RWorld.cpp" />
+		<Unit filename="..\..\base\RWorld.h" />
+		<Unit filename="..\..\base\Targa.cpp" />
+		<Unit filename="..\..\base\Targa.h" />
+		<Unit filename="..\..\base\base.cpp" />
+		<Unit filename="..\..\base\base.h" />
+		<Unit filename="..\..\base\camera.cpp" />
+		<Unit filename="..\..\base\camera.h" />
+		<Unit filename="..\..\base\frameworkdummy.cpp" />
+		<Unit filename="..\..\base\frameworkdummy.h" />
+		<Unit filename="..\..\base\pixelinfo.cpp" />
+		<Unit filename="..\..\base\pixelinfo.h" />
+		<Unit filename="..\..\base\pmath.cpp" />
+		<Unit filename="..\..\base\pmath.h" />
+		<Unit filename="..\..\base\pmemory.cpp" />
+		<Unit filename="..\..\base\pmemory.h" />
+		<Unit filename="..\..\base\pointinfo.cpp" />
+		<Unit filename="..\..\base\pointinfo.h" />
+		<Unit filename="..\..\base\preporting.cpp" />
+		<Unit filename="..\..\base\preporting.h" />
+		<Unit filename="cb.bmp" />
+		<Unit filename="dxman.cpp" />
+		<Unit filename="dxman.h" />
+		<Unit filename="entity.cpp" />
+		<Unit filename="entity.h" />
+		<Extensions>
+			<code_completion>
+				<search_path add="../../base" />
+			</code_completion>
+			<debugger />
+			<envvars />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
