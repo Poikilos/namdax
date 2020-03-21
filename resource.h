@@ -1,1 +1,0 @@
-#define IDC_CROSSHAIRS    1000

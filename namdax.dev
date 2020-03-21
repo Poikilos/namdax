@@ -12,11 +12,11 @@ ResourceIncludes=
 MakeIncludes=
 Compiler=-Dmain=SDL_main_@@_
 CppCompiler=
-Linker=-lmingw32 -lSDLmain -lSDL_@@_-lSDL_mixer_@@_
+Linker=-lmingw32 -lSDLmain -lSDL -lSDL_Mixer -lSDL_ttf_@@_
 IsCpp=1
 Icon=DXMan.ico
-ExeOutput=Release
-ObjectOutput=
+ExeOutput=bin
+ObjectOutput=obj
 OverrideOutput=0
 OverrideOutputName=DXMan.exe
 HostApplication=
@@ -32,7 +32,7 @@ CompilerSettings=0000000000000000000000
 [Unit1]
 FileName=main.c
 CompileCpp=1
-Folder=
+Folder=DXMan
 Compile=1
 Link=1
 Priority=1000

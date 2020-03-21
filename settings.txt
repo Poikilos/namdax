@@ -1,0 +1,5 @@
+music=yes
+sound=yes
+aim.flip_pitch=yes
+aim.flip_yaw=yes
+debugmode=no

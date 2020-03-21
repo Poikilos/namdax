@@ -1,9 +1,31 @@
+Settings that are unique per unit:
+iBoundaryHandling (BOUNDARY_BOUNCE, BOUNDARY_DIE, or BOUNDARY_STOP)
+bMoveByRotationAndMetricSpeed
+
+Credits:
+Photo Credits
+Emlyn Addison and eola
+(morguefile.com)
+Photo Editing
+Jake Gustafson
+
+
+Always Check
+-Remove semicolons from macros if accidentally typed!
+
 ALPHA
--fix new Shot calls
--fix new Alien calls
+-soft Quit ([Esc], 'y') does not work (process still runs invisibly)
+-fix aiming ellipse w/h ratio (less accurate as hero nears sides)
+-make STATUS_SHIELD do something visually (something better than now)
+-REPLACE ALL cases of "if (iType=E" with "if (iType==E" !!!
+-Check to see if Entity::SetVars is problematic!!! (currently only called through shot array)
+-sometimes there is a hero shadow, sometimes not -check constructor (?)
+-does not terminate on end game (click makes it disappear, but it is still running in task manager)
 
 BETA:
+-target image on enemy if pointed toward enemy (check the z-order on that)
 -implement game.dat
+-make a shadow mask for each level to prevent shadows on sky
 -change readme for new keys
 -replace integer sound calls (iPlayBomb etc) with float values ranging from -1.0f to 1.0f
 -crashes on exit, (only sometimes, not on defeat?) -- try cleaning up sound chunks?
@@ -21,10 +43,9 @@ BETA:
 -add intro (just scroll a tga with words on it) "say it is the year x" where x is the current year plus 20!
 
 FINAL:
--add jump sound
+-make bombs explode
 -deform terrain when bombs hit, and when other entities hit ground
--make moving background & make DXMan flying
--more lives
+-make moving background (use high-res morguefile.org photos)
 -fix any lines that say "Is this right?"
 -uncomment error reporting in basefunc and tga.cpp (except lines with ////)
 -Make explodedness a per-pixel offset instead of a multiplicative offset.
