@@ -30,4 +30,6 @@
 *.exe
 *.out
 *.app
-/namdax.workspace.layout
+
+## Generated files
+*.layout
