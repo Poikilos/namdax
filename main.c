@@ -144,7 +144,7 @@ Variables dat;
 bool bSDLQuitSent=false;
 bool bSplash=false;//if splash screen was drawn
 int iSplashTick;//time when splash screen appeared
-BYTE by3dAlphaLookup[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/256+Dest)
+extern BYTE by3dAlphaLookup[256][256][256]; //lookup for alpha result: ((Source-Dest)*alpha/256+Dest)
 unsigned __int32 dwarrEnergyGrad[256];//gradient for energy currency (ready attack) meter
 unsigned __int32 dwarrHealthGrad[256];//gradient for health meter
 int xCursor=0, yCursor=0, xCursorDown=0, yCursorDown=0;
@@ -293,6 +293,8 @@ string EntityTypeToString(int iTypeX);
 float MetersToMove(float fMetersPerSecond, int iForThisManyMilliseconds);
 float DegreesToMove(float fDegreesPerSecond, int iForThisManyMilliseconds);
 void DrawCube(Mass3d &m3dNow, Pixel &pixelNear, Pixel &pixelFar);
+inline void SleepWrapper(int iTicks);
+
 //void Approach(float &xMoveMe, float &yMoveMe, float &xToward, float &yToward);
 
 
@@ -3001,14 +3003,14 @@ int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int
 	//	direct draw surface description 
 	// set size of the structure
   try {
-	register unsigned __int32* lpdwDest=(unsigned __int32*)lptargaDest->buffer;
+	register Uint32* lpdwDest=(Uint32*)lptargaDest->buffer;
 	int iStride=TargaStride(lptargaDest);
 
 	register BYTE *lpbyDest=(BYTE*)&lpdwDest[xFlat + (yFlat*iStride >> 2)]; //dest pointer
 	register BYTE *lpbySrc=lptargaSrc->buffer;														 //source pointer
 	
 	register BYTE alpha,blue,green,red;
-	register unsigned __int32 pixel;
+	register Uint32 pixel;
 	//int adddPos=iStride-nWidth*4;
 	//register int adddPos=iStride >> 2;//-lptargaSrc->width*4; //in case not linear
 	//int addsPos=lPitch-nWidth*4;
@@ -3071,7 +3073,7 @@ int TargaToTarga32_Alpha(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int
 				red=SafeByte(  ((red - *lpbyDest) * cookedAlpha + *lpbyDest)  );
 				lpbyDest+=2; //increment past alpha
 				pixel=_RGB32BIT(256,red,green,blue);
-				//unsigned __int32 alphaPix=_RGB32BIT(1,alpha/255,alpha/255,alpha/255);
+				//Uint32 alphaPix=_RGB32BIT(1,alpha/255,alpha/255,alpha/255);
 				//Manual clip and set pixel:
 				//if (xSrc+xFlat<SCREEN_WIDTH)
 				//	if (xSrc+xFlat>=0)
@@ -3155,7 +3157,7 @@ float FRand(float fMin, float fMax) {
 
 int TargaToTarga32(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat) {
   try {
-	unsigned __int32* lpdwDest=(unsigned __int32*)lptargaDest->buffer;
+	Uint32* lpdwDest=(Uint32*)lptargaDest->buffer;
 	int iStride=TargaStride(lptargaDest);
 	// process each line and copy it into the primary buffer
 	for (int ySrc=0; ySrc < lptargaSrc->height; ySrc++) {
@@ -3167,7 +3169,7 @@ int TargaToTarga32(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat
 				alpha=(lptargaSrc->buffer[ySrc*lptargaSrc->width*4 + xSrc*4 + 3]);
 
 			// this builds a 32 bit color value in A.8.8.8 format (8-bit alpha mode)
-			unsigned __int32 pixel=_RGB32BIT(alpha,red,green,blue);
+			Uint32 pixel=_RGB32BIT(alpha,red,green,blue);
 
 			// write the pixel
 			lpdwDest[xFlat + xSrc + ((ySrc+yFlat)*iStride >> 2)]=pixel;
@@ -3189,8 +3191,8 @@ int TargaToTarga32(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yFlat
 
 ////////////////////////////////////////////////////////////////////////////////
 
-int Targa32ToAnyTarga(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yTo, int opacityCap, float fExplodedness, unsigned __int32 dwStat) {
-	//register unsigned __int32* lpdwDest=(unsigned __int32*)lptargaDest->buffer;
+int Targa32ToAnyTarga(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yTo, int opacityCap, float fExplodedness, Uint32 dwStat) {
+	//register Uint32* lpdwDest=(Uint32*)lptargaDest->buffer;
   try {
 	int iStride=TargaStride(lptargaDest);
 	register BYTE *lpbyDest=lptargaDest->buffer;//(BYTE*)&lpdwDest[xFlat + (yTo*iStride >> 2)]; //dest pointer
@@ -3200,7 +3202,7 @@ int Targa32ToAnyTarga(LPTARGA lptargaSrc, LPTARGA lptargaDest, int xFlat, int yT
 	register int draw=0;
 	register float cookedAlpha=1;
 	//register BYTE alpha,blue,green,red;
-	//register unsigned __int32 pixel;
+	//register Uint32 pixel;
 
 	//int adddPos=iStride-nWidth*4;
 	//register int adddPos=iStride >> 2;//-lptargaSrc->width*4; //in case not linear
@@ -3371,7 +3373,7 @@ bool GameMain() {
 		DrawExclusiveRect(0,0,SCREEN_HEIGHT,SCREEN_WIDTH,0x00000000,true);
 		TargaToTarga32(lptargaIntro, lptargaScreen, SCREEN_OFFSET_X+(SCREEN_WIDTH/2-lptargaIntro->width/2),SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
-		unsigned __int32 dwStartTick=SDL_GetTicks();
+		Uint32 dwStartTick=SDL_GetTicks();
 		//while((SDL_GetTicks() - dwStartTick) < 1000) {
 			SleepWrapper(1500);
 		//}
@@ -3502,7 +3504,7 @@ bool GameMain() {
 		}
 		iEncounter=1;//go back to first encounter of this area
 		TargaToScreen_AutoCrop(lptargaScreen);
-		unsigned __int32 dwStartTick=SDL_GetTicks();
+		Uint32 dwStartTick=SDL_GetTicks();
 		SleepWrapper(4000);//while((SDL_GetTicks() - dwStartTick) < 5000);
 		iGameState=GAMESTATE_START_ENCOUNTER;
 	}
@@ -3521,7 +3523,7 @@ bool GameMain() {
 				SCREEN_WIDTH/2-lplptargaGameScreenEncounter[iEncounter-1]->width/2+SCREEN_OFFSET_X,
 				SCREEN_HEIGHT/2+SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
-		unsigned __int32 dwStartScreen=SDL_GetTicks();
+		Uint32 dwStartScreen=SDL_GetTicks();
 		SleepWrapper(3000);//while((SDL_GetTicks() - dwStartScreen) < 3000);
 
 		if (settings.GetForcedBool("music")) {
@@ -3638,7 +3640,7 @@ bool GameMain() {
 				if (lpAlienNow->dwStatus & STATUS_BOSS) {
 					//DrawRadarDot(lpAlienNow->m3dEnt.x, lpAlienNow->m3dEnt.y, lpAlienNow->m3dEnt.z,
 					//0x00000000);
-					//prototype: void DrawRadarRect(float left, float top, float bottom, float right, unsigned __int32 dwPixel)
+					//prototype: void DrawRadarRect(float left, float top, float bottom, float right, Uint32 dwPixel)
 					float fHalfH, fHalfW;
 					fHalfH=lpAlienNow->m3dEnt.ySize/2.0f;
 					fHalfW=lpAlienNow->m3dEnt.xSize/2.0f;
@@ -3809,7 +3811,7 @@ bool GameMain() {
 			//		SCREEN_WIDTH/2-lplptargaGameScreen[iScreenNow]->width/2,
 			//		SCREEN_HEIGHT/2-lplptargaGameScreen[iScreenNow]->height/2);
 			//
-			unsigned __int32 dwStartScreen;
+			Uint32 dwStartScreen;
 			TargaToTarga32_Alpha(lplptargaGameScreen[iScreenNow],lptargaScreen,
 					SCREEN_WIDTH/2-lplptargaGameScreen[iScreenNow]->width/2+SCREEN_OFFSET_X,
 					SCREEN_HEIGHT/2-lplptargaGameScreen[iScreenNow]->height/2+SCREEN_OFFSET_Y);
@@ -3839,7 +3841,7 @@ bool GameMain() {
 			PlayMusic("music/Orangejuice-DXMan-Ending.ogg",-1);
 		}
 
-		unsigned __int32 dwStartTick=SDL_GetTicks();
+		Uint32 dwStartTick=SDL_GetTicks();
 		SleepWrapper(3000);//while((SDL_GetTicks() - dwStartTick) < 3000);
 		bool bExit=false;
 			while(!bExit) {
@@ -3879,7 +3881,7 @@ bool GameMain() {
 			SCREEN_WIDTH/2-lplptargaGameScreen[0]->width/2+SCREEN_OFFSET_X,
 			SCREEN_HEIGHT/2-lplptargaGameScreen[0]->height/2+SCREEN_OFFSET_Y);
 		TargaToScreen_AutoCrop(lptargaScreen);
-		unsigned __int32 dwStartTick=SDL_GetTicks();
+		Uint32 dwStartTick=SDL_GetTicks();
 		SleepWrapper(5000);//while((SDL_GetTicks() - dwStartTick) < 5000);
 		//PostMessage(hwndMain,WM_CLOSE,0,0);
 		//PostMessage(hwndMain,WM_QUIT,0,0);
@@ -4452,10 +4454,10 @@ void RadarDotAt(int &xPixReturn, int &yPixReturn, float xPos, float yPos) {
 	catch (char* sExn) { if (ShowError()) cerr<<"Exception error in RadarDotAt function: "<<sExn<<endl; bGood=false; }
 	catch (...) { if (ShowError()) cerr<<"Unknown Exception in RadarDotAt function."<<endl; bGood=false; }
 }//end RadarDotAt
-void DrawRadarDot(float xPos, float yPos, float zPos, unsigned __int32 dwPixel) {
+void DrawRadarDot(float xPos, float yPos, float zPos, Uint32 dwPixel) {
 	DrawRadarDot(xPos,yPos,zPos,dwPixel,true);
 }
-void DrawRadarDot(float xPos, float yPos, float zPos, unsigned __int32 dwPixel, bool bFilled) {
+void DrawRadarDot(float xPos, float yPos, float zPos, Uint32 dwPixel, bool bFilled) {
 	bool bGood;
 	try {
 		int xCenter,yCenter;
@@ -4469,7 +4471,7 @@ void DrawRadarDot(float xPos, float yPos, float zPos, unsigned __int32 dwPixel, 
 	catch (char* sExn) { if (ShowError()) cerr<<"Exception error in DrawRadarDot: "<<sExn<<endl; bGood=false; }
 	catch (...) { if (ShowError()) cerr<<"Unknown Exception in DrawRadarDot."<<endl; bGood=false; }
 }//end DrawRadarDot
-void DrawRadarRect(float left, float top, float bottom, float right, unsigned __int32 dwPixel, bool bFilled) {
+void DrawRadarRect(float left, float top, float bottom, float right, Uint32 dwPixel, bool bFilled) {
 	bool bGood=true;
 	try {
 		int iLeft=0, iTop=0, iBottom=0, iRight=0;
@@ -4487,7 +4489,7 @@ void DrawRadarRect(float left, float top, float bottom, float right, unsigned __
 void DrawRadarField() {
 	static float FRADAR_XRAD=FXMAX-FXMIN;
 	static float FRADAR_YRAD=FYMAX-FYMIN;
-	static unsigned __int32 dwPixel=0x004400FF;
+	static Uint32 dwPixel=0x004400FF;
 	static int xCenter=SCREEN_WIDTH-(int)(FRADAR_XRAD+6.0f);
 	static int yCenter=(int)((float)FRADAR_YRAD+6.0f);
 	static int xOffset=(int)(FRADAR_ZOOM*FRADAR_XRAD);
@@ -4495,7 +4497,7 @@ void DrawRadarField() {
 	static int left=xCenter-xOffset, right=xCenter+xOffset, top=yCenter-yOffset, bottom=yCenter+yOffset;
 	DrawExclusiveRect(left, top, bottom, right, dwPixel, false);
 }
-void DrawExclusiveRect(int left, int top, int bottom, int right, unsigned __int32 dwPixel, bool bFilled) {
+void DrawExclusiveRect(int left, int top, int bottom, int right, Uint32 dwPixel, bool bFilled) {
 	if (left<0||right>=BUFFER_WIDTH||top<0||bottom>=BUFFER_HEIGHT)//error checking
 		return;
 	left+=SCREEN_OFFSET_X;
@@ -4503,7 +4505,7 @@ void DrawExclusiveRect(int left, int top, int bottom, int right, unsigned __int3
 	top+=SCREEN_OFFSET_Y;
 	bottom+=SCREEN_OFFSET_Y;
 	bool bGood=true;
-	unsigned __int32* lpdwDest=(unsigned __int32*)lptargaScreen->buffer;
+	Uint32* lpdwDest=(Uint32*)lptargaScreen->buffer;
 	int iScreenW=lptargaScreen->width;
 	int iScreenH=lptargaScreen->height;
 	if (bottom<=top) {//if bad, draw vert line
@@ -4525,7 +4527,7 @@ void DrawExclusiveRect(int left, int top, int bottom, int right, unsigned __int3
         DrawExclusiveRect(left,top,bottom,right,dwPixel,false);
 		bGood=false;
 	}
-	int iStart=top*iScreenW+left;//no stride since using unsigned __int32* to buffer
+	int iStart=top*iScreenW+left;//no stride since using Uint32* to buffer
 	lpdwDest+=iStart;
 	int iSkipEdge=iScreenW-(right-left);
 	if (bGood) {
@@ -5047,6 +5049,9 @@ void DrawCube(Mass3d &m3dNow, Pixel &pixelNear, Pixel &pixelFar) {
 	camera.Point2dFrom3d(fpEnd,m3darrBox[2]);
 	DrawSubpixelLine(lptargaScreen,fpStart.x+FSCREEN_OFFSET_X, fpStart.y+FSCREEN_OFFSET_Y, fpEnd.x+FSCREEN_OFFSET_X, fpEnd.y+FSCREEN_OFFSET_Y,
 			pixelNear,&pixelNear,fSubPixAccuracy);
+}
+inline void SleepWrapper(int iTicks) {
+	SDL_Delay(iTicks);
 }
 
 //}//end namespace
